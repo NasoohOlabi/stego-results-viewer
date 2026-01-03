@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import CodeMirror from "@uiw/react-codemirror";
 import { json } from "@codemirror/lang-json";
 import { oneDark } from "@codemirror/theme-one-dark";
+import CodeMirror from "@uiw/react-codemirror";
+import { useMemo, useState } from "react";
 import { ParsedView } from "./parsed-view";
 
 interface CodeViewerProps {
@@ -62,17 +62,21 @@ export function CodeViewer({ content, filename }: CodeViewerProps) {
 							<span className="text-xs text-white/50">Raw</span>
 							<button
 								type="button"
-								onClick={() => setViewMode(viewMode === "raw" ? "parsed" : "raw")}
+								onClick={() =>
+									setViewMode(viewMode === "raw" ? "parsed" : "raw")
+								}
 								className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
 									viewMode === "parsed" ? "bg-white/40" : "bg-white/10"
 								}`}
 								role="switch"
-								aria-checked={viewMode === "parsed"}
+								aria-checked={viewMode === "parsed" ? "true" : "false"}
 								aria-label="Toggle view mode"
 							>
 								<span
 									className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-										viewMode === "parsed" ? "translate-x-6" : "translate-x-1"
+										viewMode === "parsed"
+											? "translate-x-6"
+											: "translate-x-1"
 									}`}
 								/>
 							</button>
@@ -81,7 +85,7 @@ export function CodeViewer({ content, filename }: CodeViewerProps) {
 					)}
 				</div>
 			</div>
-			<div className="flex-1 overflow-hidden">
+			<div className="flex-1 min-h-0 overflow-hidden">
 				{viewMode === "raw" ? (
 					<CodeMirror
 						value={formattedContent ?? content}
@@ -89,12 +93,13 @@ export function CodeViewer({ content, filename }: CodeViewerProps) {
 						theme={oneDark}
 						editable={false}
 						height="100%"
+						className="h-full"
 						basicSetup={{
 							lineNumbers: true,
 							foldGutter: true,
 							dropCursor: false,
 							allowMultipleSelections: false,
-							syntaxHighlighting: true,
+							syntaxHighlighting: true
 						}}
 					/>
 				) : (

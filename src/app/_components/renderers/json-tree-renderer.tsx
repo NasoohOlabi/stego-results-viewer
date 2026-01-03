@@ -4,6 +4,7 @@ import { useState } from "react";
 
 interface JsonTreeRendererProps {
 	data: unknown;
+	hideMessage?: boolean;
 }
 
 function JsonValue({ value, path = "" }: { value: unknown; path?: string }) {
@@ -111,12 +112,14 @@ function JsonValue({ value, path = "" }: { value: unknown; path?: string }) {
 	return <span className="text-gray-400">{String(value)}</span>;
 }
 
-export function JsonTreeRenderer({ data }: JsonTreeRendererProps) {
+export function JsonTreeRenderer({ data, hideMessage }: JsonTreeRendererProps) {
 	return (
 		<div className="rounded p-4">
-			<div className="mb-2 text-xs text-white/50">
-				No matching schema found. Showing JSON tree view:
-			</div>
+			{!hideMessage && (
+				<div className="mb-2 text-xs text-white/50">
+					No matching schema found. Showing JSON tree view:
+				</div>
+			)}
 			<div className="font-mono text-sm">
 				<JsonValue value={data} />
 			</div>
