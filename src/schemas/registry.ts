@@ -27,6 +27,7 @@ export function findMatchingRenderer(data: unknown): SchemaRenderer<any> | null 
 		if (result.success) {
 			return renderer;
 		}
+		console.log(`Schema "${renderer.name}" failed to match:`, result.error.format());
 	}
 	return null;
 }
@@ -39,27 +40,26 @@ export function getRegisteredRenderers(): readonly SchemaRenderer<any>[] {
 }
 
 // Register schemas and their renderers
-import { stegoResultSchema } from "./stego-result";
-import { stegoComplexResultSchema } from "./stego-complex-result";
-import { tableDataSchema } from "./table-data";
 import { StegoResultRenderer } from "~/app/_components/renderers/stego-result-renderer";
-import { StegoTextOnlyRenderer } from "~/app/_components/renderers/stego-text-only-renderer";
-import { TableDataRenderer } from "~/app/_components/renderers/table-data-renderer";
-
-registerRenderer({
-	schema: stegoComplexResultSchema,
-	component: StegoTextOnlyRenderer,
-	name: "Stego Texts",
-});
+import { stegoResultSchema } from "./stego-result";
+import { StegoTextOnlyRenderer } from "~/app/_components/renderers/stego-result-old-renderer";
+import { stegoComplexResultSchema } from "./stego-result-old";
 
 registerRenderer({
 	schema: stegoResultSchema,
 	component: StegoResultRenderer,
-	name: "Stego Result",
+	name: "Stego Results",
 });
 
 registerRenderer({
-	schema: tableDataSchema,
-	component: TableDataRenderer,
-	name: "Table Data",
+	schema: stegoComplexResultSchema,
+	component: StegoTextOnlyRenderer,
+	name: "Stego Texts (Old)",
 });
+
+
+// registerRenderer({
+// 	schema: tableDataSchema,
+// 	component: TableDataRenderer,
+// 	name: "Table Data",
+// });

@@ -7,7 +7,7 @@ import {
 	AccordionItem,
 	AccordionTrigger
 } from "~/components/ui/accordion";
-import type { StegoComplexResult } from "~/schemas/stego-complex-result";
+import type { StegoComplexResult } from "~/schemas/stego-result-old";
 import { AngleTable } from "../angle-table";
 import { PaginatedTable } from "../paginated-table";
 
@@ -18,6 +18,7 @@ interface StegoTextOnlyRendererProps {
 export function StegoTextOnlyRenderer({ data }: StegoTextOnlyRendererProps) {
 	return (
 		<div className="space-y-4">
+			<div className="text-sm text-white/50">Parsed</div>
 			<div className="flex items-center justify-between border-b border-white/10 pb-2">
 				<h4 className="text-lg font-semibold text-white">
 					Steganographic Texts

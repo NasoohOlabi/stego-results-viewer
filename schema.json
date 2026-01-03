@@ -13,6 +13,9 @@
           "compression": {
             "type": "object",
             "properties": {
+              "method": {
+                "type": "string"
+              },
               "payload": {
                 "type": "string"
               },
@@ -25,9 +28,6 @@
               "originalLength": {
                 "type": "integer"
               },
-              "usedDict": {
-                "type": "boolean"
-              },
               "ratio": {
                 "type": "number"
               },
@@ -37,7 +37,10 @@
                   "type": "object",
                   "properties": {
                     "doc": {
-                      "type": "null"
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
                     },
                     "idx": {
                       "type": "integer"
@@ -57,11 +60,11 @@
             "required": [
               "compressed",
               "compressedLength",
+              "method",
               "originalLength",
               "payload",
               "ratio",
-              "references",
-              "usedDict"
+              "references"
             ]
           },
           "commentEmbedding": {
@@ -71,12 +74,6 @@
                 "type": "string"
               },
               "bitsCount": {
-                "type": "integer"
-              },
-              "flatCommentsLength": {
-                "type": "integer"
-              },
-              "selectionIndex": {
                 "type": "integer"
               },
               "targetType": {
@@ -94,15 +91,6 @@
                   "author": {
                     "type": "string"
                   },
-                  "selftext": {
-                    "type": "string"
-                  },
-                  "subreddit": {
-                    "type": "string"
-                  },
-                  "url": {
-                    "type": "string"
-                  },
                   "permalink": {
                     "type": "string"
                   }
@@ -111,23 +99,22 @@
                   "author",
                   "id",
                   "permalink",
-                  "selftext",
-                  "subreddit",
-                  "title",
-                  "url"
+                  "title"
                 ]
               },
               "pickedCommentChain": {
                 "type": "array"
+              },
+              "insufficientBits": {
+                "type": "boolean"
               }
             },
             "required": [
               "bitsCount",
               "bitsUsed",
               "context",
-              "flatCommentsLength",
+              "insufficientBits",
               "pickedCommentChain",
-              "selectionIndex",
               "targetType"
             ]
           },
@@ -197,14 +184,10 @@
                     },
                     "tangent": {
                       "type": "string"
-                    },
-                    "source_document": {
-                      "type": "integer"
                     }
                   },
                   "required": [
                     "category",
-                    "source_document",
                     "source_quote",
                     "tangent"
                   ]
@@ -218,11 +201,15 @@
               },
               "selectedSourceDocument": {
                 "type": "null"
+              },
+              "insufficientBits": {
+                "type": "boolean"
               }
             },
             "required": [
               "bitsCount",
               "bitsUsed",
+              "insufficientBits",
               "remainingAngles",
               "remainingBits",
               "selectedAngle",
@@ -371,10 +358,7 @@
                     "type": "string"
                   },
                   "missing": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
+                    "type": "array"
                   },
                   "page_rank": {
                     "type": "integer"
@@ -387,24 +371,6 @@
                   },
                   "title": {
                     "type": "string"
-                  },
-                  "extended_sitelinks": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "link": {
-                          "type": "string"
-                        },
-                        "title": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "link",
-                        "title"
-                      ]
-                    }
                   }
                 },
                 "required": [

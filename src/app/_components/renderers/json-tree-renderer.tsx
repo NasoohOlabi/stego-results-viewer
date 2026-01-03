@@ -113,6 +113,10 @@ function JsonValue({ value, path = "" }: { value: unknown; path?: string }) {
 }
 
 export function JsonTreeRenderer({ data, hideMessage }: JsonTreeRendererProps) {
+	if (!hideMessage) {
+		console.log("No matching schema found for data:", data);
+	}
+
 	return (
 		<div className="rounded p-4">
 			{!hideMessage && (

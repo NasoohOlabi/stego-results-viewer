@@ -12,3 +12,5 @@ and make the text wrap bacause results are long
 add ui to change @src/app/_components/paginated-table.tsx pageSize
 
 @src/app/_components/renderers/stego-text-only-renderer.tsx:171-177 use tanstack table and display this as table with three columns  with pagination
+@src/app/_components/renderers/json-tree-renderer.tsx:119-121 can you console.log why there is no matching schema?!
+write new renderer and schema for the @schema.json
