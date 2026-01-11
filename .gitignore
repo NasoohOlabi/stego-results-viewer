@@ -44,3 +44,7 @@ yarn-error.log*
 
 # idea files
 .idea
+
+output-results
+prompts.md
+1look5n_v9.json

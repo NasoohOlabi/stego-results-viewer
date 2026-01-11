@@ -30,7 +30,7 @@ function parseJSON(content: string): unknown | null {
 }
 
 export function CodeViewer({ content, filename }: CodeViewerProps) {
-	const [viewMode, setViewMode] = useState<"raw" | "parsed">("raw");
+	const [viewMode, setViewMode] = useState<"raw" | "parsed">("parsed");
 
 	const formattedContent = useMemo(() => {
 		if (!content) return null;

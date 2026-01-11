@@ -117,7 +117,7 @@ export function StegoTextOnlyRenderer({ data }: StegoTextOnlyRendererProps) {
 								<div className="absolute top-2 right-2 text-[10px] font-mono text-white/20 group-hover:text-white/40">
 									#{index + 1}
 								</div>
-								<div className="whitespace-pre-wrap font-serif text-lg leading-relaxed text-white/90">
+								<div className="whitespace-pre-wrap text-lg leading-relaxed text-white/90">
 									Stego text: ({item.stegoText.length} characters)
 									<div>{item.stegoText}</div>
 								</div>

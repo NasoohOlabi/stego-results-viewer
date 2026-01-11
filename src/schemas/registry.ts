@@ -42,7 +42,9 @@ export function getRegisteredRenderers(): readonly SchemaRenderer<any>[] {
 // Register schemas and their renderers
 import { StegoResultRenderer } from "~/app/_components/renderers/stego-result-renderer";
 import { stegoResultSchema } from "./stego-result";
-import { StegoTextOnlyRenderer } from "~/app/_components/renderers/stego-result-old-renderer";
+import { StegoTextOnlyRenderer } from "~/app/_components/renderers/stego-text-only-renderer";
+import { stegoTextOnlySchema } from "./stego-text-only";
+import { StegoTextOnlyRenderer as StegoTextOnlyOldRenderer } from "~/app/_components/renderers/stego-result-old-renderer";
 import { stegoComplexResultSchema } from "./stego-result-old";
 
 registerRenderer({
@@ -52,8 +54,14 @@ registerRenderer({
 });
 
 registerRenderer({
-	schema: stegoComplexResultSchema,
+	schema: stegoTextOnlySchema,
 	component: StegoTextOnlyRenderer,
+	name: "Stego Results (Text Only)",
+});
+
+registerRenderer({
+	schema: stegoComplexResultSchema,
+	component: StegoTextOnlyOldRenderer,
 	name: "Stego Texts (Old)",
 });
 

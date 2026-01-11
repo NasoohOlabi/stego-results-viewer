@@ -1,128 +1,45 @@
 "use client";
 
-import { useState } from "react";
-import { ExternalLink, MessageCircle, MessageSquare } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger
 } from "~/components/ui/accordion";
-import type { RedditComment, StegoResult } from "~/schemas/stego-result";
+import type { RedditComment } from "~/schemas/stego-result";
+import type { StegoTextOnly } from "~/schemas/stego-text-only";
 import { AngleTable } from "../angle-table";
 import { PaginatedTable } from "../paginated-table";
 
-interface StegoResultRendererProps {
-	data: StegoResult;
+interface StegoTextOnlyRendererProps {
+	data: StegoTextOnly;
 }
 
-function CommentItem({
-	comment,
-	depth
-}: {
-	comment: RedditComment;
-	depth: number;
-}) {
-	const [isExpanded, setIsExpanded] = useState(false);
-	const hasReplies = comment.replies && comment.replies.length > 0;
-
-	return (
-		<div className="space-y-2">
-			<div
-				className={`group rounded-lg p-2 -ml-2 transition-colors ${
-					hasReplies ? "cursor-pointer hover:bg-white/5" : ""
-				}`}
-				onClick={() => hasReplies && setIsExpanded(!isExpanded)}
-			>
-				<div className="flex items-center gap-2 text-[10px] text-white/40">
-					<span className="font-bold text-blue-400">
-						u/{comment.author ?? "[deleted]"}
-					</span>
-					<span>•</span>
-					<span>{comment.score ?? 0} points</span>
-					{hasReplies && (
-						<>
-							<span>•</span>
-							<span className="text-blue-400/60 font-medium">
-								{isExpanded
-									? "Hide replies"
-									: `Show ${comment.replies?.length} replies`}
-							</span>
-						</>
-					)}
-					<span>•</span>
-					<a
-						href={`https://www.reddit.com${comment.permalink}`}
-						target="_blank"
-						rel="noopener noreferrer"
-						title="View comment on Reddit"
-						className="hover:text-white transition-colors"
-						onClick={(e) => e.stopPropagation()}
-					>
-						<ExternalLink size={10} />
-					</a>
-				</div>
-				<div className="text-sm text-white/80 leading-relaxed mt-1">
-					{comment.body}
-				</div>
-			</div>
-			{hasReplies && isExpanded && (
-				<CommentTree comments={comment.replies} depth={depth + 1} />
-			)}
-		</div>
-	);
-}
-
-function CommentTree({
-	comments,
-	depth = 0
-}: {
-	comments: RedditComment[];
-	depth?: number;
-}) {
-	if (!comments || comments.length === 0) return null;
-
-	return (
-		<div
-			className={`space-y-3 ${
-				depth > 0 ? "ml-4 border-l border-white/10 pl-4" : ""
-			}`}
-		>
-			{comments.map((comment) => (
-				<CommentItem
-					key={comment.id}
-					comment={comment}
-					depth={depth}
-				/>
-			))}
-		</div>
-	);
-}
-
-export function StegoResultRenderer({ data }: StegoResultRendererProps) {
+export function StegoTextOnlyRenderer({ data }: StegoTextOnlyRendererProps) {
 	return (
 		<div className="space-y-6">
+			<div className="flex items-center justify-between border-b border-white/10 pb-4">
+				<div>
+					<h4 className="text-xl font-bold text-white">
+						Steganographic Results (Text Only)
+					</h4>
+					<p className="text-sm text-white/50">
+						Analyzed {data.length} post{data.length !== 1 ? "s" : ""}
+					</p>
+				</div>
+			</div>
+
 			<div className="space-y-8">
 				{data.map((item, index) => {
-					const searchResults = Array.isArray(item.post?.search_results)
-						? item.post.search_results
-						: Object.values(item.post?.search_results ?? {})
-								.flat()
-								.map(
-									(x: any) =>
-										x?.content_analysis ??
-										(x?.content_fetched
-											? x?.fetched_content
-											: null) ??
-										x?.snippet
-								)
-								.filter((x): x is string => typeof x === "string");
+					const searchResults = item.post.search_results;
 
 					// Helper to flatten comments for reference lookup
 					const flattenComments = (
 						comments: RedditComment[]
 					): string[] => {
 						const flat: string[] = [];
+						if (!comments) return flat;
 						for (const c of comments) {
 							if (c.body) flat.push(c.body);
 							if (c.replies) flat.push(...flattenComments(c.replies));
@@ -130,24 +47,17 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 						return flat;
 					};
 
-					const comments = flattenComments(item.post?.comments ?? []);
+					const comments = flattenComments(
+						(item.post as any).comments ?? []
+					);
 					const allDocs = [
-						item.post?.selftext ?? "",
-						...searchResults,
+						(item.post as any).selftext ?? "",
+						...(searchResults ?? []),
 						...comments
 					];
 
-					// Helper to check if a picked comment has body/permalink (V2/V3)
-					const isCommentItem = (
-						c: any
-					): c is { body: string; permalink: string; id: string } =>
-						c && typeof c === "object" && "body" in c;
-
 					return (
-						<div
-							key={`${item.post?.id ?? index}-${index}`}
-							className="space-y-4"
-						>
+						<div key={item.post.id} className="space-y-4">
 							<div className="flex items-center justify-between text-sm">
 								<div className="flex gap-4">
 									<div className="flex items-center gap-1.5">
@@ -231,13 +141,7 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 										<div className="space-y-2">
 											<label className="text-[10px] font-bold uppercase tracking-wider text-white/30 flex justify-between">
 												<span>
-													{item.embedding?.compression
-														?.usedDict !== undefined
-														? item.embedding.compression.usedDict
-															? "Dictionary"
-															: "Direct"
-														: item.embedding?.compression
-																?.method ?? "Compression"}{" "}
+													{item.embedding?.compression?.method}{" "}
 													Bits (
 													{
 														item.embedding?.compression
@@ -306,11 +210,9 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 																		{ref.doc !== null &&
 																		ref.doc !== undefined &&
 																		allDocs[ref.doc]
-																			? (
-																					allDocs[
-																						ref.doc
-																					] as string
-																			  ).slice(
+																			? allDocs[
+																					ref.doc
+																			  ].slice(
 																					ref.idx,
 																					ref.idx + ref.len
 																			  )
@@ -323,85 +225,6 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 												</AccordionContent>
 											</AccordionItem>
 										)}
-
-										<AccordionItem
-											value="picked-chain"
-											className="border-white/10"
-										>
-											<AccordionTrigger className="hover:no-underline py-3">
-												<span className="text-sm font-medium flex items-center gap-2">
-													<MessageSquare size={16} />
-													Picked Comment Chain (
-													{item.embedding?.commentEmbedding
-														?.pickedCommentChain?.length ?? 0}
-													)
-												</span>
-											</AccordionTrigger>
-											<AccordionContent>
-												<div className="space-y-4 px-1">
-													{item.embedding?.commentEmbedding?.pickedCommentChain?.map(
-														(comment: any, i: number) => (
-															<div
-																key={
-																	isCommentItem(comment)
-																		? comment.id
-																		: i
-																}
-																className="relative pl-4 border-l-2 border-white/10 py-1"
-															>
-																<div className="flex items-center gap-2 mb-1">
-																	<span className="text-[10px] font-bold text-white/30 uppercase">
-																		Comment #{i + 1}
-																	</span>
-																	{isCommentItem(comment) && (
-																		<a
-																			href={`https://www.reddit.com${comment.permalink}`}
-																			target="_blank"
-																			rel="noopener noreferrer"
-																			title="View comment on Reddit"
-																			className="text-white/20 hover:text-white/60 transition-colors"
-																		>
-																			<ExternalLink
-																				size={12}
-																			/>
-																		</a>
-																	)}
-																</div>
-																<div className="text-sm text-white/80 leading-relaxed">
-																	{isCommentItem(comment)
-																		? comment.body
-																		: JSON.stringify(comment)}
-																</div>
-															</div>
-														)
-													)}
-												</div>
-											</AccordionContent>
-										</AccordionItem>
-
-										{item.post?.comments &&
-											item.post.comments.length > 0 && (
-												<AccordionItem
-													value="all-comments"
-													className="border-white/10"
-												>
-													<AccordionTrigger className="hover:no-underline py-3">
-														<span className="text-sm font-medium flex items-center gap-2">
-															<MessageCircle size={16} />
-															Full Comment Tree (
-															{item.post.num_comments})
-														</span>
-													</AccordionTrigger>
-													<AccordionContent>
-														<div className="px-1 py-2">
-															<CommentTree
-																comments={item.post.comments}
-															/>
-														</div>
-													</AccordionContent>
-												</AccordionItem>
-											)}
-
 										<AccordionItem
 											value="angles"
 											className="border-white/10"
