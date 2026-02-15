@@ -2,24 +2,15 @@ import { readdir, readFile } from "fs/promises";
 import { join } from "path";
 import { z } from "zod";
 
+import { getResolvedPath } from "~/server/paths";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-
-const SIDE_WING_PATH = join(process.cwd(), "..", "stego-side-wing", "output-results");
-const LOCAL_PATH = join(process.cwd(), "output-results");
-
-const PATH_MAP = {
-	"side-wing": SIDE_WING_PATH,
-	local: LOCAL_PATH,
-} as const;
-
-export type FolderType = keyof typeof PATH_MAP;
 
 export const filesRouter = createTRPCRouter({
 	listFiles: publicProcedure
-		.input(z.object({ folder: z.enum(["side-wing", "local"]).default("side-wing") }))
+		.input(z.object({ pathId: z.string().default("side-wing") }))
 		.query(async ({ input }) => {
 			try {
-				const path = PATH_MAP[input.folder];
+				const path = getResolvedPath(input.pathId);
 				const entries = await readdir(path, { withFileTypes: true });
 				// Filter out directories and only return files
 				const fileList = entries
@@ -29,24 +20,24 @@ export const filesRouter = createTRPCRouter({
 				return fileList;
 			} catch (error) {
 				console.error("Error reading directory:", error);
-				throw new Error(`Failed to read directory: ${input.folder}`);
+				throw new Error(`Failed to read directory: ${input.pathId}`);
 			}
 		}),
 
 	getFileContent: publicProcedure
 		.input(z.object({
 			filename: z.string(),
-			folder: z.enum(["side-wing", "local"]).default("side-wing")
+			pathId: z.string().default("side-wing"),
 		}))
 		.query(async ({ input }) => {
 			try {
-				const path = PATH_MAP[input.folder];
+				const path = getResolvedPath(input.pathId);
 				const filePath = join(path, input.filename);
 				const content = await readFile(filePath, "utf-8");
 				return content;
 			} catch (error) {
 				console.error("Error reading file:", error);
-				throw new Error(`Failed to read file: ${input.filename} in ${input.folder}`);
+				throw new Error(`Failed to read file: ${input.filename} in ${input.pathId}`);
 			}
 		}),
 });

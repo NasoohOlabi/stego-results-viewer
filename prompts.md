@@ -50,3 +50,11 @@ look the file names are ugly can you regex them and only show the id or maybe do
                     "1nmeeqt_version_07_after_filtering_with_comments.json",
                     "1np0vsv_version_07_after_filtering_with_comments.json",
                     "1npb37u_version_02_after_filtering_with_comments.json",
+I need to add a route for dashboard
+the dashboard should have basic statistic on 
+average bits per post
+average compresssion ratio
+and other metrics 
+learn how to calcuate and get the values form the renderers components
+the dashboard should have a route in the sidebar on the left
+add route to the new dashboard

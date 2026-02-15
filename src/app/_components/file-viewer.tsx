@@ -1,18 +1,31 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { CodeViewer } from "./code-viewer";
 import { FileExplorer } from "./file-explorer";
+import { usePathConfig } from "~/hooks/use-path-config";
 
 export function FileViewer() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const pathname = usePathname();
+	const { enabledPaths, getPathIdForApiById } = usePathConfig();
 
 	const selectedFile = searchParams.get("filename");
-	const selectedFolder =
-		(searchParams.get("folder") as "side-wing" | "local") ?? "side-wing";
+	const selectedPathId = searchParams.get("folder") ?? "side-wing";
+	const apiPathId = getPathIdForApiById(selectedPathId) ?? selectedPathId;
+	const isValidPath = enabledPaths.some((p) => p.id === selectedPathId);
+
+	useEffect(() => {
+		if (!isValidPath && enabledPaths.length > 0) {
+			const params = new URLSearchParams(searchParams.toString());
+			params.set("folder", enabledPaths[0]!.id);
+			params.delete("filename");
+			router.replace(`${pathname}?${params.toString()}`);
+		}
+	}, [selectedPathId, enabledPaths, pathname, router, searchParams, isValidPath]);
 
 	const handleFileSelect = (filename: string) => {
 		const params = new URLSearchParams(searchParams.toString());
@@ -20,20 +33,23 @@ export function FileViewer() {
 		router.push(`${pathname}?${params.toString()}`, { scroll: false });
 	};
 
-	const handleFolderSelect = (folder: "side-wing" | "local") => {
+	const handlePathSelect = (pathId: string) => {
 		const params = new URLSearchParams(searchParams.toString());
-		params.set("folder", folder);
-		params.delete("filename"); // Clear selection when switching folders
+		params.set("folder", pathId);
+		params.delete("filename");
 		router.push(`${pathname}?${params.toString()}`, { scroll: false });
 	};
 
 	const { data: files = [], isLoading: filesLoading } =
-		api.files.listFiles.useQuery({ folder: selectedFolder });
+		api.files.listFiles.useQuery(
+			{ pathId: apiPathId },
+			{ enabled: isValidPath },
+		);
 
 	const { data: fileContent, isLoading: contentLoading } =
 		api.files.getFileContent.useQuery(
-			{ filename: selectedFile!, folder: selectedFolder },
-			{ enabled: !!selectedFile }
+			{ filename: selectedFile!, pathId: apiPathId },
+			{ enabled: !!selectedFile && isValidPath },
 		);
 
 	if (filesLoading) {
@@ -51,8 +67,8 @@ export function FileViewer() {
 					files={files}
 					selectedFile={selectedFile}
 					onFileSelect={handleFileSelect}
-					selectedFolder={selectedFolder}
-					onFolderSelect={handleFolderSelect}
+					selectedPathId={selectedPathId}
+					onPathSelect={handlePathSelect}
 				/>
 			</div>
 			<div className="flex-1 min-w-0">
