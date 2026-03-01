@@ -59,7 +59,7 @@ function DashboardContent() {
 				/>
 			</div>
 			<div className="flex-1 overflow-y-auto p-8">
-				<div className="max-w-4xl mx-auto space-y-8">
+				<div className="max-w-7xl mx-auto space-y-8">
 					<header>
 						<h1 className="text-3xl font-bold">Dashboard</h1>
 						<p className="text-white/50">
@@ -72,7 +72,7 @@ function DashboardContent() {
 							<p className="text-white/50">Calculating statistics...</p>
 						</div>
 					) : stats ? (
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 							<div className="rounded-xl border border-white/10 bg-white/5 p-6 space-y-2">
 								<h3 className="text-sm font-medium text-white/50 uppercase tracking-wider">
 									Average Bits per Post
@@ -156,6 +156,30 @@ function DashboardContent() {
 								</div>
 								<p className="text-xs text-white/30">
 									Percentage of posts with zero warnings.
+								</p>
+							</div>
+
+							<div className="rounded-xl border border-white/10 bg-white/5 p-6 space-y-2">
+								<h3 className="text-sm font-medium text-white/50 uppercase tracking-wider">
+									Total Bits Embedded
+								</h3>
+								<div className="text-4xl font-bold text-emerald-400">
+									{stats.totalBitsEmbedded.toLocaleString()}
+								</div>
+								<p className="text-xs text-white/30">
+									Sum of all embedded bits across posts.
+								</p>
+							</div>
+
+							<div className="rounded-xl border border-white/10 bg-white/5 p-6 space-y-2">
+								<h3 className="text-sm font-medium text-white/50 uppercase tracking-wider">
+									Posts with Warnings
+								</h3>
+								<div className="text-4xl font-bold text-red-400">
+									{stats.postsWithWarnings}
+								</div>
+								<p className="text-xs text-white/30">
+									Number of posts that had at least one warning.
 								</p>
 							</div>
 

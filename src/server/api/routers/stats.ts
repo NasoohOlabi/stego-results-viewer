@@ -90,6 +90,7 @@ export const statsRouter = createTRPCRouter({
 				return {
 					avgBitsPerPost: 0,
 					avgCompressionRatio: 0,
+					totalBitsEmbedded: 0,
 					totalPosts: 0,
 					totalFiles: 0,
 					totalWarnings: 0,
@@ -141,6 +142,7 @@ export const statsRouter = createTRPCRouter({
 			return {
 				avgBitsPerPost: postCount > 0 ? totalBits / postCount : 0,
 				avgCompressionRatio: ratioCount > 0 ? totalRatio / ratioCount : 0,
+				totalBitsEmbedded: totalBits,
 				totalPosts: postCount,
 				totalFiles: fileCount,
 				totalWarnings,
