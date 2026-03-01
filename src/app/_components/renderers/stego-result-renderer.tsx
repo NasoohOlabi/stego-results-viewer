@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { ExternalLink, MessageCircle, MessageSquare } from "lucide-react";
+import { useState } from "react";
 import {
 	Accordion,
 	AccordionContent,
@@ -67,7 +67,7 @@ function CommentItem({
 				</div>
 			</div>
 			{hasReplies && isExpanded && (
-				<CommentTree comments={comment.replies} depth={depth + 1} />
+				<CommentTree comments={comment.replies ?? []} depth={depth + 1} />
 			)}
 		</div>
 	);
@@ -89,11 +89,7 @@ function CommentTree({
 			}`}
 		>
 			{comments.map((comment) => (
-				<CommentItem
-					key={comment.id}
-					comment={comment}
-					depth={depth}
-				/>
+				<CommentItem key={comment.id} comment={comment} depth={depth} />
 			))}
 		</div>
 	);
@@ -236,8 +232,8 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 														? item.embedding.compression.usedDict
 															? "Dictionary"
 															: "Direct"
-														: item.embedding?.compression
-																?.method ?? "Compression"}{" "}
+														: (item.embedding?.compression
+																?.method ?? "Compression")}{" "}
 													Bits (
 													{
 														item.embedding?.compression
@@ -310,10 +306,10 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 																					allDocs[
 																						ref.doc
 																					] as string
-																			  ).slice(
+																				).slice(
 																					ref.idx,
 																					ref.idx + ref.len
-																			  )
+																				)
 																			: "N/A"}
 																	</div>
 																</div>
@@ -339,6 +335,61 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 											</AccordionTrigger>
 											<AccordionContent>
 												<div className="space-y-4 px-1">
+													{/* Post Info */}
+													<div className="rounded-lg bg-black/20 p-3 space-y-2 border border-white/5">
+														<label className="text-[10px] font-bold uppercase tracking-wider text-white/30">
+															Post Info
+														</label>
+														<div className="space-y-1.5 text-sm">
+															<div>
+																<span className="text-white/40">Title: </span>
+																<span className="text-white/80">
+																	{item.post?.title ??
+																		item.embedding?.commentEmbedding?.context?.title ??
+																		"—"}
+																</span>
+															</div>
+															<div>
+																<span className="text-white/40">User: </span>
+																<span className="text-white/80">
+																	{item.post?.author ??
+																		item.embedding?.commentEmbedding?.context?.author ??
+																		"—"}
+																</span>
+															</div>
+															<div>
+																<span className="text-white/40">URL: </span>
+																{(item.post?.url ??
+																	item.embedding?.commentEmbedding?.context?.url) ? (
+																	<a
+																		href={
+																			item.post?.url ??
+																			item.embedding?.commentEmbedding?.context?.url
+																		}
+																		target="_blank"
+																		rel="noopener noreferrer"
+																		className="text-blue-400 hover:underline break-all"
+																	>
+																		{item.post?.url ??
+																			item.embedding?.commentEmbedding?.context?.url}
+																	</a>
+																) : (
+																	<span className="text-white/80">—</span>
+																)}
+															</div>
+															<div>
+																<span className="text-white/40">URL Content: </span>
+																<div className="mt-1 rounded bg-black/30 p-2 text-white/70 text-xs leading-relaxed line-clamp-6">
+																	{item.post?.selftext ??
+																		item.embedding?.commentEmbedding?.context
+																			?.selftext ??
+																		"—"}
+																</div>
+															</div>
+														</div>
+													</div>
+
+													{/* Comment Chain */}
 													{item.embedding?.commentEmbedding?.pickedCommentChain?.map(
 														(comment: any, i: number) => (
 															<div
@@ -375,6 +426,16 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 															</div>
 														)
 													)}
+
+													{/* Proposed Stegotext */}
+													<div className="space-y-2 pt-2">
+														<label className="text-[10px] font-bold uppercase tracking-wider text-white/30">
+															Proposed Stegotext
+														</label>
+														<div className="rounded-lg bg-black/30 p-4 text-sm leading-relaxed text-white/90">
+															{item.stegoText}
+														</div>
+													</div>
 												</div>
 											</AccordionContent>
 										</AccordionItem>
@@ -401,6 +462,28 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 													</AccordionContent>
 												</AccordionItem>
 											)}
+
+										{item.embedding?.angleEmbedding
+											?.selectedAngle && (
+											<AccordionItem
+												value="selected-angle"
+												className="border-white/10"
+											>
+												<AccordionTrigger className="hover:no-underline py-3">
+													<span className="text-sm font-medium">
+														Selected Angle
+													</span>
+												</AccordionTrigger>
+												<AccordionContent>
+													<AngleTable
+														data={[
+															item.embedding!.angleEmbedding!
+																.selectedAngle!
+														]}
+													/>
+												</AccordionContent>
+											</AccordionItem>
+										)}
 
 										<AccordionItem
 											value="angles"

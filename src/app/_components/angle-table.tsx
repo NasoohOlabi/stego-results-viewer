@@ -11,10 +11,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 interface AngleData {
-	category: string;
-	source_quote: string;
-	tangent: string;
+	category?: string;
+	source_quote?: string;
+	tangent?: string;
 	source_document?: number;
+	idx?: number;
 }
 
 interface AngleTableProps {

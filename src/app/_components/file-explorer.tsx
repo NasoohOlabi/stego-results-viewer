@@ -1,24 +1,24 @@
 "use client";
 
+import {
+	ChevronRight,
+	FileJson,
+	Folder,
+	Home,
+	LayoutDashboard,
+	Plus,
+	Settings,
+	Trash2
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
-	AccordionTrigger,
+	AccordionTrigger
 } from "~/components/ui/accordion";
-import {
-	ChevronRight,
-	FileJson,
-	Folder,
-	LayoutDashboard,
-	Home,
-	Settings,
-	Plus,
-	Trash2,
-} from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { usePathConfig } from "~/hooks/use-path-config";
 
 interface FileExplorerProps {
@@ -32,31 +32,22 @@ interface FileExplorerProps {
 interface ParsedFile {
 	filename: string;
 	id: string;
-	version: string | null;
-	description: string | null;
-	timestamp: string | null;
+	tag: string | null;
 }
 
 function parseFilename(filename: string): ParsedFile {
-	const match = filename.match(
-		/^([a-z0-9]+)_version_(\d+)_+(.+?)(?:_(\d{10,}))?\.json$/,
-	);
-	if (!match) {
-		return {
-			filename,
-			id: filename.replace(".json", ""),
-			version: null,
-			description: null,
-			timestamp: null,
-		};
+	const stem = filename.replace(/\.json$/i, "");
+	const underscoreIdx = stem.indexOf("_");
+	if (underscoreIdx === -1) {
+		return { filename, id: stem, tag: null };
 	}
-	return {
-		filename,
-		id: match[1]!,
-		version: match[2]!,
-		description: match[3]!,
-		timestamp: match[4] || null,
-	};
+	const id = stem.slice(0, underscoreIdx);
+	const tag = stem.slice(underscoreIdx + 1) || null;
+	return { filename, id, tag };
+}
+
+function formatTag(tag: string): string {
+	return tag.replace(/_/g, " ");
 }
 
 export function FileExplorer({
@@ -64,15 +55,10 @@ export function FileExplorer({
 	selectedFile,
 	onFileSelect,
 	selectedPathId,
-	onPathSelect,
+	onPathSelect
 }: FileExplorerProps) {
-	const {
-		pathEntries,
-		enabledPaths,
-		togglePath,
-		addPath,
-		removePath,
-	} = usePathConfig();
+	const { pathEntries, enabledPaths, togglePath, addPath, removePath } =
+		usePathConfig();
 
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [newLabel, setNewLabel] = useState("");
@@ -88,7 +74,10 @@ export function FileExplorer({
 		return groups;
 	}, [files]);
 
-	const sortedIds = useMemo(() => Object.keys(groupedFiles).sort(), [groupedFiles]);
+	const sortedIds = useMemo(
+		() => Object.keys(groupedFiles).sort(),
+		[groupedFiles]
+	);
 
 	const [openItems, setOpenItems] = useState<string[]>([]);
 
@@ -147,7 +136,9 @@ export function FileExplorer({
 						type="button"
 						onClick={() => setSettingsOpen((o) => !o)}
 						className={`rounded-md p-1.5 transition-colors ${
-							settingsOpen ? "bg-white/10 text-white" : "text-white/50 hover:bg-white/5 hover:text-white"
+							settingsOpen
+								? "bg-white/10 text-white"
+								: "text-white/50 hover:bg-white/5 hover:text-white"
 						}`}
 						title="Path settings"
 					>
@@ -175,11 +166,16 @@ export function FileExplorer({
 									>
 										<span
 											className={`h-3 w-3 shrink-0 rounded-full bg-current transition-all ${
-												entry.enabled ? "ml-4 text-green-400" : "ml-0.5 text-white/30"
+												entry.enabled
+													? "ml-4 text-green-400"
+													: "ml-0.5 text-white/30"
 											}`}
 										/>
 									</button>
-									<span className="min-w-0 flex-1 truncate text-xs" title={entry.path ?? entry.id}>
+									<span
+										className="min-w-0 flex-1 truncate text-xs"
+										title={entry.path ?? entry.id}
+									>
 										{entry.label}
 									</span>
 									{!entry.isBuiltIn && (
@@ -268,9 +264,9 @@ export function FileExplorer({
 										<FileJson className="h-4 w-4 shrink-0 opacity-50" />
 										<span className="truncate" title={item.filename}>
 											{item.id}
-											{item.version && (
+											{item.tag && (
 												<span className="ml-2 text-[10px] opacity-40">
-													v{item.version}
+													{formatTag(item.tag)}
 												</span>
 											)}
 										</span>
@@ -280,10 +276,16 @@ export function FileExplorer({
 						}
 
 						return (
-							<AccordionItem key={id} value={id} className="border-none px-2">
+							<AccordionItem
+								key={id}
+								value={id}
+								className="border-none px-2"
+							>
 								<AccordionTrigger className="group flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10 hover:text-white hover:no-underline data-[state=open]:bg-white/5 [&>svg:last-child]:hidden">
 									<Folder className="h-4 w-4 shrink-0 opacity-50" />
-									<span className="flex-1 truncate text-left">{id}</span>
+									<span className="flex-1 truncate text-left">
+										{id}
+									</span>
 									<span className="ml-2 rounded bg-white/10 px-1.5 py-0.5 text-[10px]">
 										{items.length}
 									</span>
@@ -292,32 +294,25 @@ export function FileExplorer({
 								<AccordionContent className="pb-1 pt-1 ml-4 border-l border-white/10">
 									<div className="space-y-1 pl-2">
 										{items
-											.sort((a, b) => {
-												if (a.version !== b.version) {
-													return (a.version || "").localeCompare(b.version || "");
-												}
-												return (a.timestamp || "").localeCompare(b.timestamp || "");
-											})
+											.sort((a, b) =>
+												(a.tag ?? a.filename).localeCompare(
+													b.tag ?? b.filename
+												)
+											)
 											.map((item) => {
-												const isSelected = selectedFile === item.filename;
-												const displayName = item.timestamp
-													? `${item.version ? `v${item.version} - ` : ""}${new Date(
-															Number(item.timestamp),
-														).toLocaleString([], {
-															month: "short",
-															day: "numeric",
-															hour: "2-digit",
-															minute: "2-digit",
-														})}`
-													: item.version
-														? `v${item.version}`
-														: item.filename;
+												const isSelected =
+													selectedFile === item.filename;
+												const displayName = item.tag
+													? formatTag(item.tag)
+													: item.filename.replace(/\.json$/i, "");
 
 												return (
 													<button
 														key={item.filename}
 														type="button"
-														onClick={() => onFileSelect(item.filename)}
+														onClick={() =>
+															onFileSelect(item.filename)
+														}
 														className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors ${
 															isSelected
 																? "bg-white/20 text-white"
@@ -325,7 +320,10 @@ export function FileExplorer({
 														}`}
 													>
 														<FileJson className="h-3 w-3 shrink-0 opacity-50" />
-														<span className="truncate" title={item.filename}>
+														<span
+															className="truncate"
+															title={item.filename}
+														>
 															{displayName}
 														</span>
 													</button>

@@ -26,7 +26,7 @@ const compressionSchema = z.object({
  * REDDIT COMMENT SCHEMAS (Recursive)
  */
 export type RedditComment = {
-	_meta: {
+	_meta?: {
 		retrieved_2nd_on: number;
 		is_edited?: boolean;
 		removal_type?: string;
@@ -36,7 +36,7 @@ export type RedditComment = {
 	author: string | null;
 	author_fullname?: string;
 	body: string | null;
-	comment_type: null;
+	comment_type?: null;
 	controversiality: number;
 	created: number;
 	created_utc: number;
@@ -52,7 +52,7 @@ export type RedditComment = {
 	replies: RedditComment[] | null;
 };
 
-const redditCommentSchema: z.ZodType<RedditComment> = z.lazy(() =>
+const redditCommentSchema = z.lazy(() =>
 	z.object({
 		_meta: z.object({
 			retrieved_2nd_on: z.number().int(),
@@ -60,7 +60,7 @@ const redditCommentSchema: z.ZodType<RedditComment> = z.lazy(() =>
 			removal_type: z.string().optional(),
 			was_deleted_later: z.boolean().optional(),
 			was_initially_deleted: z.boolean().optional(),
-		}),
+		}).optional(),
 		author: z.string().nullable(),
 		author_fullname: z.string().optional(),
 		body: z.string().nullable(),
@@ -79,7 +79,7 @@ const redditCommentSchema: z.ZodType<RedditComment> = z.lazy(() =>
 		ups: z.number().int().optional(),
 		replies: z.array(redditCommentSchema).nullable().optional(),
 	}).passthrough(),
-);
+) as z.ZodType<RedditComment>;
 
 /**
  * EMBEDDING SCHEMAS
@@ -118,11 +118,12 @@ const angleSchema = z.object({
 	category: z.string().optional(),
 	source_quote: z.string().optional(),
 	tangent: z.string().optional(),
+	idx: z.number().int().optional(),
 }).passthrough();
 
 const angleWithDocSchema = angleSchema.extend({
 	source_document: z.number().int().optional(),
-});
+}).passthrough();
 
 const angleEmbeddingSchema = z.object({
 	bitsUsed: z.string().optional(),
