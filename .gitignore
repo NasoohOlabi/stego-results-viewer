@@ -49,3 +49,7 @@ output-results
 prompts.md
 1look5n_v9.json
 output-results-old
+stats.db
+stats.db-journal
+stats.db-wal
+stats.db-shm
