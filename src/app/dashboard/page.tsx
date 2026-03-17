@@ -1,11 +1,12 @@
 "use client";
 
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathConfig } from "~/hooks/use-path-config";
 import { api } from "~/trpc/react";
 import { FileExplorer } from "../_components/file-explorer";
-import { useRouter, usePathname } from "next/navigation";
-import { usePathConfig } from "~/hooks/use-path-config";
+import { DivergenceMetricsRenderer } from "../_components/renderers/divergence-metrics-renderer";
+import { PerplexityMetricsRenderer } from "../_components/renderers/perplexity-metrics-renderer";
 import { DistributionCharts } from "./_components/distribution-charts";
 
 function DashboardContent() {
@@ -24,11 +25,18 @@ function DashboardContent() {
 			params.set("folder", enabledPaths[0]!.id);
 			router.replace(`${pathname}?${params.toString()}`);
 		}
-	}, [selectedPathId, enabledPaths, pathname, router, searchParams, isValidPath]);
+	}, [
+		selectedPathId,
+		enabledPaths,
+		pathname,
+		router,
+		searchParams,
+		isValidPath
+	]);
 
 	const { data: stats, isLoading } = api.stats.getStats.useQuery(
 		{ pathId: apiPathId },
-		{ enabled: isValidPath },
+		{ enabled: isValidPath }
 	);
 
 	const handleFileSelect = (filename: string) => {
@@ -43,10 +51,17 @@ function DashboardContent() {
 
 	const { data: files = [] } = api.files.listFiles.useQuery(
 		{ pathId: apiPathId },
-		{ enabled: isValidPath },
+		{ enabled: isValidPath }
 	);
 
-	const selectedLabel = enabledPaths.find((p) => p.id === selectedPathId)?.label ?? selectedPathId;
+	const { data: divergenceMetrics } =
+		api.stats.getDivergenceMetrics.useQuery();
+	const { data: perplexityMetrics } =
+		api.stats.getPerplexityMetrics.useQuery();
+
+	const selectedLabel =
+		enabledPaths.find((p) => p.id === selectedPathId)?.label ??
+		selectedPathId;
 
 	return (
 		<div className="flex h-screen w-full text-white">
@@ -64,10 +79,22 @@ function DashboardContent() {
 					<header>
 						<h1 className="text-3xl font-bold">Dashboard</h1>
 						<p className="text-white/50">
-							Overview of steganography results in {selectedLabel} folder.
+							Overview of steganography results in {selectedLabel}{" "}
+							folder.
 						</p>
 					</header>
+					{divergenceMetrics && (
+						<div className="pt-8 border-t border-white/10">
+							<DivergenceMetricsRenderer data={divergenceMetrics} />
+						</div>
+					)}
+					{perplexityMetrics && (
+						<div className="pt-8 border-t border-white/10">
+							<PerplexityMetricsRenderer data={perplexityMetrics} />
+						</div>
+					)}
 
+					<hr />
 					{isLoading ? (
 						<div className="flex h-64 items-center justify-center">
 							<p className="text-white/50">Calculating statistics...</p>
@@ -82,7 +109,8 @@ function DashboardContent() {
 									{stats.avgBitsPerPost.toFixed(2)}
 								</div>
 								<p className="text-xs text-white/30">
-									Based on {stats.totalPosts} posts across {stats.totalFiles} files.
+									Based on {stats.totalPosts} posts across{" "}
+									{stats.totalFiles} files.
 								</p>
 							</div>
 
@@ -94,7 +122,8 @@ function DashboardContent() {
 									{(stats.avgCompressionRatio * 100).toFixed(1)}%
 								</div>
 								<p className="text-xs text-white/30">
-									Average ratio of compressed payload to original payload.
+									Average ratio of compressed payload to original
+									payload.
 								</p>
 							</div>
 
@@ -130,7 +159,8 @@ function DashboardContent() {
 									{(stats.dictUsageRate * 100).toFixed(1)}%
 								</div>
 								<p className="text-xs text-white/30">
-									Percentage of posts using dictionary-based compression.
+									Percentage of posts using dictionary-based
+									compression.
 								</p>
 							</div>
 
@@ -170,7 +200,10 @@ function DashboardContent() {
 						</div>
 					)}
 
-					<DistributionCharts pathId={apiPathId} isValidPath={isValidPath} />
+					<DistributionCharts
+						pathId={apiPathId}
+						isValidPath={isValidPath}
+					/>
 				</div>
 			</div>
 		</div>

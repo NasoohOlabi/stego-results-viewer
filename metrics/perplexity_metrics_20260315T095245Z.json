@@ -1,0 +1,2310 @@
+{
+  "created_at_utc": "2026-03-15T09:52:45.690327+00:00",
+  "config": {
+    "output_dir": "D:\\Master\\code\\stego-side-wing\\output-results",
+    "metrics_dir": "D:\\Master\\code\\stego-results-viewer\\metrics",
+    "model_name": "gpt2",
+    "device": "cpu",
+    "stride": 512,
+    "max_length": 1024
+  },
+  "dataset_summary": {
+    "total_output_files": 574,
+    "usable_stego_texts": 574,
+    "skipped_invalid_json": 0,
+    "skipped_missing_stego_text": 0,
+    "skipped_empty_stego_text": 0,
+    "scored_texts": 571
+  },
+  "perplexity_summary": {
+    "average_perplexity": 92.33311663296953,
+    "min_perplexity": 14.21075525436768,
+    "max_perplexity": 3579.89681475998
+  },
+  "per_file_perplexity": [
+    {
+      "file": "output-results\\1look5n_version_12.json",
+      "perplexity": 181.695205707484
+    },
+    {
+      "file": "output-results\\1look5n_version_13.json",
+      "perplexity": 65.32698597522965
+    },
+    {
+      "file": "output-results\\1look5n_version_14.json",
+      "perplexity": 37.22504341167747
+    },
+    {
+      "file": "output-results\\1look5n_version_15.json",
+      "perplexity": 37.71939424644547
+    },
+    {
+      "file": "output-results\\1lpx80x_version_10.json",
+      "perplexity": 83.08131540277981
+    },
+    {
+      "file": "output-results\\1lpx80x_version_11.json",
+      "perplexity": 99.15057291146482
+    },
+    {
+      "file": "output-results\\1lpx80x_version_12.json",
+      "perplexity": 304.97058233260105
+    },
+    {
+      "file": "output-results\\1lpx80x_version_13.json",
+      "perplexity": 91.61900087656642
+    },
+    {
+      "file": "output-results\\1lpx80x_version_14.json",
+      "perplexity": 90.24461240416674
+    },
+    {
+      "file": "output-results\\1lpx80x_version_15.json",
+      "perplexity": 56.525496995075024
+    },
+    {
+      "file": "output-results\\1lqdcha_version_10.json",
+      "perplexity": 26.58641881673758
+    },
+    {
+      "file": "output-results\\1lqdcha_version_11.json",
+      "perplexity": 39.59959698714433
+    },
+    {
+      "file": "output-results\\1lqdcha_version_12.json",
+      "perplexity": 35.16199630454895
+    },
+    {
+      "file": "output-results\\1lqdcha_version_13.json",
+      "perplexity": 71.26022719227674
+    },
+    {
+      "file": "output-results\\1lqdcha_version_14.json",
+      "perplexity": 35.95208845309337
+    },
+    {
+      "file": "output-results\\1lqdcha_version_15.json",
+      "perplexity": 59.95204304379133
+    },
+    {
+      "file": "output-results\\1lqptry_version_10.json",
+      "perplexity": 99.0312660889206
+    },
+    {
+      "file": "output-results\\1lqptry_version_11.json",
+      "perplexity": 108.5274499247764
+    },
+    {
+      "file": "output-results\\1lqptry_version_12.json",
+      "perplexity": 99.24380298875907
+    },
+    {
+      "file": "output-results\\1lqptry_version_13.json",
+      "perplexity": 77.26292548336036
+    },
+    {
+      "file": "output-results\\1lqptry_version_14.json",
+      "perplexity": 35.30644257136732
+    },
+    {
+      "file": "output-results\\1lqptry_version_15.json",
+      "perplexity": 78.73688745794227
+    },
+    {
+      "file": "output-results\\1ls39dh_version_10.json",
+      "perplexity": 48.11969529220032
+    },
+    {
+      "file": "output-results\\1ls39dh_version_11.json",
+      "perplexity": 37.96782215396918
+    },
+    {
+      "file": "output-results\\1ls39dh_version_12.json",
+      "perplexity": 29.856778388520738
+    },
+    {
+      "file": "output-results\\1ls39dh_version_13.json",
+      "perplexity": 222.12614674356297
+    },
+    {
+      "file": "output-results\\1ls39dh_version_14.json",
+      "perplexity": 55.046969801128476
+    },
+    {
+      "file": "output-results\\1ls39dh_version_15.json",
+      "perplexity": 67.62964877699393
+    },
+    {
+      "file": "output-results\\1lsl81k_version_10.json",
+      "perplexity": 33.241178542067345
+    },
+    {
+      "file": "output-results\\1lsl81k_version_11.json",
+      "perplexity": 167.68656268950298
+    },
+    {
+      "file": "output-results\\1lsl81k_version_12.json",
+      "perplexity": 95.16707410754645
+    },
+    {
+      "file": "output-results\\1lsl81k_version_13.json",
+      "perplexity": 40.23910319435239
+    },
+    {
+      "file": "output-results\\1lsl81k_version_14.json",
+      "perplexity": 99.71982862581679
+    },
+    {
+      "file": "output-results\\1lsl81k_version_15.json",
+      "perplexity": 131.60406868674704
+    },
+    {
+      "file": "output-results\\1lt0kf4_version_10.json",
+      "perplexity": 54.60049318182584
+    },
+    {
+      "file": "output-results\\1lt0kf4_version_11.json",
+      "perplexity": 58.13187287243719
+    },
+    {
+      "file": "output-results\\1lt0kf4_version_12.json",
+      "perplexity": 27.460246369852467
+    },
+    {
+      "file": "output-results\\1lt0kf4_version_13.json",
+      "perplexity": 47.58729223987665
+    },
+    {
+      "file": "output-results\\1lt0kf4_version_14.json",
+      "perplexity": 121.38164889626943
+    },
+    {
+      "file": "output-results\\1lt0kf4_version_15.json",
+      "perplexity": 111.10740869024933
+    },
+    {
+      "file": "output-results\\1lvzr7o_version_10.json",
+      "perplexity": 57.45212301250828
+    },
+    {
+      "file": "output-results\\1lvzr7o_version_11.json",
+      "perplexity": 95.30794453565676
+    },
+    {
+      "file": "output-results\\1lvzr7o_version_12.json",
+      "perplexity": 58.16575589530179
+    },
+    {
+      "file": "output-results\\1lvzr7o_version_13.json",
+      "perplexity": 36.60809232071947
+    },
+    {
+      "file": "output-results\\1lvzr7o_version_14.json",
+      "perplexity": 79.04558260673095
+    },
+    {
+      "file": "output-results\\1lvzr7o_version_15.json",
+      "perplexity": 27.484795616123137
+    },
+    {
+      "file": "output-results\\1lxhv54_version_10.json",
+      "perplexity": 76.90928201668451
+    },
+    {
+      "file": "output-results\\1lxhv54_version_11.json",
+      "perplexity": 157.2409452637008
+    },
+    {
+      "file": "output-results\\1lxhv54_version_12.json",
+      "perplexity": 169.54504258034407
+    },
+    {
+      "file": "output-results\\1lxhv54_version_13.json",
+      "perplexity": 93.23399244327209
+    },
+    {
+      "file": "output-results\\1lxhv54_version_14.json",
+      "perplexity": 110.3774724653312
+    },
+    {
+      "file": "output-results\\1lxhv54_version_15.json",
+      "perplexity": 63.5458397842297
+    },
+    {
+      "file": "output-results\\1lyx9g5_version_10.json",
+      "perplexity": 129.25002352156295
+    },
+    {
+      "file": "output-results\\1lyx9g5_version_12.json",
+      "perplexity": 78.03051826055913
+    },
+    {
+      "file": "output-results\\1lyx9g5_version_13.json",
+      "perplexity": 39.81249216527365
+    },
+    {
+      "file": "output-results\\1lyx9g5_version_14.json",
+      "perplexity": 104.6968139816672
+    },
+    {
+      "file": "output-results\\1lyx9g5_version_15.json",
+      "perplexity": 86.85065255591826
+    },
+    {
+      "file": "output-results\\1m03ffr_version_10.json",
+      "perplexity": 113.53790278079322
+    },
+    {
+      "file": "output-results\\1m03ffr_version_11.json",
+      "perplexity": 155.84292812140987
+    },
+    {
+      "file": "output-results\\1m03ffr_version_12.json",
+      "perplexity": 152.2986115728242
+    },
+    {
+      "file": "output-results\\1m03ffr_version_13.json",
+      "perplexity": 76.05321527171293
+    },
+    {
+      "file": "output-results\\1m03ffr_version_14.json",
+      "perplexity": 71.75439802827592
+    },
+    {
+      "file": "output-results\\1m03ffr_version_15.json",
+      "perplexity": 45.169321520111524
+    },
+    {
+      "file": "output-results\\1m24yhd_version_10.json",
+      "perplexity": 81.73325683650438
+    },
+    {
+      "file": "output-results\\1m24yhd_version_11.json",
+      "perplexity": 91.38522285347214
+    },
+    {
+      "file": "output-results\\1m24yhd_version_12.json",
+      "perplexity": 55.640739247605396
+    },
+    {
+      "file": "output-results\\1m24yhd_version_13.json",
+      "perplexity": 349.7116891818433
+    },
+    {
+      "file": "output-results\\1m24yhd_version_14.json",
+      "perplexity": 43.189013154283025
+    },
+    {
+      "file": "output-results\\1m24yhd_version_15.json",
+      "perplexity": 126.2358435741524
+    },
+    {
+      "file": "output-results\\1m2fdjr_version_10.json",
+      "perplexity": 49.94932908424187
+    },
+    {
+      "file": "output-results\\1m2fdjr_version_11.json",
+      "perplexity": 158.64008069183552
+    },
+    {
+      "file": "output-results\\1m2fdjr_version_12.json",
+      "perplexity": 102.03215509596531
+    },
+    {
+      "file": "output-results\\1m2fdjr_version_13.json",
+      "perplexity": 36.671600262883935
+    },
+    {
+      "file": "output-results\\1m2fdjr_version_14.json",
+      "perplexity": 37.828366709288325
+    },
+    {
+      "file": "output-results\\1m2fdjr_version_15.json",
+      "perplexity": 179.40302297513378
+    },
+    {
+      "file": "output-results\\1m2fdjr_version_16.json",
+      "perplexity": 48.43977454052047
+    },
+    {
+      "file": "output-results\\1m2n7b7_version_10.json",
+      "perplexity": 87.67807894762164
+    },
+    {
+      "file": "output-results\\1m2n7b7_version_11.json",
+      "perplexity": 103.19274880239014
+    },
+    {
+      "file": "output-results\\1m2n7b7_version_12.json",
+      "perplexity": 27.935388896021507
+    },
+    {
+      "file": "output-results\\1m2n7b7_version_13.json",
+      "perplexity": 65.91408212629071
+    },
+    {
+      "file": "output-results\\1m2n7b7_version_14.json",
+      "perplexity": 86.24350752318234
+    },
+    {
+      "file": "output-results\\1m2n7b7_version_15.json",
+      "perplexity": 134.93353113520732
+    },
+    {
+      "file": "output-results\\1m349q4_version_10.json",
+      "perplexity": 82.90038716210812
+    },
+    {
+      "file": "output-results\\1m349q4_version_11.json",
+      "perplexity": 36.78731496823107
+    },
+    {
+      "file": "output-results\\1m349q4_version_12.json",
+      "perplexity": 34.845178041463726
+    },
+    {
+      "file": "output-results\\1m349q4_version_13.json",
+      "perplexity": 44.06765516599847
+    },
+    {
+      "file": "output-results\\1m349q4_version_14.json",
+      "perplexity": 95.3370801109148
+    },
+    {
+      "file": "output-results\\1m349q4_version_15.json",
+      "perplexity": 55.64583354262092
+    },
+    {
+      "file": "output-results\\1m349q4_version_16.json",
+      "perplexity": 135.17096624370748
+    },
+    {
+      "file": "output-results\\1m3gsf7_version_10.json",
+      "perplexity": 78.69559914615225
+    },
+    {
+      "file": "output-results\\1m3gsf7_version_11.json",
+      "perplexity": 94.31573393530655
+    },
+    {
+      "file": "output-results\\1m3gsf7_version_12.json",
+      "perplexity": 146.55957528372016
+    },
+    {
+      "file": "output-results\\1m3gsf7_version_13.json",
+      "perplexity": 171.9917709552083
+    },
+    {
+      "file": "output-results\\1m3gsf7_version_14.json",
+      "perplexity": 45.68471389586088
+    },
+    {
+      "file": "output-results\\1m3gsf7_version_15.json",
+      "perplexity": 64.627014683183
+    },
+    {
+      "file": "output-results\\1m3ofx6_version_10.json",
+      "perplexity": 81.96719788074022
+    },
+    {
+      "file": "output-results\\1m3ofx6_version_12.json",
+      "perplexity": 134.19511905666258
+    },
+    {
+      "file": "output-results\\1m3ofx6_version_13.json",
+      "perplexity": 214.6845436983352
+    },
+    {
+      "file": "output-results\\1m3ofx6_version_14.json",
+      "perplexity": 89.18757442693496
+    },
+    {
+      "file": "output-results\\1m3ofx6_version_15.json",
+      "perplexity": 75.12456382304748
+    },
+    {
+      "file": "output-results\\1m6fel0_version_10.json",
+      "perplexity": 64.90935464066985
+    },
+    {
+      "file": "output-results\\1m6fel0_version_12.json",
+      "perplexity": 72.01167718796604
+    },
+    {
+      "file": "output-results\\1m6fel0_version_13.json",
+      "perplexity": 57.010735574125
+    },
+    {
+      "file": "output-results\\1m6fel0_version_14.json",
+      "perplexity": 165.78195943476317
+    },
+    {
+      "file": "output-results\\1m6fel0_version_15.json",
+      "perplexity": 305.7452057863263
+    },
+    {
+      "file": "output-results\\1m6lgtd_version_10.json",
+      "perplexity": 120.43153636607295
+    },
+    {
+      "file": "output-results\\1m6lgtd_version_11.json",
+      "perplexity": 79.21790895224643
+    },
+    {
+      "file": "output-results\\1m6lgtd_version_12.json",
+      "perplexity": 101.61285410723629
+    },
+    {
+      "file": "output-results\\1m6lgtd_version_13.json",
+      "perplexity": 46.97870859401835
+    },
+    {
+      "file": "output-results\\1m6lgtd_version_14.json",
+      "perplexity": 63.56341680495872
+    },
+    {
+      "file": "output-results\\1m6lgtd_version_15.json",
+      "perplexity": 102.33903050594158
+    },
+    {
+      "file": "output-results\\1m7fagv_version_10.json",
+      "perplexity": 82.9290908993361
+    },
+    {
+      "file": "output-results\\1m7fagv_version_11.json",
+      "perplexity": 131.44345452448664
+    },
+    {
+      "file": "output-results\\1m7fagv_version_12.json",
+      "perplexity": 112.08049297221925
+    },
+    {
+      "file": "output-results\\1m7fagv_version_13.json",
+      "perplexity": 93.87575572073531
+    },
+    {
+      "file": "output-results\\1m7fagv_version_14.json",
+      "perplexity": 67.65303285769201
+    },
+    {
+      "file": "output-results\\1m7fagv_version_15.json",
+      "perplexity": 91.33643090912334
+    },
+    {
+      "file": "output-results\\1m7mw6y_version_10.json",
+      "perplexity": 102.27483109811735
+    },
+    {
+      "file": "output-results\\1m7mw6y_version_11.json",
+      "perplexity": 53.63015236386032
+    },
+    {
+      "file": "output-results\\1m7mw6y_version_12.json",
+      "perplexity": 50.43115988694447
+    },
+    {
+      "file": "output-results\\1m7mw6y_version_13.json",
+      "perplexity": 60.99024654841804
+    },
+    {
+      "file": "output-results\\1m7mw6y_version_14.json",
+      "perplexity": 39.97088681762769
+    },
+    {
+      "file": "output-results\\1m7mw6y_version_15.json",
+      "perplexity": 180.72097194657053
+    },
+    {
+      "file": "output-results\\1m7qlfn_version_10.json",
+      "perplexity": 73.54944470980733
+    },
+    {
+      "file": "output-results\\1m7qlfn_version_11.json",
+      "perplexity": 179.11154805632486
+    },
+    {
+      "file": "output-results\\1m7qlfn_version_12.json",
+      "perplexity": 68.63834326864662
+    },
+    {
+      "file": "output-results\\1m7qlfn_version_13.json",
+      "perplexity": 24.098656353318482
+    },
+    {
+      "file": "output-results\\1m7qlfn_version_14.json",
+      "perplexity": 57.5744635508124
+    },
+    {
+      "file": "output-results\\1m7qlfn_version_15.json",
+      "perplexity": 66.7305647274814
+    },
+    {
+      "file": "output-results\\1m964jv_version_10.json",
+      "perplexity": 123.34487844396571
+    },
+    {
+      "file": "output-results\\1m964jv_version_11.json",
+      "perplexity": 43.82569416499211
+    },
+    {
+      "file": "output-results\\1m964jv_version_12.json",
+      "perplexity": 93.03091010545393
+    },
+    {
+      "file": "output-results\\1m964jv_version_13.json",
+      "perplexity": 42.16656857348601
+    },
+    {
+      "file": "output-results\\1m964jv_version_14.json",
+      "perplexity": 59.36829095543324
+    },
+    {
+      "file": "output-results\\1m964jv_version_15.json",
+      "perplexity": 50.345947673717376
+    },
+    {
+      "file": "output-results\\1m9dtuv_version_10.json",
+      "perplexity": 115.09035614676068
+    },
+    {
+      "file": "output-results\\1m9dtuv_version_12.json",
+      "perplexity": 91.32528212294137
+    },
+    {
+      "file": "output-results\\1m9dtuv_version_13.json",
+      "perplexity": 73.2483809038673
+    },
+    {
+      "file": "output-results\\1m9dtuv_version_14.json",
+      "perplexity": 92.41259112951688
+    },
+    {
+      "file": "output-results\\1m9dtuv_version_15.json",
+      "perplexity": 158.61194306696885
+    },
+    {
+      "file": "output-results\\1m9vtya_version_10.json",
+      "perplexity": 44.91832361985873
+    },
+    {
+      "file": "output-results\\1m9vtya_version_11.json",
+      "perplexity": 46.173665293963026
+    },
+    {
+      "file": "output-results\\1m9vtya_version_12.json",
+      "perplexity": 112.98670154481762
+    },
+    {
+      "file": "output-results\\1m9vtya_version_13.json",
+      "perplexity": 99.2844618864316
+    },
+    {
+      "file": "output-results\\1m9vtya_version_14.json",
+      "perplexity": 91.39036495079156
+    },
+    {
+      "file": "output-results\\1m9vtya_version_15.json",
+      "perplexity": 55.60466800704579
+    },
+    {
+      "file": "output-results\\1mb2ahx_version_10.json",
+      "perplexity": 66.36472293182064
+    },
+    {
+      "file": "output-results\\1mb2ahx_version_11.json",
+      "perplexity": 45.55015557740117
+    },
+    {
+      "file": "output-results\\1mb2ahx_version_12.json",
+      "perplexity": 103.85219170576707
+    },
+    {
+      "file": "output-results\\1mb2ahx_version_13.json",
+      "perplexity": 102.018435950527
+    },
+    {
+      "file": "output-results\\1mb2ahx_version_14.json",
+      "perplexity": 38.81626905116339
+    },
+    {
+      "file": "output-results\\1mb2ahx_version_15.json",
+      "perplexity": 31.822364072889947
+    },
+    {
+      "file": "output-results\\1mbs8zo_version_10.json",
+      "perplexity": 42.10048983949047
+    },
+    {
+      "file": "output-results\\1mbs8zo_version_11.json",
+      "perplexity": 196.22090385365163
+    },
+    {
+      "file": "output-results\\1mbs8zo_version_12.json",
+      "perplexity": 62.08656051219273
+    },
+    {
+      "file": "output-results\\1mbs8zo_version_13.json",
+      "perplexity": 80.47745823298051
+    },
+    {
+      "file": "output-results\\1mbs8zo_version_14.json",
+      "perplexity": 121.7189161235043
+    },
+    {
+      "file": "output-results\\1mbs8zo_version_15.json",
+      "perplexity": 67.25284869009513
+    },
+    {
+      "file": "output-results\\1mcgxck_version_10.json",
+      "perplexity": 25.887867030504292
+    },
+    {
+      "file": "output-results\\1mcgxck_version_11.json",
+      "perplexity": 48.091412103380065
+    },
+    {
+      "file": "output-results\\1mcgxck_version_12.json",
+      "perplexity": 64.11384087315803
+    },
+    {
+      "file": "output-results\\1mcgxck_version_13.json",
+      "perplexity": 39.36633182274267
+    },
+    {
+      "file": "output-results\\1mcgxck_version_14.json",
+      "perplexity": 149.41927877335414
+    },
+    {
+      "file": "output-results\\1mcgxck_version_15.json",
+      "perplexity": 42.18929513877279
+    },
+    {
+      "file": "output-results\\1me94bd_version_10.json",
+      "perplexity": 39.49147227595788
+    },
+    {
+      "file": "output-results\\1me94bd_version_11.json",
+      "perplexity": 653.2402884925708
+    },
+    {
+      "file": "output-results\\1me94bd_version_12.json",
+      "perplexity": 45.81937475483947
+    },
+    {
+      "file": "output-results\\1me94bd_version_13.json",
+      "perplexity": 67.86411264485214
+    },
+    {
+      "file": "output-results\\1me94bd_version_14.json",
+      "perplexity": 68.23454321417334
+    },
+    {
+      "file": "output-results\\1me94bd_version_15.json",
+      "perplexity": 46.409941150920766
+    },
+    {
+      "file": "output-results\\1mf1m8t_version_10.json",
+      "perplexity": 36.83247709792525
+    },
+    {
+      "file": "output-results\\1mf1m8t_version_11.json",
+      "perplexity": 54.92374026865022
+    },
+    {
+      "file": "output-results\\1mf1m8t_version_12.json",
+      "perplexity": 50.692339915258124
+    },
+    {
+      "file": "output-results\\1mf1m8t_version_13.json",
+      "perplexity": 251.3242376227271
+    },
+    {
+      "file": "output-results\\1mf1m8t_version_14.json",
+      "perplexity": 185.36931279824668
+    },
+    {
+      "file": "output-results\\1mf1m8t_version_15.json",
+      "perplexity": 87.17195247171712
+    },
+    {
+      "file": "output-results\\1mf39uh_version_10.json",
+      "perplexity": 44.377558732007635
+    },
+    {
+      "file": "output-results\\1mf39uh_version_11.json",
+      "perplexity": 67.11778304092333
+    },
+    {
+      "file": "output-results\\1mf39uh_version_12.json",
+      "perplexity": 91.04795944005014
+    },
+    {
+      "file": "output-results\\1mf39uh_version_13.json",
+      "perplexity": 41.71727484958038
+    },
+    {
+      "file": "output-results\\1mf39uh_version_14.json",
+      "perplexity": 164.55938109598972
+    },
+    {
+      "file": "output-results\\1mf39uh_version_15.json",
+      "perplexity": 76.05067676414612
+    },
+    {
+      "file": "output-results\\1mf4m37_version_10.json",
+      "perplexity": 106.18816174062731
+    },
+    {
+      "file": "output-results\\1mf4m37_version_11.json",
+      "perplexity": 212.52949770778432
+    },
+    {
+      "file": "output-results\\1mf4m37_version_12.json",
+      "perplexity": 181.1628970563471
+    },
+    {
+      "file": "output-results\\1mf4m37_version_13.json",
+      "perplexity": 56.68853054095892
+    },
+    {
+      "file": "output-results\\1mf4m37_version_14.json",
+      "perplexity": 234.8800537015384
+    },
+    {
+      "file": "output-results\\1mf4m37_version_15.json",
+      "perplexity": 81.00479592063634
+    },
+    {
+      "file": "output-results\\1mgqgp8_version_10.json",
+      "perplexity": 49.3638355607456
+    },
+    {
+      "file": "output-results\\1mgqgp8_version_11.json",
+      "perplexity": 37.18323835950567
+    },
+    {
+      "file": "output-results\\1mgqgp8_version_12.json",
+      "perplexity": 39.71032778244947
+    },
+    {
+      "file": "output-results\\1mgqgp8_version_13.json",
+      "perplexity": 74.64055999646163
+    },
+    {
+      "file": "output-results\\1mgqgp8_version_14.json",
+      "perplexity": 103.75225775937321
+    },
+    {
+      "file": "output-results\\1mgqgp8_version_15.json",
+      "perplexity": 68.6755993337404
+    },
+    {
+      "file": "output-results\\1mhfo58_version_10.json",
+      "perplexity": 114.66440443429494
+    },
+    {
+      "file": "output-results\\1mhfo58_version_11.json",
+      "perplexity": 72.94315804771395
+    },
+    {
+      "file": "output-results\\1mhfo58_version_12.json",
+      "perplexity": 87.05265425386901
+    },
+    {
+      "file": "output-results\\1mhfo58_version_13.json",
+      "perplexity": 57.06556655618648
+    },
+    {
+      "file": "output-results\\1mhfo58_version_14.json",
+      "perplexity": 288.90037496147346
+    },
+    {
+      "file": "output-results\\1mhfo58_version_15.json",
+      "perplexity": 33.315569407502075
+    },
+    {
+      "file": "output-results\\1mij5ut_version_10.json",
+      "perplexity": 73.90081708935318
+    },
+    {
+      "file": "output-results\\1mij5ut_version_11.json",
+      "perplexity": 113.46830125233015
+    },
+    {
+      "file": "output-results\\1mij5ut_version_12.json",
+      "perplexity": 27.022316074005236
+    },
+    {
+      "file": "output-results\\1mij5ut_version_13.json",
+      "perplexity": 79.53778145649963
+    },
+    {
+      "file": "output-results\\1mij5ut_version_14.json",
+      "perplexity": 41.6738923216681
+    },
+    {
+      "file": "output-results\\1mij5ut_version_15.json",
+      "perplexity": 35.07726820986607
+    },
+    {
+      "file": "output-results\\1mjnn1k_version_10.json",
+      "perplexity": 103.38852868199724
+    },
+    {
+      "file": "output-results\\1mjnn1k_version_12.json",
+      "perplexity": 69.83186415642045
+    },
+    {
+      "file": "output-results\\1mjnn1k_version_13.json",
+      "perplexity": 148.54484766315238
+    },
+    {
+      "file": "output-results\\1mjnn1k_version_14.json",
+      "perplexity": 347.64521436643514
+    },
+    {
+      "file": "output-results\\1mjnn1k_version_15.json",
+      "perplexity": 57.57482044928519
+    },
+    {
+      "file": "output-results\\1mk37uu_version_10.json",
+      "perplexity": 98.52098444926398
+    },
+    {
+      "file": "output-results\\1mk37uu_version_11.json",
+      "perplexity": 35.37341840892807
+    },
+    {
+      "file": "output-results\\1mk37uu_version_12.json",
+      "perplexity": 90.80948950656132
+    },
+    {
+      "file": "output-results\\1mk37uu_version_13.json",
+      "perplexity": 80.43755849896706
+    },
+    {
+      "file": "output-results\\1mk37uu_version_14.json",
+      "perplexity": 55.53850101956163
+    },
+    {
+      "file": "output-results\\1mk37uu_version_15.json",
+      "perplexity": 88.17738875852334
+    },
+    {
+      "file": "output-results\\1mn1o1o_version_10.json",
+      "perplexity": 79.63345183012869
+    },
+    {
+      "file": "output-results\\1mn1o1o_version_11.json",
+      "perplexity": 192.06263828798882
+    },
+    {
+      "file": "output-results\\1mn1o1o_version_12.json",
+      "perplexity": 65.97653223494902
+    },
+    {
+      "file": "output-results\\1mn1o1o_version_13.json",
+      "perplexity": 90.24521485396095
+    },
+    {
+      "file": "output-results\\1mn1o1o_version_14.json",
+      "perplexity": 54.95688020812255
+    },
+    {
+      "file": "output-results\\1mn1o1o_version_15.json",
+      "perplexity": 114.915862441217
+    },
+    {
+      "file": "output-results\\1mnezub_version_10.json",
+      "perplexity": 52.40636249414509
+    },
+    {
+      "file": "output-results\\1mnezub_version_11.json",
+      "perplexity": 58.01031182092069
+    },
+    {
+      "file": "output-results\\1mnezub_version_12.json",
+      "perplexity": 94.98278633520376
+    },
+    {
+      "file": "output-results\\1mnezub_version_13.json",
+      "perplexity": 58.97888107320434
+    },
+    {
+      "file": "output-results\\1mnezub_version_14.json",
+      "perplexity": 164.9746076052215
+    },
+    {
+      "file": "output-results\\1mnezub_version_15.json",
+      "perplexity": 163.78898620967297
+    },
+    {
+      "file": "output-results\\1mo9otv_version_10.json",
+      "perplexity": 68.16794044424262
+    },
+    {
+      "file": "output-results\\1mo9otv_version_12.json",
+      "perplexity": 109.77710543902616
+    },
+    {
+      "file": "output-results\\1mo9otv_version_13.json",
+      "perplexity": 111.48819221920222
+    },
+    {
+      "file": "output-results\\1mo9otv_version_14.json",
+      "perplexity": 53.61516876758925
+    },
+    {
+      "file": "output-results\\1mo9otv_version_15.json",
+      "perplexity": 43.17142935089628
+    },
+    {
+      "file": "output-results\\1mol7ba_version_10.json",
+      "perplexity": 72.72689171760484
+    },
+    {
+      "file": "output-results\\1mol7ba_version_11.json",
+      "perplexity": 54.64683006546669
+    },
+    {
+      "file": "output-results\\1mol7ba_version_12.json",
+      "perplexity": 48.71089117636937
+    },
+    {
+      "file": "output-results\\1mol7ba_version_13.json",
+      "perplexity": 27.21662503265518
+    },
+    {
+      "file": "output-results\\1mol7ba_version_14.json",
+      "perplexity": 61.44890547204941
+    },
+    {
+      "file": "output-results\\1mol7ba_version_15.json",
+      "perplexity": 35.039980376597676
+    },
+    {
+      "file": "output-results\\1mq4hx5_version_10.json",
+      "perplexity": 27.803136021886043
+    },
+    {
+      "file": "output-results\\1mq4hx5_version_11.json",
+      "perplexity": 73.00018804174044
+    },
+    {
+      "file": "output-results\\1mq4hx5_version_12.json",
+      "perplexity": 59.240274300842856
+    },
+    {
+      "file": "output-results\\1mq4hx5_version_13.json",
+      "perplexity": 65.33281134746855
+    },
+    {
+      "file": "output-results\\1mq4hx5_version_14.json",
+      "perplexity": 89.72516791219427
+    },
+    {
+      "file": "output-results\\1mq4hx5_version_15.json",
+      "perplexity": 162.98799814402867
+    },
+    {
+      "file": "output-results\\1ms1qk1_version_10.json",
+      "perplexity": 69.11742999270837
+    },
+    {
+      "file": "output-results\\1ms1qk1_version_11.json",
+      "perplexity": 39.264816188702326
+    },
+    {
+      "file": "output-results\\1ms1qk1_version_12.json",
+      "perplexity": 82.4379161738486
+    },
+    {
+      "file": "output-results\\1ms1qk1_version_13.json",
+      "perplexity": 43.56747245239125
+    },
+    {
+      "file": "output-results\\1ms1qk1_version_14.json",
+      "perplexity": 41.64198072358129
+    },
+    {
+      "file": "output-results\\1ms1qk1_version_15.json",
+      "perplexity": 149.98005797270756
+    },
+    {
+      "file": "output-results\\1mtnfnc_version_10.json",
+      "perplexity": 125.55101543471842
+    },
+    {
+      "file": "output-results\\1mtnfnc_version_11.json",
+      "perplexity": 107.97034782306667
+    },
+    {
+      "file": "output-results\\1mtnfnc_version_12.json",
+      "perplexity": 88.78396458442057
+    },
+    {
+      "file": "output-results\\1mtnfnc_version_13.json",
+      "perplexity": 87.89466146002124
+    },
+    {
+      "file": "output-results\\1mtnfnc_version_14.json",
+      "perplexity": 41.71140701999269
+    },
+    {
+      "file": "output-results\\1mtnfnc_version_15.json",
+      "perplexity": 43.3748619859231
+    },
+    {
+      "file": "output-results\\1mtunw2_version_10.json",
+      "perplexity": 35.80442022724745
+    },
+    {
+      "file": "output-results\\1mtunw2_version_11.json",
+      "perplexity": 35.68512632963447
+    },
+    {
+      "file": "output-results\\1mtunw2_version_12.json",
+      "perplexity": 49.15289992254925
+    },
+    {
+      "file": "output-results\\1mtunw2_version_13.json",
+      "perplexity": 107.6872472094311
+    },
+    {
+      "file": "output-results\\1mtunw2_version_14.json",
+      "perplexity": 222.45240171375676
+    },
+    {
+      "file": "output-results\\1mtunw2_version_15.json",
+      "perplexity": 68.61553472828253
+    },
+    {
+      "file": "output-results\\1mu1urk_version_10.json",
+      "perplexity": 36.64907598034088
+    },
+    {
+      "file": "output-results\\1mu1urk_version_11.json",
+      "perplexity": 55.401647792233426
+    },
+    {
+      "file": "output-results\\1mu1urk_version_12.json",
+      "perplexity": 146.44277404515287
+    },
+    {
+      "file": "output-results\\1mu1urk_version_13.json",
+      "perplexity": 177.7945689100038
+    },
+    {
+      "file": "output-results\\1mu1urk_version_14.json",
+      "perplexity": 125.4086118681492
+    },
+    {
+      "file": "output-results\\1mu1urk_version_15.json",
+      "perplexity": 61.116769781605534
+    },
+    {
+      "file": "output-results\\1mvlhxn_version_10.json",
+      "perplexity": 90.89977434874544
+    },
+    {
+      "file": "output-results\\1mvlhxn_version_12.json",
+      "perplexity": 76.4345516873392
+    },
+    {
+      "file": "output-results\\1mvlhxn_version_14.json",
+      "perplexity": 79.08335888531276
+    },
+    {
+      "file": "output-results\\1mvlhxn_version_15.json",
+      "perplexity": 35.811420791518465
+    },
+    {
+      "file": "output-results\\1mwdfat_version_10.json",
+      "perplexity": 67.28749175947547
+    },
+    {
+      "file": "output-results\\1mwdfat_version_11.json",
+      "perplexity": 41.00319490474958
+    },
+    {
+      "file": "output-results\\1mwdfat_version_12.json",
+      "perplexity": 84.12396693082134
+    },
+    {
+      "file": "output-results\\1mwdfat_version_13.json",
+      "perplexity": 82.45847758606132
+    },
+    {
+      "file": "output-results\\1mwdfat_version_14.json",
+      "perplexity": 72.02627225029384
+    },
+    {
+      "file": "output-results\\1mwdfat_version_15.json",
+      "perplexity": 88.21557502461492
+    },
+    {
+      "file": "output-results\\1mxc4ma_version_10.json",
+      "perplexity": 45.31901327785451
+    },
+    {
+      "file": "output-results\\1mxc4ma_version_11.json",
+      "perplexity": 110.5692195960105
+    },
+    {
+      "file": "output-results\\1mxc4ma_version_12.json",
+      "perplexity": 155.81231470864032
+    },
+    {
+      "file": "output-results\\1mxc4ma_version_13.json",
+      "perplexity": 105.50166050748587
+    },
+    {
+      "file": "output-results\\1mxc4ma_version_14.json",
+      "perplexity": 74.27667371387933
+    },
+    {
+      "file": "output-results\\1mxc4ma_version_15.json",
+      "perplexity": 67.54939808768997
+    },
+    {
+      "file": "output-results\\1myi8uy_version_10.json",
+      "perplexity": 134.1298659230595
+    },
+    {
+      "file": "output-results\\1myi8uy_version_12.json",
+      "perplexity": 51.3634676480529
+    },
+    {
+      "file": "output-results\\1myi8uy_version_13.json",
+      "perplexity": 66.90369671084898
+    },
+    {
+      "file": "output-results\\1myi8uy_version_14.json",
+      "perplexity": 114.89865773712279
+    },
+    {
+      "file": "output-results\\1myi8uy_version_15.json",
+      "perplexity": 313.9314327043753
+    },
+    {
+      "file": "output-results\\1mz96ww_version_10.json",
+      "perplexity": 49.34590247350286
+    },
+    {
+      "file": "output-results\\1mz96ww_version_11.json",
+      "perplexity": 63.35955001511476
+    },
+    {
+      "file": "output-results\\1mz96ww_version_12.json",
+      "perplexity": 44.54600070348006
+    },
+    {
+      "file": "output-results\\1mz96ww_version_13.json",
+      "perplexity": 129.5659608455521
+    },
+    {
+      "file": "output-results\\1mz96ww_version_14.json",
+      "perplexity": 41.02410115703634
+    },
+    {
+      "file": "output-results\\1mz96ww_version_15.json",
+      "perplexity": 53.832148160901355
+    },
+    {
+      "file": "output-results\\1mz96ww_version_16.json",
+      "perplexity": 33.940333370548906
+    },
+    {
+      "file": "output-results\\1mzozwd_version_10.json",
+      "perplexity": 146.28183604855974
+    },
+    {
+      "file": "output-results\\1mzozwd_version_11.json",
+      "perplexity": 155.627498919149
+    },
+    {
+      "file": "output-results\\1mzozwd_version_12.json",
+      "perplexity": 269.9245900566202
+    },
+    {
+      "file": "output-results\\1mzozwd_version_13.json",
+      "perplexity": 62.83387548672372
+    },
+    {
+      "file": "output-results\\1mzozwd_version_14.json",
+      "perplexity": 77.13724978556729
+    },
+    {
+      "file": "output-results\\1mzozwd_version_15.json",
+      "perplexity": 46.427515685300584
+    },
+    {
+      "file": "output-results\\1mzu604_version_10.json",
+      "perplexity": 96.43614069675695
+    },
+    {
+      "file": "output-results\\1mzu604_version_11.json",
+      "perplexity": 107.12122772908943
+    },
+    {
+      "file": "output-results\\1mzu604_version_12.json",
+      "perplexity": 101.70689600002227
+    },
+    {
+      "file": "output-results\\1mzu604_version_13.json",
+      "perplexity": 100.11847518793712
+    },
+    {
+      "file": "output-results\\1mzu604_version_14.json",
+      "perplexity": 136.84690506070683
+    },
+    {
+      "file": "output-results\\1mzu604_version_15.json",
+      "perplexity": 81.78085727931817
+    },
+    {
+      "file": "output-results\\1n058ec_version_10.json",
+      "perplexity": 22.68069949632386
+    },
+    {
+      "file": "output-results\\1n058ec_version_12.json",
+      "perplexity": 109.52232046835559
+    },
+    {
+      "file": "output-results\\1n058ec_version_13.json",
+      "perplexity": 48.73232294754758
+    },
+    {
+      "file": "output-results\\1n058ec_version_14.json",
+      "perplexity": 155.60575720851068
+    },
+    {
+      "file": "output-results\\1n058ec_version_15.json",
+      "perplexity": 62.65690274912858
+    },
+    {
+      "file": "output-results\\1n112qh_version_10.json",
+      "perplexity": 67.93194099222768
+    },
+    {
+      "file": "output-results\\1n112qh_version_11.json",
+      "perplexity": 48.61629761324801
+    },
+    {
+      "file": "output-results\\1n112qh_version_12.json",
+      "perplexity": 27.103111135129055
+    },
+    {
+      "file": "output-results\\1n112qh_version_13.json",
+      "perplexity": 62.65839662390932
+    },
+    {
+      "file": "output-results\\1n112qh_version_14.json",
+      "perplexity": 51.658867006851
+    },
+    {
+      "file": "output-results\\1n112qh_version_15.json",
+      "perplexity": 84.27786231651962
+    },
+    {
+      "file": "output-results\\1n2nrn6_version_10.json",
+      "perplexity": 79.23441792884815
+    },
+    {
+      "file": "output-results\\1n2nrn6_version_11.json",
+      "perplexity": 41.995287566629294
+    },
+    {
+      "file": "output-results\\1n2nrn6_version_12.json",
+      "perplexity": 58.74586278289197
+    },
+    {
+      "file": "output-results\\1n2nrn6_version_13.json",
+      "perplexity": 104.32917655191417
+    },
+    {
+      "file": "output-results\\1n2nrn6_version_14.json",
+      "perplexity": 99.46177574443894
+    },
+    {
+      "file": "output-results\\1n2nrn6_version_15.json",
+      "perplexity": 91.52948557978803
+    },
+    {
+      "file": "output-results\\1n35gc8_version_10.json",
+      "perplexity": 40.23158239741918
+    },
+    {
+      "file": "output-results\\1n35gc8_version_12.json",
+      "perplexity": 30.788234076951532
+    },
+    {
+      "file": "output-results\\1n35gc8_version_13.json",
+      "perplexity": 139.23822479682275
+    },
+    {
+      "file": "output-results\\1n35gc8_version_14.json",
+      "perplexity": 73.41601510689482
+    },
+    {
+      "file": "output-results\\1n35gc8_version_15.json",
+      "perplexity": 55.945196501985585
+    },
+    {
+      "file": "output-results\\1n43yfc_version_10.json",
+      "perplexity": 67.66835784613099
+    },
+    {
+      "file": "output-results\\1n43yfc_version_11.json",
+      "perplexity": 54.53775755428363
+    },
+    {
+      "file": "output-results\\1n43yfc_version_12.json",
+      "perplexity": 47.88450937585713
+    },
+    {
+      "file": "output-results\\1n43yfc_version_13.json",
+      "perplexity": 75.41758611231215
+    },
+    {
+      "file": "output-results\\1n43yfc_version_14.json",
+      "perplexity": 39.87574984665502
+    },
+    {
+      "file": "output-results\\1n43yfc_version_15.json",
+      "perplexity": 366.2964065651351
+    },
+    {
+      "file": "output-results\\1n5dce4_version_10.json",
+      "perplexity": 36.600429895407544
+    },
+    {
+      "file": "output-results\\1n5dce4_version_11.json",
+      "perplexity": 67.86731637340169
+    },
+    {
+      "file": "output-results\\1n5dce4_version_12.json",
+      "perplexity": 133.44127574760915
+    },
+    {
+      "file": "output-results\\1n5dce4_version_13.json",
+      "perplexity": 92.67577335517935
+    },
+    {
+      "file": "output-results\\1n5dce4_version_14.json",
+      "perplexity": 123.4813468444725
+    },
+    {
+      "file": "output-results\\1n5dce4_version_15.json",
+      "perplexity": 65.48183060999838
+    },
+    {
+      "file": "output-results\\1n6ser7_version_10.json",
+      "perplexity": 59.168624332682974
+    },
+    {
+      "file": "output-results\\1n6ser7_version_11.json",
+      "perplexity": 39.98535567524737
+    },
+    {
+      "file": "output-results\\1n6ser7_version_12.json",
+      "perplexity": 112.01899564038104
+    },
+    {
+      "file": "output-results\\1n6ser7_version_13.json",
+      "perplexity": 45.3508881167071
+    },
+    {
+      "file": "output-results\\1n6ser7_version_14.json",
+      "perplexity": 250.86841779799235
+    },
+    {
+      "file": "output-results\\1n6ser7_version_15.json",
+      "perplexity": 29.00194730192072
+    },
+    {
+      "file": "output-results\\1n74p67_version_10.json",
+      "perplexity": 90.8853851502449
+    },
+    {
+      "file": "output-results\\1n74p67_version_11.json",
+      "perplexity": 88.22121184288851
+    },
+    {
+      "file": "output-results\\1n74p67_version_12.json",
+      "perplexity": 72.85684542794695
+    },
+    {
+      "file": "output-results\\1n74p67_version_13.json",
+      "perplexity": 64.80735783033796
+    },
+    {
+      "file": "output-results\\1n74p67_version_14.json",
+      "perplexity": 33.432855943849106
+    },
+    {
+      "file": "output-results\\1n74p67_version_15.json",
+      "perplexity": 77.05056679044282
+    },
+    {
+      "file": "output-results\\1n7iul3_version_10.json",
+      "perplexity": 82.10481432522863
+    },
+    {
+      "file": "output-results\\1n7iul3_version_11.json",
+      "perplexity": 191.91012226019706
+    },
+    {
+      "file": "output-results\\1n7iul3_version_12.json",
+      "perplexity": 162.1777801636047
+    },
+    {
+      "file": "output-results\\1n7iul3_version_13.json",
+      "perplexity": 84.31046012721669
+    },
+    {
+      "file": "output-results\\1n7iul3_version_14.json",
+      "perplexity": 118.80120086845142
+    },
+    {
+      "file": "output-results\\1n7iul3_version_15.json",
+      "perplexity": 30.314896142149507
+    },
+    {
+      "file": "output-results\\1n7iul3_version_16.json",
+      "perplexity": 67.02503484959226
+    },
+    {
+      "file": "output-results\\1n9n9az_version_10.json",
+      "perplexity": 130.10675089267153
+    },
+    {
+      "file": "output-results\\1n9n9az_version_11.json",
+      "perplexity": 151.7214943262872
+    },
+    {
+      "file": "output-results\\1n9n9az_version_12.json",
+      "perplexity": 36.67487910601798
+    },
+    {
+      "file": "output-results\\1n9n9az_version_13.json",
+      "perplexity": 53.12074650700079
+    },
+    {
+      "file": "output-results\\1n9n9az_version_14.json",
+      "perplexity": 65.28170908661767
+    },
+    {
+      "file": "output-results\\1n9n9az_version_15.json",
+      "perplexity": 78.4172818175796
+    },
+    {
+      "file": "output-results\\1naqplk_version_10.json",
+      "perplexity": 73.73516990134952
+    },
+    {
+      "file": "output-results\\1naqplk_version_11.json",
+      "perplexity": 35.096458345429085
+    },
+    {
+      "file": "output-results\\1naqplk_version_12.json",
+      "perplexity": 39.727969987963554
+    },
+    {
+      "file": "output-results\\1naqplk_version_13.json",
+      "perplexity": 73.72989613962487
+    },
+    {
+      "file": "output-results\\1naqplk_version_14.json",
+      "perplexity": 70.25469723704185
+    },
+    {
+      "file": "output-results\\1naqplk_version_15.json",
+      "perplexity": 76.3795367757805
+    },
+    {
+      "file": "output-results\\1nb4zud_version_10.json",
+      "perplexity": 34.74869287965369
+    },
+    {
+      "file": "output-results\\1nb4zud_version_11.json",
+      "perplexity": 66.07551684945531
+    },
+    {
+      "file": "output-results\\1nb4zud_version_12.json",
+      "perplexity": 127.46432154843302
+    },
+    {
+      "file": "output-results\\1nb4zud_version_13.json",
+      "perplexity": 66.29630972471911
+    },
+    {
+      "file": "output-results\\1nb4zud_version_14.json",
+      "perplexity": 36.783201702683
+    },
+    {
+      "file": "output-results\\1nb4zud_version_15.json",
+      "perplexity": 63.96192612353764
+    },
+    {
+      "file": "output-results\\1nbu4fg_version_10.json",
+      "perplexity": 79.26030276759894
+    },
+    {
+      "file": "output-results\\1nbu4fg_version_12.json",
+      "perplexity": 41.90842933969398
+    },
+    {
+      "file": "output-results\\1nbu4fg_version_13.json",
+      "perplexity": 113.72483636339051
+    },
+    {
+      "file": "output-results\\1nbu4fg_version_14.json",
+      "perplexity": 65.27293137080272
+    },
+    {
+      "file": "output-results\\1nbu4fg_version_15.json",
+      "perplexity": 163.92587576388374
+    },
+    {
+      "file": "output-results\\1ndheef_version_10.json",
+      "perplexity": 50.73550528733329
+    },
+    {
+      "file": "output-results\\1ndheef_version_11.json",
+      "perplexity": 108.28145127564703
+    },
+    {
+      "file": "output-results\\1ndheef_version_12.json",
+      "perplexity": 184.848803366283
+    },
+    {
+      "file": "output-results\\1ndheef_version_13.json",
+      "perplexity": 30.167386023977926
+    },
+    {
+      "file": "output-results\\1ndheef_version_14.json",
+      "perplexity": 63.19935636316878
+    },
+    {
+      "file": "output-results\\1ndheef_version_15.json",
+      "perplexity": 63.154108594706074
+    },
+    {
+      "file": "output-results\\1ndp828_version_10.json",
+      "perplexity": 43.167106561578564
+    },
+    {
+      "file": "output-results\\1ndp828_version_11.json",
+      "perplexity": 64.69284154485081
+    },
+    {
+      "file": "output-results\\1ndp828_version_12.json",
+      "perplexity": 37.51962394912577
+    },
+    {
+      "file": "output-results\\1ndp828_version_13.json",
+      "perplexity": 60.57410738065575
+    },
+    {
+      "file": "output-results\\1ndp828_version_14.json",
+      "perplexity": 132.59559131441506
+    },
+    {
+      "file": "output-results\\1ndp828_version_15.json",
+      "perplexity": 49.42278762728334
+    },
+    {
+      "file": "output-results\\1ndps99_version_10.json",
+      "perplexity": 44.850370617462175
+    },
+    {
+      "file": "output-results\\1ndps99_version_11.json",
+      "perplexity": 32.74108697602425
+    },
+    {
+      "file": "output-results\\1ndps99_version_12.json",
+      "perplexity": 61.915648647622476
+    },
+    {
+      "file": "output-results\\1ndps99_version_13.json",
+      "perplexity": 103.46289905180875
+    },
+    {
+      "file": "output-results\\1ndps99_version_14.json",
+      "perplexity": 63.90549659814018
+    },
+    {
+      "file": "output-results\\1ndps99_version_15.json",
+      "perplexity": 66.736324325952
+    },
+    {
+      "file": "output-results\\1ndv9mn_version_10.json",
+      "perplexity": 80.85799542895226
+    },
+    {
+      "file": "output-results\\1ndv9mn_version_11.json",
+      "perplexity": 132.24407612551542
+    },
+    {
+      "file": "output-results\\1ndv9mn_version_12.json",
+      "perplexity": 50.98527741533518
+    },
+    {
+      "file": "output-results\\1ndv9mn_version_13.json",
+      "perplexity": 82.59932138735677
+    },
+    {
+      "file": "output-results\\1ndv9mn_version_14.json",
+      "perplexity": 34.814162452280016
+    },
+    {
+      "file": "output-results\\1ndv9mn_version_15.json",
+      "perplexity": 139.99417289444574
+    },
+    {
+      "file": "output-results\\1ndv9mn_version_16.json",
+      "perplexity": 47.774420681395824
+    },
+    {
+      "file": "output-results\\1ne9f7n_version_09.json",
+      "perplexity": 79.3318417683748
+    },
+    {
+      "file": "output-results\\1ne9f7n_version_10.json",
+      "perplexity": 102.09055507019607
+    },
+    {
+      "file": "output-results\\1ne9f7n_version_11.json",
+      "perplexity": 3579.89681475998
+    },
+    {
+      "file": "output-results\\1ne9f7n_version_12.json",
+      "perplexity": 77.07107075802473
+    },
+    {
+      "file": "output-results\\1ne9f7n_version_13.json",
+      "perplexity": 87.48684820164719
+    },
+    {
+      "file": "output-results\\1ne9f7n_version_14.json",
+      "perplexity": 89.08382409442187
+    },
+    {
+      "file": "output-results\\1ne9f7n_version_15.json",
+      "perplexity": 60.924265180685836
+    },
+    {
+      "file": "output-results\\1ne9f7n_version_16.json",
+      "perplexity": 58.79162453671207
+    },
+    {
+      "file": "output-results\\1necsep_version_10.json",
+      "perplexity": 52.9820564440299
+    },
+    {
+      "file": "output-results\\1necsep_version_11.json",
+      "perplexity": 48.014491725109636
+    },
+    {
+      "file": "output-results\\1necsep_version_12.json",
+      "perplexity": 37.4972850541445
+    },
+    {
+      "file": "output-results\\1necsep_version_13.json",
+      "perplexity": 14.21075525436768
+    },
+    {
+      "file": "output-results\\1necsep_version_14.json",
+      "perplexity": 36.579205152627885
+    },
+    {
+      "file": "output-results\\1necsep_version_15.json",
+      "perplexity": 91.44546455289395
+    },
+    {
+      "file": "output-results\\1necsep_version_16.json",
+      "perplexity": 77.40899388719934
+    },
+    {
+      "file": "output-results\\1nen54t_version_10.json",
+      "perplexity": 66.34637127344098
+    },
+    {
+      "file": "output-results\\1nen54t_version_11.json",
+      "perplexity": 30.885951232291593
+    },
+    {
+      "file": "output-results\\1nen54t_version_12.json",
+      "perplexity": 41.698361516444606
+    },
+    {
+      "file": "output-results\\1nen54t_version_13.json",
+      "perplexity": 89.75058538235002
+    },
+    {
+      "file": "output-results\\1nen54t_version_14.json",
+      "perplexity": 283.9943635983254
+    },
+    {
+      "file": "output-results\\1nen54t_version_15.json",
+      "perplexity": 123.13561444586493
+    },
+    {
+      "file": "output-results\\1nero22_version_10.json",
+      "perplexity": 56.78703661878407
+    },
+    {
+      "file": "output-results\\1nero22_version_11.json",
+      "perplexity": 48.35875724504415
+    },
+    {
+      "file": "output-results\\1nero22_version_12.json",
+      "perplexity": 108.16456652369294
+    },
+    {
+      "file": "output-results\\1nero22_version_13.json",
+      "perplexity": 151.58995319611313
+    },
+    {
+      "file": "output-results\\1nero22_version_14.json",
+      "perplexity": 23.886014342645872
+    },
+    {
+      "file": "output-results\\1nero22_version_15.json",
+      "perplexity": 141.20018329753233
+    },
+    {
+      "file": "output-results\\1ngylf0_version_10.json",
+      "perplexity": 63.76909503367622
+    },
+    {
+      "file": "output-results\\1ngylf0_version_11.json",
+      "perplexity": 43.70129973403326
+    },
+    {
+      "file": "output-results\\1ngylf0_version_12.json",
+      "perplexity": 45.75177116629888
+    },
+    {
+      "file": "output-results\\1ngylf0_version_13.json",
+      "perplexity": 26.30679750027704
+    },
+    {
+      "file": "output-results\\1ngylf0_version_14.json",
+      "perplexity": 26.26030018354824
+    },
+    {
+      "file": "output-results\\1ngylf0_version_15.json",
+      "perplexity": 69.7148849734588
+    },
+    {
+      "file": "output-results\\1ngylf0_version_16.json",
+      "perplexity": 60.914185333771535
+    },
+    {
+      "file": "output-results\\1nh7ptq_version_10.json",
+      "perplexity": 383.86673508449996
+    },
+    {
+      "file": "output-results\\1nh7ptq_version_11.json",
+      "perplexity": 52.66193700936101
+    },
+    {
+      "file": "output-results\\1nh7ptq_version_12.json",
+      "perplexity": 45.42209016531833
+    },
+    {
+      "file": "output-results\\1nh7ptq_version_13.json",
+      "perplexity": 74.91090233509584
+    },
+    {
+      "file": "output-results\\1nh7ptq_version_14.json",
+      "perplexity": 71.23257322678332
+    },
+    {
+      "file": "output-results\\1nh7ptq_version_15.json",
+      "perplexity": 67.0352308736962
+    },
+    {
+      "file": "output-results\\1ni3f9u_version_10.json",
+      "perplexity": 34.37917588239891
+    },
+    {
+      "file": "output-results\\1ni3f9u_version_12.json",
+      "perplexity": 50.87560401951021
+    },
+    {
+      "file": "output-results\\1ni3f9u_version_13.json",
+      "perplexity": 81.23820140829648
+    },
+    {
+      "file": "output-results\\1ni3f9u_version_14.json",
+      "perplexity": 325.2771231105603
+    },
+    {
+      "file": "output-results\\1ni3f9u_version_15.json",
+      "perplexity": 232.4384745868908
+    },
+    {
+      "file": "output-results\\1nihypp_version_10.json",
+      "perplexity": 61.36791199426012
+    },
+    {
+      "file": "output-results\\1nihypp_version_11.json",
+      "perplexity": 78.57433686467067
+    },
+    {
+      "file": "output-results\\1nihypp_version_12.json",
+      "perplexity": 68.0234140838614
+    },
+    {
+      "file": "output-results\\1nihypp_version_13.json",
+      "perplexity": 97.86930302878102
+    },
+    {
+      "file": "output-results\\1nihypp_version_14.json",
+      "perplexity": 81.58929890398385
+    },
+    {
+      "file": "output-results\\1nihypp_version_15.json",
+      "perplexity": 116.28392746792395
+    },
+    {
+      "file": "output-results\\1nipgmv_version_10.json",
+      "perplexity": 39.06250440095777
+    },
+    {
+      "file": "output-results\\1nipgmv_version_11.json",
+      "perplexity": 269.06604632775714
+    },
+    {
+      "file": "output-results\\1nipgmv_version_12.json",
+      "perplexity": 124.22600736989054
+    },
+    {
+      "file": "output-results\\1nipgmv_version_13.json",
+      "perplexity": 121.12158688445786
+    },
+    {
+      "file": "output-results\\1nipgmv_version_14.json",
+      "perplexity": 96.9193088812455
+    },
+    {
+      "file": "output-results\\1nipgmv_version_15.json",
+      "perplexity": 35.05174503987192
+    },
+    {
+      "file": "output-results\\1niycja_version_10.json",
+      "perplexity": 83.1521001771504
+    },
+    {
+      "file": "output-results\\1niycja_version_11.json",
+      "perplexity": 68.71372751241876
+    },
+    {
+      "file": "output-results\\1niycja_version_12.json",
+      "perplexity": 68.52215447262508
+    },
+    {
+      "file": "output-results\\1niycja_version_13.json",
+      "perplexity": 81.13661805366083
+    },
+    {
+      "file": "output-results\\1niycja_version_14.json",
+      "perplexity": 50.94598058896609
+    },
+    {
+      "file": "output-results\\1niycja_version_15.json",
+      "perplexity": 81.38254881231516
+    },
+    {
+      "file": "output-results\\1njs8qr_version_08_after_filtering_with_comments_1771146871555.json",
+      "perplexity": 58.2417177736512
+    },
+    {
+      "file": "output-results\\1njs8qr_version_08_after_filtering_with_comments_1771147201954.json",
+      "perplexity": 52.338048824812255
+    },
+    {
+      "file": "output-results\\1njs8qr_version_08_after_filtering_with_comments_1771148200320.json",
+      "perplexity": 63.99020533838089
+    },
+    {
+      "file": "output-results\\1njs8qr_version_08_after_filtering_with_comments_1771148388427.json",
+      "perplexity": 66.0559852345091
+    },
+    {
+      "file": "output-results\\1njs8qr_version_08_after_filtering_with_comments_1771148536478.json",
+      "perplexity": 81.64689834405789
+    },
+    {
+      "file": "output-results\\1njs8qr_version_08_after_filtering_with_comments_1771148685594.json",
+      "perplexity": 139.33260258407017
+    },
+    {
+      "file": "output-results\\1njs8qr_version_09.json",
+      "perplexity": 28.047058561701572
+    },
+    {
+      "file": "output-results\\1njs8qr_version_09_1771146679201.json",
+      "perplexity": 64.66869210797798
+    },
+    {
+      "file": "output-results\\1njs8qr_version_09_1771149109182.json",
+      "perplexity": 37.86374668591954
+    },
+    {
+      "file": "output-results\\1njs8qr_version_09_1771149279084.json",
+      "perplexity": 76.62029138785122
+    },
+    {
+      "file": "output-results\\1njs8qr_version_09_1771149479830.json",
+      "perplexity": 66.75863552847491
+    },
+    {
+      "file": "output-results\\1nkto23_version_10.json",
+      "perplexity": 91.4219646959874
+    },
+    {
+      "file": "output-results\\1nkto23_version_12.json",
+      "perplexity": 63.60792657927766
+    },
+    {
+      "file": "output-results\\1nkto23_version_13.json",
+      "perplexity": 106.26865038864193
+    },
+    {
+      "file": "output-results\\1nkto23_version_14.json",
+      "perplexity": 33.00163142280461
+    },
+    {
+      "file": "output-results\\1nkto23_version_15.json",
+      "perplexity": 89.63972560039925
+    },
+    {
+      "file": "output-results\\1nlgzzu_version_10.json",
+      "perplexity": 66.5238036692537
+    },
+    {
+      "file": "output-results\\1nlgzzu_version_12.json",
+      "perplexity": 109.38390912680224
+    },
+    {
+      "file": "output-results\\1nlgzzu_version_13.json",
+      "perplexity": 118.56882833928275
+    },
+    {
+      "file": "output-results\\1nlgzzu_version_14.json",
+      "perplexity": 47.67826945358394
+    },
+    {
+      "file": "output-results\\1nlgzzu_version_15.json",
+      "perplexity": 109.56389891105606
+    },
+    {
+      "file": "output-results\\1nlyvxv_version_10.json",
+      "perplexity": 60.68552860944132
+    },
+    {
+      "file": "output-results\\1nlyvxv_version_11.json",
+      "perplexity": 45.432639294100575
+    },
+    {
+      "file": "output-results\\1nlyvxv_version_12.json",
+      "perplexity": 37.871158923719534
+    },
+    {
+      "file": "output-results\\1nlyvxv_version_13.json",
+      "perplexity": 89.15249576882766
+    },
+    {
+      "file": "output-results\\1nlyvxv_version_14.json",
+      "perplexity": 63.19128048439866
+    },
+    {
+      "file": "output-results\\1nlyvxv_version_15.json",
+      "perplexity": 97.5490342909762
+    },
+    {
+      "file": "output-results\\1nm4nqf_version_10.json",
+      "perplexity": 27.1154949355671
+    },
+    {
+      "file": "output-results\\1nm4nqf_version_11.json",
+      "perplexity": 78.09584536898502
+    },
+    {
+      "file": "output-results\\1nm4nqf_version_12.json",
+      "perplexity": 43.62865498969613
+    },
+    {
+      "file": "output-results\\1nm4nqf_version_13.json",
+      "perplexity": 47.220972798727324
+    },
+    {
+      "file": "output-results\\1nm4nqf_version_14.json",
+      "perplexity": 48.83796987053233
+    },
+    {
+      "file": "output-results\\1nm4nqf_version_15.json",
+      "perplexity": 52.08426969764437
+    },
+    {
+      "file": "output-results\\1nmeeqt_version_10.json",
+      "perplexity": 40.409762722379305
+    },
+    {
+      "file": "output-results\\1nmeeqt_version_11.json",
+      "perplexity": 80.16802590255332
+    },
+    {
+      "file": "output-results\\1nmeeqt_version_12.json",
+      "perplexity": 43.54708696328369
+    },
+    {
+      "file": "output-results\\1nmeeqt_version_13.json",
+      "perplexity": 52.78852364073891
+    },
+    {
+      "file": "output-results\\1nmeeqt_version_14.json",
+      "perplexity": 81.95109644006186
+    },
+    {
+      "file": "output-results\\1nmeeqt_version_15.json",
+      "perplexity": 73.02504604348036
+    },
+    {
+      "file": "output-results\\1nms58r_version_10.json",
+      "perplexity": 56.02239887799927
+    },
+    {
+      "file": "output-results\\1nms58r_version_12.json",
+      "perplexity": 69.29986081807336
+    },
+    {
+      "file": "output-results\\1nms58r_version_13.json",
+      "perplexity": 58.32256204140396
+    },
+    {
+      "file": "output-results\\1nms58r_version_14.json",
+      "perplexity": 66.37358416980749
+    },
+    {
+      "file": "output-results\\1nms58r_version_15.json",
+      "perplexity": 98.85434261486822
+    },
+    {
+      "file": "output-results\\1nogkuu_version_10.json",
+      "perplexity": 114.38753066802538
+    },
+    {
+      "file": "output-results\\1nogkuu_version_12.json",
+      "perplexity": 208.8963842376461
+    },
+    {
+      "file": "output-results\\1nogkuu_version_13.json",
+      "perplexity": 167.21961273909807
+    },
+    {
+      "file": "output-results\\1nogkuu_version_14.json",
+      "perplexity": 122.17317093693052
+    },
+    {
+      "file": "output-results\\1nogkuu_version_15.json",
+      "perplexity": 43.75581571540395
+    },
+    {
+      "file": "output-results\\1np0vsv_version_10.json",
+      "perplexity": 131.4989981879021
+    },
+    {
+      "file": "output-results\\1np0vsv_version_11.json",
+      "perplexity": 61.016746384580166
+    },
+    {
+      "file": "output-results\\1np0vsv_version_12.json",
+      "perplexity": 43.43696498140963
+    },
+    {
+      "file": "output-results\\1np0vsv_version_13.json",
+      "perplexity": 57.9784269092912
+    },
+    {
+      "file": "output-results\\1np0vsv_version_15.json",
+      "perplexity": 91.62620957190857
+    },
+    {
+      "file": "output-results\\1npb37u_version_10.json",
+      "perplexity": 98.2020014060105
+    },
+    {
+      "file": "output-results\\1npb37u_version_11.json",
+      "perplexity": 23.73099834884289
+    },
+    {
+      "file": "output-results\\1npb37u_version_12.json",
+      "perplexity": 98.86636338874841
+    },
+    {
+      "file": "output-results\\1npb37u_version_13.json",
+      "perplexity": 85.5549744508246
+    },
+    {
+      "file": "output-results\\1npb37u_version_14.json",
+      "perplexity": 41.45016385462766
+    },
+    {
+      "file": "output-results\\1npb37u_version_15.json",
+      "perplexity": 28.66815826704536
+    },
+    {
+      "file": "output-results\\1npb37u_version_16.json",
+      "perplexity": 53.89219614285408
+    },
+    {
+      "file": "output-results\\1nph8ez_version_10.json",
+      "perplexity": 30.60506341379588
+    },
+    {
+      "file": "output-results\\1nph8ez_version_11.json",
+      "perplexity": 113.32257949741967
+    },
+    {
+      "file": "output-results\\1nph8ez_version_12.json",
+      "perplexity": 98.76039526206773
+    },
+    {
+      "file": "output-results\\1nph8ez_version_13.json",
+      "perplexity": 62.0637391144271
+    },
+    {
+      "file": "output-results\\1nph8ez_version_14.json",
+      "perplexity": 43.685590401936025
+    },
+    {
+      "file": "output-results\\1nph8ez_version_15.json",
+      "perplexity": 105.68831389056174
+    },
+    {
+      "file": "output-results\\1npmqeu_version_10.json",
+      "perplexity": 237.49728522541662
+    },
+    {
+      "file": "output-results\\1npmqeu_version_11.json",
+      "perplexity": 43.008267083284416
+    },
+    {
+      "file": "output-results\\1npmqeu_version_12.json",
+      "perplexity": 113.53530413416878
+    },
+    {
+      "file": "output-results\\1npmqeu_version_13.json",
+      "perplexity": 119.26043183525682
+    },
+    {
+      "file": "output-results\\1npmqeu_version_14.json",
+      "perplexity": 73.16544003898282
+    },
+    {
+      "file": "output-results\\1npmqeu_version_15.json",
+      "perplexity": 147.9931042734442
+    },
+    {
+      "file": "output-results\\1npmqeu_version_16.json",
+      "perplexity": 87.4945244627264
+    },
+    {
+      "file": "output-results\\1nq5cjp_version_10.json",
+      "perplexity": 37.9497581929982
+    },
+    {
+      "file": "output-results\\1nq5cjp_version_11.json",
+      "perplexity": 36.58497029505328
+    },
+    {
+      "file": "output-results\\1nq5cjp_version_12.json",
+      "perplexity": 104.4193589332502
+    },
+    {
+      "file": "output-results\\1nq5cjp_version_13.json",
+      "perplexity": 86.74999301318867
+    },
+    {
+      "file": "output-results\\1nq5cjp_version_14.json",
+      "perplexity": 72.32172671438107
+    },
+    {
+      "file": "output-results\\1nq5cjp_version_15.json",
+      "perplexity": 67.39425958780195
+    },
+    {
+      "file": "output-results\\1nql6ua_version_10.json",
+      "perplexity": 71.05213519501599
+    },
+    {
+      "file": "output-results\\1nql6ua_version_11.json",
+      "perplexity": 226.63294752531468
+    },
+    {
+      "file": "output-results\\1nql6ua_version_12.json",
+      "perplexity": 39.10650622213907
+    },
+    {
+      "file": "output-results\\1nql6ua_version_13.json",
+      "perplexity": 77.68184347277683
+    },
+    {
+      "file": "output-results\\1nql6ua_version_14.json",
+      "perplexity": 72.58138615504174
+    },
+    {
+      "file": "output-results\\1nql6ua_version_15.json",
+      "perplexity": 59.36625274190714
+    },
+    {
+      "file": "output-results\\1nr43ul_version_10.json",
+      "perplexity": 28.190067722694106
+    },
+    {
+      "file": "output-results\\1nr43ul_version_11.json",
+      "perplexity": 92.54947251454291
+    },
+    {
+      "file": "output-results\\1nr43ul_version_12.json",
+      "perplexity": 98.52117236330818
+    },
+    {
+      "file": "output-results\\1nr43ul_version_13.json",
+      "perplexity": 64.87704963767808
+    },
+    {
+      "file": "output-results\\1nr43ul_version_14.json",
+      "perplexity": 55.58844357891476
+    },
+    {
+      "file": "output-results\\1nr43ul_version_15.json",
+      "perplexity": 60.50240203592423
+    },
+    {
+      "file": "output-results\\1ns662s_version_10.json",
+      "perplexity": 156.92433107133868
+    },
+    {
+      "file": "output-results\\1ns662s_version_12.json",
+      "perplexity": 68.04508484413901
+    },
+    {
+      "file": "output-results\\1ns662s_version_13.json",
+      "perplexity": 109.38197928626825
+    },
+    {
+      "file": "output-results\\1ns662s_version_14.json",
+      "perplexity": 189.61262900115514
+    },
+    {
+      "file": "output-results\\1ns662s_version_15.json",
+      "perplexity": 75.50650035756513
+    }
+  ]
+}

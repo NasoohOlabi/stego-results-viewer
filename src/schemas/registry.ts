@@ -40,17 +40,25 @@ export function getRegisteredRenderers(): readonly SchemaRenderer<any>[] {
 }
 
 // Register schemas and their renderers
-import { StegoResultRenderer } from "~/app/_components/renderers/stego-result-renderer";
-import { stegoResultSchema } from "./stego-result";
-import { StegoTextOnlyRenderer } from "~/app/_components/renderers/stego-text-only-renderer";
-import { stegoTextOnlySchema } from "./stego-text-only";
 import { StegoTextOnlyRenderer as StegoTextOnlyOldRenderer } from "~/app/_components/renderers/stego-result-old-renderer";
+import { StegoResultRenderer } from "~/app/_components/renderers/stego-result-renderer";
+import { StegoTextOnlyRenderer } from "~/app/_components/renderers/stego-text-only-renderer";
+import { DivergenceMetricsRenderer } from "~/app/_components/renderers/divergence-metrics-renderer";
+import { stegoResultSchema } from "./stego-result";
 import { stegoComplexResultSchema } from "./stego-result-old";
+import { stegoTextOnlySchema } from "./stego-text-only";
+import { divergenceMetricsSchema } from "./divergence-metrics";
 
 registerRenderer({
 	schema: stegoResultSchema,
 	component: StegoResultRenderer,
 	name: "Stego Results",
+});
+
+registerRenderer({
+	schema: divergenceMetricsSchema,
+	component: DivergenceMetricsRenderer,
+	name: "Divergence Metrics",
 });
 
 registerRenderer({

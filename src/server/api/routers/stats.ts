@@ -1,4 +1,4 @@
-import { readdir, stat } from "fs/promises";
+import { readdir, stat, readFile } from "fs/promises";
 import { join } from "path";
 import { z } from "zod";
 import { getResolvedPath } from "~/server/paths";
@@ -7,6 +7,8 @@ import { Worker } from "worker_threads";
 import { cpus } from "os";
 import { db } from "~/server/db/stats";
 import type { WorkerPostStat } from "./stats-worker";
+import { divergenceMetricsSchema } from "~/schemas/divergence-metrics";
+import { perplexityMetricsSchema } from "~/schemas/perplexity-metrics";
 
 const numCPUs = cpus().length;
 const workerPath = join(process.cwd(), "src/server/api/routers/stats-worker.ts");
@@ -244,5 +246,72 @@ export const statsRouter = createTRPCRouter({
 				angles: anglesDist,
 				commentChain: commentChainDist,
 			};
+		}),
+	
+	getDivergenceMetrics: publicProcedure
+		.query(async () => {
+			const metricsDir = join(process.cwd(), "metrics");
+			try {
+				const entries = await readdir(metricsDir, { withFileTypes: true });
+				const files = entries
+					.filter((entry) =>
+						entry.isFile() &&
+						entry.name.endsWith(".json") &&
+						entry.name.startsWith("divergence_metrics_")
+					)
+					.map((entry) => entry.name);
+
+				if (files.length === 0) return null;
+
+				// Get latest file by sorting filenames (they have timestamp)
+				const latestFile = files.sort().reverse()[0]!;
+				const filePath = join(metricsDir, latestFile);
+				const content = await readFile(filePath, "utf-8");
+				const data = JSON.parse(content);
+				
+				const parsed = divergenceMetricsSchema.safeParse(data);
+				if (!parsed.success) {
+					console.error("Failed to parse divergence metrics:", parsed.error);
+					return null;
+				}
+				
+				return parsed.data;
+			} catch (error) {
+				console.error("Error reading metrics directory:", error);
+				return null;
+			}
+		}),
+
+	getPerplexityMetrics: publicProcedure
+		.query(async () => {
+			const metricsDir = join(process.cwd(), "metrics");
+			try {
+				const entries = await readdir(metricsDir, { withFileTypes: true });
+				const files = entries
+					.filter((entry) =>
+						entry.isFile() &&
+						entry.name.endsWith(".json") &&
+						entry.name.startsWith("perplexity_metrics_")
+					)
+					.map((entry) => entry.name);
+
+				if (files.length === 0) return null;
+
+				const latestFile = files.sort().reverse()[0]!;
+				const filePath = join(metricsDir, latestFile);
+				const content = await readFile(filePath, "utf-8");
+				const data = JSON.parse(content);
+
+				const parsed = perplexityMetricsSchema.safeParse(data);
+				if (!parsed.success) {
+					console.error("Failed to parse perplexity metrics:", parsed.error);
+					return null;
+				}
+
+				return parsed.data;
+			} catch (error) {
+				console.error("Error reading metrics directory:", error);
+				return null;
+			}
 		}),
 });

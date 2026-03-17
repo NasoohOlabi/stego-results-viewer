@@ -56,6 +56,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.2.4(react@19.2.4)
+      react-inspector:
+        specifier: ^9.0.0
+        version: 9.0.0(react@19.2.4)
       recharts:
         specifier: ^3.7.0
         version: 3.7.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react-is@19.2.4)(react@19.2.4)(redux@5.0.1)
@@ -1109,6 +1112,11 @@ packages:
     peerDependencies:
       react: ^19.2.4
 
+  react-inspector@9.0.0:
+    resolution: {integrity: sha512-w/VJucSeHxlwRa2nfM2k7YhpT1r5EtlDOClSR+L7DyQP91QMdfFEDXDs9bPYN4kzP7umFtom7L0b2GGjph4Kow==}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
+
   react-is@19.2.4:
     resolution: {integrity: sha512-W+EWGn2v0ApPKgKKCy/7s7WHXkboGcsrXE+2joLyVxkbyVQfO3MUEaUQDHoSmb8TFFrSKYa9mw64WZHNHSDzYA==}
 
@@ -2133,6 +2141,10 @@ snapshots:
     dependencies:
       react: 19.2.4
       scheduler: 0.27.0
+
+  react-inspector@9.0.0(react@19.2.4):
+    dependencies:
+      react: 19.2.4
 
   react-is@19.2.4: {}
 

@@ -152,7 +152,10 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 											title="Comments"
 											className="bg-blue-600/30 text-blue-400 px-2 py-0.5 rounded text-xs font-mono"
 										>
-											{item.embedding?.commentEmbedding?.bitsUsed}
+											{item.embedding?.commentEmbedding?.bitsUsed?.replace(
+												/(\d{3})(?=\d)/g,
+												"$1 "
+											)}
 										</span>
 										<span
 											title="Angles"
@@ -342,47 +345,67 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 														</label>
 														<div className="space-y-1.5 text-sm">
 															<div>
-																<span className="text-white/40">Title: </span>
+																<span className="text-white/40">
+																	Title:{" "}
+																</span>
 																<span className="text-white/80">
 																	{item.post?.title ??
-																		item.embedding?.commentEmbedding?.context?.title ??
+																		item.embedding
+																			?.commentEmbedding
+																			?.context?.title ??
 																		"—"}
 																</span>
 															</div>
 															<div>
-																<span className="text-white/40">User: </span>
+																<span className="text-white/40">
+																	User:{" "}
+																</span>
 																<span className="text-white/80">
 																	{item.post?.author ??
-																		item.embedding?.commentEmbedding?.context?.author ??
+																		item.embedding
+																			?.commentEmbedding
+																			?.context?.author ??
 																		"—"}
 																</span>
 															</div>
 															<div>
-																<span className="text-white/40">URL: </span>
+																<span className="text-white/40">
+																	URL:{" "}
+																</span>
 																{(item.post?.url ??
-																	item.embedding?.commentEmbedding?.context?.url) ? (
+																item.embedding?.commentEmbedding
+																	?.context?.url) ? (
 																	<a
 																		href={
 																			item.post?.url ??
-																			item.embedding?.commentEmbedding?.context?.url
+																			item.embedding
+																				?.commentEmbedding
+																				?.context?.url
 																		}
 																		target="_blank"
 																		rel="noopener noreferrer"
 																		className="text-blue-400 hover:underline break-all"
 																	>
 																		{item.post?.url ??
-																			item.embedding?.commentEmbedding?.context?.url}
+																			item.embedding
+																				?.commentEmbedding
+																				?.context?.url}
 																	</a>
 																) : (
-																	<span className="text-white/80">—</span>
+																	<span className="text-white/80">
+																		—
+																	</span>
 																)}
 															</div>
 															<div>
-																<span className="text-white/40">URL Content: </span>
+																<span className="text-white/40">
+																	URL Content:{" "}
+																</span>
 																<div className="mt-1 rounded bg-black/30 p-2 text-white/70 text-xs leading-relaxed line-clamp-6">
 																	{item.post?.selftext ??
-																		item.embedding?.commentEmbedding?.context
-																			?.selftext ??
+																		item.embedding
+																			?.commentEmbedding
+																			?.context?.selftext ??
 																		"—"}
 																</div>
 															</div>

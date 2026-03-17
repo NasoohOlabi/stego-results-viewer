@@ -6,8 +6,10 @@ import {
 	Folder,
 	Home,
 	LayoutDashboard,
+	MessageSquareText,
 	Plus,
 	Settings,
+	Shield,
 	Trash2
 } from "lucide-react";
 import Link from "next/link";
@@ -127,6 +129,28 @@ export function FileExplorer({
 					>
 						<LayoutDashboard className="h-4 w-4" />
 						Dashboard
+					</Link>
+					<Link
+						href={`/admin-api?folder=${selectedPathId}`}
+						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+							pathname === "/admin-api"
+								? "bg-white/10 text-white"
+								: "text-white/50 hover:bg-white/5 hover:text-white"
+						}`}
+					>
+						<Shield className="h-4 w-4" />
+						Admin API
+					</Link>
+					<Link
+						href={`/prompt-logs?folder=${selectedPathId}`}
+						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+							pathname === "/prompt-logs"
+								? "bg-white/10 text-white"
+								: "text-white/50 hover:bg-white/5 hover:text-white"
+						}`}
+					>
+						<MessageSquareText className="h-4 w-4" />
+						Prompt Logs
 					</Link>
 				</div>
 
