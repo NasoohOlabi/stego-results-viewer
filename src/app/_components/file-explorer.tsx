@@ -4,6 +4,7 @@ import {
 	ChevronRight,
 	FileJson,
 	Folder,
+	GitCompare,
 	Home,
 	LayoutDashboard,
 	Logs,
@@ -174,6 +175,17 @@ export function FileExplorer({
 					>
 						<Logs className="h-4 w-4" />
 						Workflow Runs
+					</Link>
+					<Link
+						href={`/double-process-new-post?folder=${selectedPathId}`}
+						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+							pathname === "/double-process-new-post"
+								? "bg-white/10 text-white"
+								: "text-white/50 hover:bg-white/5 hover:text-white"
+						}`}
+					>
+						<GitCompare className="h-4 w-4" />
+						Double-process new post
 					</Link>
 				</div>
 

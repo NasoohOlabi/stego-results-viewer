@@ -5,6 +5,7 @@ export const WORKFLOW_COMMAND_OPTIONS = [
 	"research",
 	"gen-angles",
 	"validate-post",
+	"double-process-new-post",
 	"stego",
 	"decode",
 	"gen-terms",

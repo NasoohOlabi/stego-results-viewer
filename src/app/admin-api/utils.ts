@@ -231,6 +231,8 @@ export function getWorkflowTemplate(command: string): string {
 			return '{\n  "post_id": "example-post-id",\n  "post_title": "Sample title",\n  "post_text": "Sample text"\n}';
 		case "validate-post":
 			return '{\n  "post_id": "example-post-id",\n  "stream": false\n}';
+		case "double-process-new-post":
+			return '{\n  "stream": true,\n  "allow_angles_fallback": false\n}';
 		case "full":
 			return '{\n  "start_step": "filter-url-unresolved",\n  "count": 3\n}';
 		default:
