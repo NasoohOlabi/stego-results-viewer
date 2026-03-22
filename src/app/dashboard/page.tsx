@@ -90,7 +90,10 @@ function DashboardContent() {
 					)}
 					{perplexityMetrics && (
 						<div className="pt-8 border-t border-white/10">
-							<PerplexityMetricsRenderer data={perplexityMetrics} />
+							<PerplexityMetricsRenderer
+								data={perplexityMetrics}
+								folderId={selectedPathId}
+							/>
 						</div>
 					)}
 

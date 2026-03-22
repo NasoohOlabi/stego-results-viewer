@@ -46,15 +46,25 @@ function PromptLogsContent() {
 		{ enabled: isValidPath }
 	);
 
-	const { data, isLoading, error } = api.promptLogs.getEntries.useQuery();
-
+	const [selectedLogFile, setSelectedLogFile] = useState("all");
 	const [searchText, setSearchText] = useState("");
 	const [scopeFilter, setScopeFilter] = useState("all");
 	const [providerFilter, setProviderFilter] = useState("all");
 	const [modelFilter, setModelFilter] = useState("all");
 	const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
 
+	const { data, isLoading, error } = api.promptLogs.getEntries.useQuery({
+		fileName: selectedLogFile
+	});
+
 	const entries = data?.entries ?? [];
+	const logFileOptions = data?.availableFiles ?? [];
+
+	useEffect(() => {
+		if (selectedLogFile === "all") return;
+		const exists = logFileOptions.some((file) => file.fileName === selectedLogFile);
+		if (!exists) setSelectedLogFile("all");
+	}, [logFileOptions, selectedLogFile]);
 
 	const scopeOptions = useMemo(() => {
 		return Array.from(
@@ -87,6 +97,7 @@ function PromptLogsContent() {
 				entry.scope ?? "",
 				entry.provider ?? "",
 				entry.model ?? "",
+				entry.sourceFileName ?? "",
 				entry.userPrompt ?? "",
 				entry.systemMessage ?? "",
 				entry.userPromptPreview ?? "",
@@ -125,7 +136,22 @@ function PromptLogsContent() {
 				<div className="flex w-[430px] shrink-0 flex-col border-r border-white/10 bg-zinc-950/70">
 					<div className="space-y-3 border-b border-white/10 p-4">
 						<h1 className="font-semibold text-xl">Prompt Logs</h1>
-						<p className="text-sm text-white/60">{data?.logPath ?? "Loading path..."}</p>
+						<p className="text-sm text-white/60">
+							{data?.logDirectory ?? "Loading log directory..."}
+						</p>
+						<select
+							value={selectedLogFile}
+							onChange={(event) => setSelectedLogFile(event.target.value)}
+							aria-label="Select prompt log file"
+							className="w-full rounded-md border border-white/15 bg-zinc-900 px-2 py-1.5 text-sm"
+						>
+							<option value="all">All prompt logs</option>
+							{logFileOptions.map((file) => (
+								<option key={file.fileName} value={file.fileName}>
+									{file.dateLabel} - {file.fileName}
+								</option>
+							))}
+						</select>
 						<input
 							type="text"
 							value={searchText}
@@ -207,6 +233,9 @@ function PromptLogsContent() {
 												{formatTimestamp(entry.timestamp)}
 											</div>
 											<div className="mb-2 flex flex-wrap gap-1 text-[11px]">
+												<span className="rounded bg-blue-500/20 px-2 py-0.5 text-blue-100">
+													{entry.sourceFileName}
+												</span>
 												<span className="rounded bg-white/10 px-2 py-0.5">
 													{entry.provider ?? "unknown provider"}
 												</span>
@@ -235,6 +264,9 @@ function PromptLogsContent() {
 								<div className="flex flex-wrap gap-2 text-xs text-white/80">
 									<span className="rounded bg-white/10 px-2 py-1">
 										{formatTimestamp(selectedEntry.timestamp)}
+									</span>
+									<span className="rounded bg-blue-500/20 px-2 py-1 text-blue-100">
+										File: {selectedEntry.sourceFileName}
 									</span>
 									<span className="rounded bg-white/10 px-2 py-1">
 										Provider: {selectedEntry.provider ?? "n/a"}

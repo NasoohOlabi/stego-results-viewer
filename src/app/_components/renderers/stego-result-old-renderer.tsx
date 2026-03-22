@@ -10,6 +10,7 @@ import {
 import type { StegoComplexResult } from "~/schemas/stego-result-old";
 import { AngleTable } from "../angle-table";
 import { PaginatedTable } from "../paginated-table";
+import { PostValidationActions } from "../post-validation-actions";
 
 interface StegoTextOnlyRendererProps {
 	data: StegoComplexResult;
@@ -110,6 +111,7 @@ export function StegoTextOnlyRenderer({ data }: StegoTextOnlyRendererProps) {
 									</p>
 								)}
 							</div>
+							<PostValidationActions postId={item.post?.id} />
 							<div
 								key={index}
 								className="group relative rounded-lg border border-white/10 p-4 transition-colors hover:bg-white/5"

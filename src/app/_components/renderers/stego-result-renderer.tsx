@@ -11,6 +11,7 @@ import {
 import type { RedditComment, StegoResult } from "~/schemas/stego-result";
 import { AngleTable } from "../angle-table";
 import { PaginatedTable } from "../paginated-table";
+import { PostValidationActions } from "../post-validation-actions";
 
 interface StegoResultRendererProps {
 	data: StegoResult;
@@ -209,6 +210,7 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 								</div>
 
 								<div className="p-4 space-y-6">
+									<PostValidationActions postId={item.post?.id} />
 									<div className="space-y-2">
 										<label className="text-[10px] font-bold uppercase tracking-wider text-white/30">
 											Stego Text ({item.stegoText?.length} chars)

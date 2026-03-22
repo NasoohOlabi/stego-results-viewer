@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { HydrateClient } from "~/trpc/server";
 import { FileViewer } from "./_components/file-viewer";
+
+export const metadata: Metadata = {
+	title: "Result files"
+};
 
 export default async function Home() {
 	return (

@@ -67,10 +67,16 @@ No auth is currently enforced in this service. Frontend should treat this API as
 - `GET /workflows/pipelines`
   - Returns available pipeline commands and workflow execution endpoints.
 
+- `GET /workflows/runs`
+  - Returns currently executing workflow runs in this API process.
+  - Response `data`: `{ "runs": [...], "count": <int> }`.
+  - Each run: `id`, `command`, `mode` (`sync` | `stream`), `started_at` (Unix seconds), `elapsed_ms`.
+
 - `POST /workflows/run`
   - Generic workflow runner.
-  - Body: `command` (`data-load|research|gen-angles|stego|decode|gen-terms|full`) + same fields as the matching dedicated endpoint.
-  - For `command: "stego"`, it uses the same optional/fallback semantics as `POST /workflows/stego`.
+  - Body: `command` (`data-load|research|gen-angles|validate-post|stego|decode|gen-terms|full`) + same fields as the matching dedicated endpoint.
+  - For `command: "stego"`, it uses the same optional/fallback semantics as `POST /workflows/stego` (including optional `payload` as a string or JSON value coerced to string).
+  - For `command: "full"`, optional `payload` (string or JSON) is accepted and reported on the run as `payload_provided` in progress events; omit to use defaults where applicable.
   - Streaming:
     - Defaults to `text/event-stream` (SSE) with events: `status`, `progress`, `log`, `heartbeat`, `result`, `error`, `done`.
     - Disable streaming with `?stream=0` or body `{ "stream": false }` to get standard JSON envelope.
@@ -88,12 +94,19 @@ No auth is currently enforced in this service. Frontend should treat this API as
   - Streaming defaults to SSE; disable via `?stream=0` or `{ "stream": false }`.
 
 - `POST /workflows/stego`
-  - Body: `post_id?`, `payload?`, `tag?`, `list_offset?`
+  - Body: `post_id?`, `payload?` (string or JSON object/array, coerced to string), `tag?`, `list_offset?`, `run_all?`, `max_posts?`
   - Behavior:
     - `post_id` is optional.
     - When `post_id` is omitted, the API auto-selects the next unprocessed post from `final-step` for the same `tag`.
     - If a provided `post_id` is not found in `final-step` or `angles-step`, it falls back to the same auto-selection behavior.
     - `payload` is optional; when omitted, the workflow uses the default payload from `workflows/27rZrYtywu3k9e7Q.json` (`SetSecretData.payload`).
+    - `run_all` (default `false`) makes stego process posts recursively for the same tag until no unprocessed posts remain.
+    - `max_posts` optionally limits how many posts are processed when `run_all=true`. Omitted, null, or any integer &lt; 1 means **no limit** (process until no unprocessed posts or a stop condition). Use `max_posts` ≥ 1 to cap batch size.
+    - `post_id` cannot be combined with `run_all=true`.
+  - `run_all` response shape:
+    - `run_all`, `tag`, `list_offset`, `max_posts`
+    - `processed_count`, `succeeded_count`, `failed_count`, `stopped_reason`
+    - `results` (array of per-post stego outputs)
   - Streaming defaults to SSE; disable via `?stream=0` or `{ "stream": false }`.
 
 - `POST /workflows/decode`
@@ -104,8 +117,21 @@ No auth is currently enforced in this service. Frontend should treat this API as
   - Body: `post_id` (string), `post_title?`, `post_text?`, `post_url?`
   - Streaming defaults to SSE; disable via `?stream=0` or `{ "stream": false }`.
 
+- `POST /workflows/validate-post`
+  - Validates reproducibility for one post: reruns **data-load → research → gen-angles** (steps `filter-url-unresolved` → `filter-researched` → `angles-step`) and compares each stage’s saved artifact to the snapshot taken **before** the rerun (strict deep JSON equality, including list order).
+  - Body: `post_id` (string, required), `stream?` (bool; same SSE default as other workflow routes).
+  - Prerequisites: baseline files must already exist for that `post_id` in each step’s destination directory (`{post_id}.json` per [`STEPS` in `infrastructure/config.py`](../src/infrastructure/config.py)); otherwise the handler returns 500 with a missing-baseline message.
+  - Response `data` shape:
+    - `post_id`: string
+    - `valid`: boolean (true only if all three stages match)
+    - `steps`: object with keys `data_load`, `research`, `gen_angles`, each:
+      - `step`: workflow step name
+      - `matches`: boolean
+      - `changed_keys`: string paths (e.g. `search_results[1]`, `angles`) when `matches` is false; empty array when true
+  - **Note:** LLM calls in this path use temperature 0 where applicable (e.g. search-term generation, angles analysis); live search/fetch can still drift vs an older run, so `valid: false` is expected if the web or APIs change.
+
 - `POST /workflows/full`
-  - Body: `start_step?` (default `filter-url-unresolved`), `count?`
+  - Body: `start_step?` (default `filter-url-unresolved`), `count?`, `payload?` (optional string or JSON; same as stego `payload`)
   - Streaming defaults to SSE; disable via `?stream=0` or `{ "stream": false }`.
 
 ### Tools

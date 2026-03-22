@@ -11,6 +11,7 @@ import type { RedditComment } from "~/schemas/stego-result";
 import type { StegoTextOnly } from "~/schemas/stego-text-only";
 import { AngleTable } from "../angle-table";
 import { PaginatedTable } from "../paginated-table";
+import { PostValidationActions } from "../post-validation-actions";
 
 interface StegoTextOnlyRendererProps {
 	data: StegoTextOnly;
@@ -120,6 +121,7 @@ export function StegoTextOnlyRenderer({ data }: StegoTextOnlyRendererProps) {
 								</div>
 
 								<div className="p-4 space-y-6">
+									<PostValidationActions postId={item.post?.id} />
 									<div className="space-y-2">
 										<label className="text-[10px] font-bold uppercase tracking-wider text-white/30">
 											Stego Text ({item.stegoText?.length} chars)

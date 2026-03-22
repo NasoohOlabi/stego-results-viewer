@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { DashboardAdminContent } from "./dashboard-admin-content";
+import { ApiLogsContent } from "./api-logs-content";
 
 export const metadata: Metadata = {
-	title: "Admin API"
+	title: "API logs (live)"
 };
 
-export default function AdminApiPage() {
+export default function ApiLogsPage() {
 	return (
 		<Suspense fallback={<div>Loading...</div>}>
-			<DashboardAdminContent />
+			<ApiLogsContent />
 		</Suspense>
 	);
 }

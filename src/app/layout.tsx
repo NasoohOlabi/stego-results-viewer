@@ -6,7 +6,10 @@ import { Geist } from "next/font/google";
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
-	title: "StegoTest Results Viewer",
+	title: {
+		default: "StegoTest Results Viewer",
+		template: "%s | StegoTest Results Viewer"
+	},
 	description: "View the results of your StegoTest runs",
 	icons: [{ rel: "icon", url: "/favicon.ico" }]
 };

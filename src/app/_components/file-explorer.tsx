@@ -6,6 +6,7 @@ import {
 	Folder,
 	Home,
 	LayoutDashboard,
+	Logs,
 	MessageSquareText,
 	Plus,
 	Settings,
@@ -151,6 +152,28 @@ export function FileExplorer({
 					>
 						<MessageSquareText className="h-4 w-4" />
 						Prompt Logs
+					</Link>
+					<Link
+						href={`/api-logs?folder=${selectedPathId}`}
+						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+							pathname === "/api-logs"
+								? "bg-white/10 text-white"
+								: "text-white/50 hover:bg-white/5 hover:text-white"
+						}`}
+					>
+						<Logs className="h-4 w-4" />
+						API Logs
+					</Link>
+					<Link
+						href={`/workflows-runs?folder=${selectedPathId}`}
+						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+							pathname === "/workflows-runs"
+								? "bg-white/10 text-white"
+								: "text-white/50 hover:bg-white/5 hover:text-white"
+						}`}
+					>
+						<Logs className="h-4 w-4" />
+						Workflow Runs
 					</Link>
 				</div>
 

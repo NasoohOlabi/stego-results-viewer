@@ -1,10 +1,23 @@
 "use client";
 
+import { Link2 } from "lucide-react";
+import Link from "next/link";
 import type { PerplexityMetrics } from "~/schemas/perplexity-metrics";
 
 const TOP_OUTLIERS_COUNT = 5;
 
-export function PerplexityMetricsRenderer({ data }: { data: PerplexityMetrics }) {
+function outputBasename(filePath: string): string {
+	return filePath.replace(/^.*[/\\]/, "");
+}
+
+export function PerplexityMetricsRenderer({
+	data,
+	folderId = "side-wing",
+}: {
+	data: PerplexityMetrics;
+	/** Matches `folder` query on the home file viewer (`/?filename=…&folder=…`). */
+	folderId?: string;
+}) {
 	const topOutliers = [...data.per_file_perplexity]
 		.sort((a, b) => b.perplexity - a.perplexity)
 		.slice(0, TOP_OUTLIERS_COUNT);
@@ -62,17 +75,32 @@ export function PerplexityMetricsRenderer({ data }: { data: PerplexityMetrics })
 			<div className="rounded-xl border border-white/10 bg-white/5 p-6">
 				<h3 className="text-lg font-semibold mb-4">Top Perplexity Outliers</h3>
 				<div className="space-y-3">
-					{topOutliers.map((item) => (
-						<div
-							key={item.file}
-							className="flex items-center justify-between rounded-lg border border-white/10 px-4 py-3"
-						>
-							<p className="text-sm text-white/80 truncate">{item.file}</p>
-							<p className="text-sm font-semibold text-red-300">
-								{item.perplexity.toFixed(2)}
-							</p>
-						</div>
-					))}
+					{topOutliers.map((item) => {
+						const basename = outputBasename(item.file);
+						const href = `/?filename=${encodeURIComponent(basename)}&folder=${encodeURIComponent(folderId)}`;
+						return (
+							<div
+								key={item.file}
+								className="flex items-center justify-between gap-3 rounded-lg border border-white/10 px-4 py-3"
+							>
+								<Link
+									href={href}
+									className="group flex min-w-0 flex-1 items-center gap-2 text-sm text-cyan-400/90 hover:text-cyan-300"
+									title="Open in file viewer"
+								>
+									<span className="truncate group-hover:underline">{item.file}</span>
+									<Link2
+										size={16}
+										className="shrink-0 opacity-70 group-hover:opacity-100"
+										aria-hidden
+									/>
+								</Link>
+								<p className="text-sm font-semibold text-red-300 shrink-0">
+									{item.perplexity.toFixed(2)}
+								</p>
+							</div>
+						);
+					})}
 				</div>
 			</div>
 		</div>
