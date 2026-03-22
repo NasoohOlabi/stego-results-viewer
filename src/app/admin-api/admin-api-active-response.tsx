@@ -400,32 +400,62 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 									<span className="font-semibold text-white/80">
 										Validate post — {validatePostView.post_id}
 									</span>
+									{validatePostView.mode ? (
+										<span className="rounded bg-white/10 px-2 py-0.5 font-mono text-[10px] text-white/50">
+											{validatePostView.mode}
+										</span>
+									) : null}
 									<span
 										className={`rounded px-2 py-0.5 font-medium ${
 											validatePostView.valid
 												? "bg-emerald-500/25 text-emerald-200"
-												: "bg-amber-500/25 text-amber-200"
+												: validatePostView.validation_outcome ===
+													  "rerun_incomplete"
+													? "bg-sky-500/20 text-sky-200"
+													: "bg-amber-500/25 text-amber-200"
 										}`}
 									>
-										{validatePostView.valid ? "valid" : "mismatch"}
+										{validatePostView.valid
+											? "valid"
+											: validatePostView.validation_outcome
+												? validatePostView.validation_outcome.replace(
+														/_/g,
+														" "
+													)
+												: "not valid"}
 									</span>
 								</div>
+								{validatePostView.validation_explanation ? (
+									<p className="text-[11px] leading-snug text-white/55">
+										{validatePostView.validation_explanation}
+									</p>
+								) : null}
 								<div className="overflow-x-auto rounded border border-white/10">
-									<table className="w-full min-w-[480px] text-left text-xs">
+									<table className="w-full min-w-[640px] text-left text-xs">
 										<thead className="border-b border-white/10 bg-white/5 text-white/55">
 											<tr>
 												<th className="px-2 py-2 font-medium">Stage</th>
 												<th className="px-2 py-2 font-medium">Step</th>
 												<th className="px-2 py-2 font-medium">Match</th>
+												<th className="px-2 py-2 font-medium">Comparison</th>
 												<th className="px-2 py-2 font-medium">
 													Changed keys
 												</th>
+												<th className="px-2 py-2 font-medium">Error</th>
 											</tr>
 										</thead>
 										<tbody className="divide-y divide-white/10">
 											{Object.entries(validatePostView.steps).map(
 												([key, row]) => (
-													<tr key={key} className="text-white/85">
+													<tr
+														key={key}
+														className="text-white/85"
+														title={
+															[row.comparison_note, row.error]
+																.filter(Boolean)
+																.join("\n\n") || undefined
+														}
+													>
 														<td className="px-2 py-2 font-mono text-[11px] text-white/60">
 															{key}
 														</td>
@@ -433,16 +463,26 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 															{row.step}
 														</td>
 														<td className="px-2 py-2">
-															{row.matches ? (
-																<span className="text-emerald-300/90">yes</span>
-															) : (
+															{row.matches === true ? (
+																<span className="text-emerald-300/90">
+																	yes
+																</span>
+															) : row.matches === false ? (
 																<span className="text-rose-300/90">no</span>
+															) : (
+																<span className="text-white/45">n/a</span>
 															)}
 														</td>
-														<td className="max-w-[320px] px-2 py-2 text-white/70">
+														<td className="max-w-[140px] px-2 py-2 font-mono text-[10px] text-violet-200/90">
+															{row.comparison ?? "—"}
+														</td>
+														<td className="max-w-[200px] px-2 py-2 text-white/70">
 															{row.changed_keys.length === 0
 																? "—"
 																: row.changed_keys.join(", ")}
+														</td>
+														<td className="max-w-[220px] truncate px-2 py-2 font-mono text-[10px] text-rose-200/80">
+															{row.error ?? "—"}
 														</td>
 													</tr>
 												)

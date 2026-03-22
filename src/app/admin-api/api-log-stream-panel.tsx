@@ -201,7 +201,6 @@ export function ApiLogStreamPanel() {
 		<section className="grid grid-cols-1 gap-4 rounded-xl border border-white/10 bg-white/5 p-4 xl:grid-cols-[460px_minmax(0,1fr)]">
 			<div className="space-y-3">
 				<div className="flex items-center justify-between gap-2">
-					<h2 className="font-semibold text-xl">API Logs (Live)</h2>
 					<label className="flex items-center gap-2 text-xs text-white/70">
 						<input
 							type="checkbox"

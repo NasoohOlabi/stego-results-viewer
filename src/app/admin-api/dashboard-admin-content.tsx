@@ -8,7 +8,6 @@ import { api } from "~/trpc/react";
 import { AdminApiActiveResponse } from "./admin-api-active-response";
 import { AdminApiTabWorkspace } from "./admin-api-tab-workspace";
 import { executeAdminApiRequest } from "./fetch-admin-api";
-import { ApiLogStreamPanel } from "./api-log-stream-panel";
 import {
 	runTabAction,
 	submitWorkflowRequest as submitWorkflowRequestImpl,
@@ -16,18 +15,18 @@ import {
 } from "./tab-actions";
 import {
 	ADMIN_API_STORAGE_KEY,
-	type ApiActionId,
-	type ApiResponseView,
-	type ApiWorkspaceTab,
-	type PersistedAdminApiState,
-	type StreamEventView,
-	type WorkflowCommand,
 	createIdleResponse,
 	getApiToolForAction,
 	getDefaultApiActionForTool,
 	isApiActionId,
 	isApiToolId,
-	isWorkflowCommand
+	isWorkflowCommand,
+	type ApiActionId,
+	type ApiResponseView,
+	type ApiWorkspaceTab,
+	type PersistedAdminApiState,
+	type StreamEventView,
+	type WorkflowCommand
 } from "./types";
 import { getWorkflowTemplate, toPrettyJson } from "./utils";
 
@@ -70,9 +69,8 @@ export function DashboardAdminContent() {
 	const [jsonWriteBody, setJsonWriteBody] = useState(
 		'{\n  "hello": "world"\n}'
 	);
-	const [workflowCommand, setWorkflowCommand] = useState<WorkflowCommand>(
-		"data-load"
-	);
+	const [workflowCommand, setWorkflowCommand] =
+		useState<WorkflowCommand>("data-load");
 	const [artifactTag, setArtifactTag] = useState("");
 	const [stegoPayload, setStegoPayload] = useState("");
 	const [validatePostId, setValidatePostId] = useState("");
@@ -137,7 +135,8 @@ export function DashboardAdminContent() {
 			) {
 				setWorkflowCommand(parsed.workflowCommand);
 			} else if (
-				typeof (parsed as { artifactStep?: string }).artifactStep === "string"
+				typeof (parsed as { artifactStep?: string }).artifactStep ===
+				"string"
 			) {
 				const legacy = (parsed as { artifactStep: string }).artifactStep;
 				const fromStep: Partial<Record<string, WorkflowCommand>> = {
@@ -580,7 +579,9 @@ export function DashboardAdminContent() {
 						validateUseFetchCache={validateUseFetchCache}
 						setValidateUseFetchCache={setValidateUseFetchCache}
 						validateAllowAnglesFallback={validateAllowAnglesFallback}
-						setValidateAllowAnglesFallback={setValidateAllowAnglesFallback}
+						setValidateAllowAnglesFallback={
+							setValidateAllowAnglesFallback
+						}
 						protocolIncludePost={protocolIncludePost}
 						setProtocolIncludePost={setProtocolIncludePost}
 						protocolUseCache={protocolUseCache}
@@ -615,8 +616,6 @@ export function DashboardAdminContent() {
 						copiedStreamEventKey={copiedStreamEventKey}
 						onCopyStreamEvent={copyStreamEvent}
 					/>
-
-					<ApiLogStreamPanel />
 				</div>
 			</div>
 		</div>

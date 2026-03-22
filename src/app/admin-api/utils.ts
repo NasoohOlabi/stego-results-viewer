@@ -314,13 +314,21 @@ export function isWorkflowRunsEndpoint(active: {
 /** Step summary from POST /workflows/validate-post `data.steps`. */
 export interface ValidatePostStepSummary {
 	step: string;
-	matches: boolean;
+	/** `null` when rerun did not complete or could not be compared (not a simple mismatch). */
+	matches: boolean | null;
 	changed_keys: string[];
+	comparison?: string;
+	comparison_note?: string;
+	error?: string | null;
 }
 
 export interface ValidatePostResultView {
 	post_id: string;
 	valid: boolean;
+	/** e.g. `live_protocol_replay` */
+	mode?: string;
+	validation_outcome?: string;
+	validation_explanation?: string;
 	steps: Record<string, ValidatePostStepSummary>;
 }
 
@@ -351,19 +359,49 @@ export function extractValidatePostFromAdminResponse(
 		const step = entry.step;
 		const matches = entry.matches;
 		const changed = entry.changed_keys;
+		const matchesOk =
+			matches === null || typeof matches === "boolean";
 		if (
 			typeof step !== "string" ||
-			typeof matches !== "boolean" ||
+			!matchesOk ||
 			!Array.isArray(changed) ||
 			!changed.every((c) => typeof c === "string")
 		) {
 			continue;
 		}
+		const comparison =
+			typeof entry.comparison === "string" ? entry.comparison : undefined;
+		const comparison_note =
+			typeof entry.comparison_note === "string"
+				? entry.comparison_note
+				: undefined;
+		const err = entry.error;
+		const error =
+			err === null || typeof err === "string" ? err : undefined;
 		steps[key] = {
 			step,
 			matches,
-			changed_keys: changed
+			changed_keys: changed,
+			...(comparison !== undefined ? { comparison } : {}),
+			...(comparison_note !== undefined ? { comparison_note } : {}),
+			...(error !== undefined ? { error } : {})
 		};
 	}
-	return { post_id: inner.post_id, valid: inner.valid, steps };
+	const mode = typeof inner.mode === "string" ? inner.mode : undefined;
+	const validation_outcome =
+		typeof inner.validation_outcome === "string"
+			? inner.validation_outcome
+			: undefined;
+	const validation_explanation =
+		typeof inner.validation_explanation === "string"
+			? inner.validation_explanation
+			: undefined;
+	return {
+		post_id: inner.post_id,
+		valid: inner.valid,
+		mode,
+		validation_outcome,
+		validation_explanation,
+		steps
+	};
 }
