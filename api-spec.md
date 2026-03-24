@@ -33,6 +33,18 @@ No auth is currently enforced in this service. Frontend should treat this API as
 - `GET /state/paths`
   - Returns known state paths (datasets, caches, db files, logs).
 
+- `GET /state/logs`
+  - Returns the configured API JSONL log file size and path.
+  - Response `data`: `file_logging_enabled` (bool), `path` (string or null), `bytes` (integer, on-disk size).
+
+- `DELETE /state/logs`
+  - Truncates the API JSONL log file to zero bytes (frees disk space; does not remove stderr logging).
+  - Returns `400` if file logging is disabled (e.g. `--no-log-file`).
+
+- `GET /logging/tags`
+  - Returns the canonical list of structured log tag ids and descriptions used in JSONL output.
+  - Response `data`: `{ "tags": [ { "id": string, "description": string }, ... ], "tag_ids": string[] }`.
+
 - `GET /state/fs/list?path=<repo-relative>&recursive=<bool>&limit=<int>`
   - Lists files/directories under a repo-relative path.
 
@@ -153,6 +165,13 @@ No auth is currently enforced in this service. Frontend should treat this API as
     - `passes.pass_1_cached` / `passes.pass_2_cacheless`: each has `settings` (the four flags above) and `steps` with per-stage summaries (`data_load`, `research`, `gen_angles`) including stable `hash` and stage-specific fields (same summarizer as other workflow reports)
     - `stage_hash_match`: `{ "data_load": bool, "research": bool, "gen_angles": bool }` — whether the full-post hash for each stage matched between the two passes (search/API non-determinism often makes `research` differ between passes even on the same day)
   - Also available as `POST /workflows/run` with `"command": "double-process-new-post"` and the same body fields.
+
+- `POST /workflows/batch-angles-determinism`
+  - **Purpose:** For each `post_id`, load the post from `step` (default `angles-step`), build the same text dictionary as gen-angles, then run angle extraction **twice** with **angles disk cache disabled** (`use_cache=false` on `analyze_angles_from_texts`) and compare normalized angle lists (non-empty `source_quote` / `tangent` / `category` only, same as production preview).
+  - Body: `post_ids` (required non-empty string array), `step?` (default `angles-step`), `stream?` (bool; same SSE default as other workflow routes).
+  - Response `data`: `mode` (`batch_angles_determinism`), `posts_requested`, `posts_succeeded`, `all_identical` (true only if every row without `error` has `identical: true`), `results[]` per post (`run_1_hash` / `run_2_hash`, `identical`, `error?`, etc.).
+  - **Note:** This does **not** prove cross-machine parity; it only measures whether two fresh runs on **this** host+LLM return the same normalized list for the same inputs.
+  - Also available as `POST /workflows/run` with `"command": "batch-angles-determinism"` and the same body fields.
 
 - `POST /workflows/full`
   - Body: `start_step?` (default `filter-url-unresolved`), `count?`, `payload?` (optional string or JSON; same as stego `payload`)

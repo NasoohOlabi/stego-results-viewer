@@ -80,6 +80,51 @@ export function AdminApiToolPanelsCore(
 							type="button"
 							onClick={() =>
 								callApi(
+									"GET",
+									"/state/logs",
+									undefined,
+									undefined,
+									tab.id
+								)
+							}
+							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+						>
+							GET /state/logs
+						</button>
+						<button
+							type="button"
+							onClick={() =>
+								callApi(
+									"DELETE",
+									"/state/logs",
+									undefined,
+									undefined,
+									tab.id
+								)
+							}
+							className="rounded-md bg-rose-500/20 px-3 py-2 text-sm hover:bg-rose-500/30"
+						>
+							DELETE /state/logs
+						</button>
+						<button
+							type="button"
+							onClick={() =>
+								callApi(
+									"GET",
+									"/logging/tags",
+									undefined,
+									undefined,
+									tab.id
+								)
+							}
+							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+						>
+							GET /logging/tags
+						</button>
+						<button
+							type="button"
+							onClick={() =>
+								callApi(
 									"POST",
 									"/admin/kv/migrate",
 									undefined,

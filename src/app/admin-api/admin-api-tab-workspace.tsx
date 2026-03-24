@@ -62,6 +62,24 @@ export interface AdminApiTabWorkspaceProps {
 	setProtocolUseCache: (value: boolean) => void;
 	protocolPersistCache: boolean;
 	setProtocolPersistCache: (value: boolean) => void;
+	batchAnglesDeterminismPostIds: string;
+	setBatchAnglesDeterminismPostIds: (value: string) => void;
+	batchAnglesDeterminismStep: string;
+	setBatchAnglesDeterminismStep: (value: string) => void;
+	batchAnglesDeterminismStream: boolean;
+	setBatchAnglesDeterminismStream: (value: boolean) => void;
+	receiverPostJson: string;
+	setReceiverPostJson: (value: string) => void;
+	receiverSenderUserId: string;
+	setReceiverSenderUserId: (value: string) => void;
+	receiverCompressedBitstring: string;
+	setReceiverCompressedBitstring: (value: string) => void;
+	receiverStream: boolean;
+	setReceiverStream: (value: boolean) => void;
+	receiverPreviewUseCache: boolean;
+	setReceiverPreviewUseCache: (value: boolean) => void;
+	receiverMaxPaddingBits: string;
+	setReceiverMaxPaddingBits: (value: string) => void;
 	kvKey: string;
 	setKvKey: (value: string) => void;
 	kvValue: string;
@@ -135,6 +153,24 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 		setProtocolUseCache,
 		protocolPersistCache,
 		setProtocolPersistCache,
+		batchAnglesDeterminismPostIds,
+		setBatchAnglesDeterminismPostIds,
+		batchAnglesDeterminismStep,
+		setBatchAnglesDeterminismStep,
+		batchAnglesDeterminismStream,
+		setBatchAnglesDeterminismStream,
+		receiverPostJson,
+		setReceiverPostJson,
+		receiverSenderUserId,
+		setReceiverSenderUserId,
+		receiverCompressedBitstring,
+		setReceiverCompressedBitstring,
+		receiverStream,
+		setReceiverStream,
+		receiverPreviewUseCache,
+		setReceiverPreviewUseCache,
+		receiverMaxPaddingBits,
+		setReceiverMaxPaddingBits,
 		kvKey,
 		setKvKey,
 		kvValue,
@@ -283,6 +319,28 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 							setProtocolUseCache={setProtocolUseCache}
 							protocolPersistCache={protocolPersistCache}
 							setProtocolPersistCache={setProtocolPersistCache}
+							batchAnglesDeterminismPostIds={batchAnglesDeterminismPostIds}
+							setBatchAnglesDeterminismPostIds={
+								setBatchAnglesDeterminismPostIds
+							}
+							batchAnglesDeterminismStep={batchAnglesDeterminismStep}
+							setBatchAnglesDeterminismStep={setBatchAnglesDeterminismStep}
+							batchAnglesDeterminismStream={batchAnglesDeterminismStream}
+							setBatchAnglesDeterminismStream={
+								setBatchAnglesDeterminismStream
+							}
+							receiverPostJson={receiverPostJson}
+							setReceiverPostJson={setReceiverPostJson}
+							receiverSenderUserId={receiverSenderUserId}
+							setReceiverSenderUserId={setReceiverSenderUserId}
+							receiverCompressedBitstring={receiverCompressedBitstring}
+							setReceiverCompressedBitstring={setReceiverCompressedBitstring}
+							receiverStream={receiverStream}
+							setReceiverStream={setReceiverStream}
+							receiverPreviewUseCache={receiverPreviewUseCache}
+							setReceiverPreviewUseCache={setReceiverPreviewUseCache}
+							receiverMaxPaddingBits={receiverMaxPaddingBits}
+							setReceiverMaxPaddingBits={setReceiverMaxPaddingBits}
 							kvKey={kvKey}
 							setKvKey={setKvKey}
 							kvValue={kvValue}

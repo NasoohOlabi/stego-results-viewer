@@ -4,7 +4,7 @@ import type {
 	HttpMethod,
 	WorkflowCommand
 } from "./types";
-import { parseStegoPayloadInput } from "./utils";
+import { parsePostIdsFromMultiline, parseStegoPayloadInput } from "./utils";
 
 export type CallApiFn = (
 	method: HttpMethod,
@@ -126,6 +126,15 @@ export type RunTabActionContext = {
 	protocolIncludePost: boolean;
 	protocolUseCache: boolean;
 	protocolPersistCache: boolean;
+	batchAnglesDeterminismPostIds: string;
+	batchAnglesDeterminismStep: string;
+	batchAnglesDeterminismStream: boolean;
+	receiverPostJson: string;
+	receiverSenderUserId: string;
+	receiverCompressedBitstring: string;
+	receiverStream: boolean;
+	receiverPreviewUseCache: boolean;
+	receiverMaxPaddingBits: string;
 	callApi: CallApiFn;
 	setTabError: SetTabErrorFn;
 	submitWorkflowRequest: (tabId: string, options?: { forceRunAll?: boolean }) => Promise<void>;
@@ -157,6 +166,15 @@ export async function runTabAction(ctx: RunTabActionContext): Promise<void> {
 		protocolIncludePost,
 		protocolUseCache,
 		protocolPersistCache,
+		batchAnglesDeterminismPostIds,
+		batchAnglesDeterminismStep,
+		batchAnglesDeterminismStream,
+		receiverPostJson,
+		receiverSenderUserId,
+		receiverCompressedBitstring,
+		receiverStream,
+		receiverPreviewUseCache,
+		receiverMaxPaddingBits,
 		callApi,
 		setTabError,
 		submitWorkflowRequest
@@ -171,6 +189,15 @@ export async function runTabAction(ctx: RunTabActionContext): Promise<void> {
 			return;
 		case "service-state-paths":
 			await callApi("GET", "/state/paths", undefined, undefined, tab.id);
+			return;
+		case "service-state-logs":
+			await callApi("GET", "/state/logs", undefined, undefined, tab.id);
+			return;
+		case "service-state-logs-truncate":
+			await callApi("DELETE", "/state/logs", undefined, undefined, tab.id);
+			return;
+		case "service-logging-tags":
+			await callApi("GET", "/logging/tags", undefined, undefined, tab.id);
 			return;
 		case "service-kv-migrate":
 			await callApi("POST", "/admin/kv/migrate", undefined, undefined, tab.id);
@@ -263,6 +290,68 @@ export async function runTabAction(ctx: RunTabActionContext): Promise<void> {
 				body,
 				tab.id
 			);
+			return;
+		}
+		case "workflows-receiver": {
+			const path = "/workflows/receiver";
+			const sender = receiverSenderUserId.trim();
+			if (!sender) {
+				setTabError(
+					tab.id,
+					`${base}${path}`,
+					"POST",
+					"sender_user_id is required"
+				);
+				return;
+			}
+			let post: unknown;
+			try {
+				post = JSON.parse(receiverPostJson) as unknown;
+			} catch {
+				setTabError(
+					tab.id,
+					`${base}${path}`,
+					"POST",
+					"post must be valid JSON object"
+				);
+				return;
+			}
+			if (!post || typeof post !== "object" || Array.isArray(post)) {
+				setTabError(
+					tab.id,
+					`${base}${path}`,
+					"POST",
+					"post must be a JSON object"
+				);
+				return;
+			}
+			const body: Record<string, unknown> = {
+				post,
+				sender_user_id: sender,
+				stream: receiverStream,
+				use_cache: receiverPreviewUseCache,
+				use_terms_cache: validateUseTermsCache,
+				persist_terms_cache: validatePersistTermsCache,
+				use_fetch_cache: validateUseFetchCache,
+				allow_angles_fallback: validateAllowAnglesFallback
+			};
+			const cbs = receiverCompressedBitstring.trim();
+			if (cbs) body.compressed_bitstring = cbs;
+			const mpb = receiverMaxPaddingBits.trim();
+			if (mpb.length > 0) {
+				const n = Number(mpb);
+				if (!Number.isInteger(n) || n < 0) {
+					setTabError(
+						tab.id,
+						`${base}${path}`,
+						"POST",
+						"max_padding_bits must be a non-negative integer"
+					);
+					return;
+				}
+				body.max_padding_bits = n;
+			}
+			await callApi("POST", path, undefined, body, tab.id);
 			return;
 		}
 		case "protocol-gen-terms": {
@@ -361,6 +450,32 @@ export async function runTabAction(ctx: RunTabActionContext): Promise<void> {
 					use_fetch_cache: validateUseFetchCache,
 					allow_angles_fallback: validateAllowAnglesFallback,
 					include_post: protocolIncludePost
+				},
+				tab.id
+			);
+			return;
+		}
+		case "workflows-batch-angles-determinism": {
+			const path = "/workflows/batch-angles-determinism";
+			const postIds = parsePostIdsFromMultiline(batchAnglesDeterminismPostIds);
+			if (postIds.length === 0) {
+				setTabError(
+					tab.id,
+					`${base}${path}`,
+					"POST",
+					"At least one post_id is required (one per line or comma-separated)"
+				);
+				return;
+			}
+			const stepTrimmed = batchAnglesDeterminismStep.trim();
+			await callApi(
+				"POST",
+				path,
+				undefined,
+				{
+					post_ids: postIds,
+					...(stepTrimmed ? { step: stepTrimmed } : {}),
+					stream: batchAnglesDeterminismStream
 				},
 				tab.id
 			);

@@ -5,7 +5,9 @@ export const WORKFLOW_COMMAND_OPTIONS = [
 	"research",
 	"gen-angles",
 	"validate-post",
+	"receiver",
 	"double-process-new-post",
+	"batch-angles-determinism",
 	"stego",
 	"decode",
 	"gen-terms",
@@ -56,6 +58,9 @@ export type ApiActionId =
 	| "service-health"
 	| "service-state-steps"
 	| "service-state-paths"
+	| "service-state-logs"
+	| "service-state-logs-truncate"
+	| "service-logging-tags"
 	| "service-kv-migrate"
 	| "cache-stats"
 	| "cache-clear"
@@ -65,6 +70,8 @@ export type ApiActionId =
 	| "fs-write-json"
 	| "workflows-runs"
 	| "workflows-validate-post"
+	| "workflows-receiver"
+	| "workflows-batch-angles-determinism"
 	| "protocol-gen-terms"
 	| "protocol-data-load-preview"
 	| "protocol-research-preview"
@@ -108,6 +115,21 @@ export const API_ACTION_OPTIONS: Array<{
 		label: "GET /state/paths"
 	},
 	{
+		id: "service-state-logs",
+		apiToolId: "service",
+		label: "GET /state/logs"
+	},
+	{
+		id: "service-state-logs-truncate",
+		apiToolId: "service",
+		label: "DELETE /state/logs"
+	},
+	{
+		id: "service-logging-tags",
+		apiToolId: "service",
+		label: "GET /logging/tags"
+	},
+	{
 		id: "service-kv-migrate",
 		apiToolId: "service",
 		label: "POST /admin/kv/migrate"
@@ -147,6 +169,16 @@ export const API_ACTION_OPTIONS: Array<{
 		id: "workflows-validate-post",
 		apiToolId: "artifacts-workflows",
 		label: "POST /workflows/validate-post"
+	},
+	{
+		id: "workflows-receiver",
+		apiToolId: "artifacts-workflows",
+		label: "POST /workflows/receiver"
+	},
+	{
+		id: "workflows-batch-angles-determinism",
+		apiToolId: "artifacts-workflows",
+		label: "POST /workflows/batch-angles-determinism"
 	},
 	{
 		id: "protocol-gen-terms",
@@ -250,6 +282,17 @@ export interface PersistedAdminApiState {
 	/** POST /workflows/validate-post */
 	validatePostId: string;
 	validatePostStream: boolean;
+	/** POST /workflows/receiver */
+	receiverPostJson: string;
+	receiverSenderUserId: string;
+	receiverCompressedBitstring: string;
+	receiverStream: boolean;
+	receiverPreviewUseCache: boolean;
+	receiverMaxPaddingBits: string;
+	/** POST /workflows/batch-angles-determinism — one id per line or comma-separated */
+	batchAnglesDeterminismPostIds: string;
+	batchAnglesDeterminismStep: string;
+	batchAnglesDeterminismStream: boolean;
 	validateUseTermsCache: boolean;
 	validatePersistTermsCache: boolean;
 	validateUseFetchCache: boolean;

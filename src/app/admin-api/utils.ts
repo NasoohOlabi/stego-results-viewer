@@ -231,8 +231,12 @@ export function getWorkflowTemplate(command: string): string {
 			return '{\n  "post_id": "example-post-id",\n  "post_title": "Sample title",\n  "post_text": "Sample text"\n}';
 		case "validate-post":
 			return '{\n  "post_id": "example-post-id",\n  "stream": false\n}';
+		case "receiver":
+			return '{\n  "post": {},\n  "sender_user_id": "sender-id",\n  "stream": false,\n  "use_cache": false\n}';
 		case "double-process-new-post":
 			return '{\n  "stream": true,\n  "allow_angles_fallback": false\n}';
+		case "batch-angles-determinism":
+			return '{\n  "post_ids": ["example-post-id"],\n  "step": "angles-step",\n  "stream": false\n}';
 		case "full":
 			return '{\n  "start_step": "filter-url-unresolved",\n  "count": 3\n}';
 		default:
@@ -249,6 +253,14 @@ export function parseStegoPayloadInput(raw: string): unknown | undefined {
 	} catch {
 		return t;
 	}
+}
+
+/** Split newline- or comma-separated post ids; trims and drops empties. */
+export function parsePostIdsFromMultiline(raw: string): string[] {
+	return raw
+		.split(/[\n,]+/)
+		.map((s) => s.trim())
+		.filter((s) => s.length > 0);
 }
 
 export function getWorkflowRunAllTemplate(command: string): string {
@@ -406,4 +418,98 @@ export function extractValidatePostFromAdminResponse(
 		validation_explanation,
 		steps
 	};
+}
+
+/** Human-readable byte size for log file stats. */
+export function formatBytes(n: number): string {
+	if (!Number.isFinite(n)) return String(n);
+	if (n < 0) return `${n} B`;
+	if (n < 1024) return `${n} B`;
+	const units = ["KB", "MB", "GB", "TB"];
+	let v = n / 1024;
+	let u = 0;
+	while (v >= 1024 && u < units.length - 1) {
+		v /= 1024;
+		u++;
+	}
+	const digits = v >= 100 || u === 0 ? 0 : v >= 10 ? 1 : 2;
+	return `${v.toFixed(digits)} ${units[u]}`;
+}
+
+/** Parsed `data` from GET /state/logs. */
+export interface StateLogsView {
+	file_logging_enabled: boolean;
+	path: string | null;
+	bytes: number;
+}
+
+export function extractStateLogsFromAdminResponse(
+	data: unknown
+): StateLogsView | null {
+	if (!isRecord(data)) return null;
+	const payload = data.payload;
+	if (!isRecord(payload) || payload.ok !== true) return null;
+	const inner = payload.data;
+	if (!isRecord(inner)) return null;
+	if (typeof inner.file_logging_enabled !== "boolean") return null;
+	const path = inner.path;
+	if (path !== null && typeof path !== "string") return null;
+	const bytes = inner.bytes;
+	if (typeof bytes !== "number" || !Number.isFinite(bytes)) return null;
+	return { file_logging_enabled: inner.file_logging_enabled, path, bytes };
+}
+
+export function isStateLogsEndpoint(active: {
+	method: string;
+	endpoint: string;
+	request: { path: string } | null;
+}): boolean {
+	if (active.method !== "GET") return false;
+	if (active.request?.path === "/state/logs") return true;
+	return active.endpoint.includes("/state/logs");
+}
+
+export interface LoggingTagRow {
+	id: string;
+	description: string;
+}
+
+export interface LoggingTagsView {
+	tags: LoggingTagRow[];
+	tag_ids: string[];
+}
+
+export function extractLoggingTagsFromAdminResponse(
+	data: unknown
+): LoggingTagsView | null {
+	if (!isRecord(data)) return null;
+	const payload = data.payload;
+	if (!isRecord(payload) || payload.ok !== true) return null;
+	const inner = payload.data;
+	if (!isRecord(inner)) return null;
+	const tagsRaw = inner.tags;
+	if (!Array.isArray(tagsRaw)) return null;
+	const tags: LoggingTagRow[] = [];
+	for (const item of tagsRaw) {
+		if (!isRecord(item)) continue;
+		if (typeof item.id !== "string" || typeof item.description !== "string")
+			continue;
+		tags.push({ id: item.id, description: item.description });
+	}
+	const tagIdsRaw = inner.tag_ids;
+	const tag_ids =
+		Array.isArray(tagIdsRaw) && tagIdsRaw.every((x) => typeof x === "string")
+			? (tagIdsRaw as string[])
+			: tags.map((t) => t.id);
+	return { tags, tag_ids };
+}
+
+export function isLoggingTagsEndpoint(active: {
+	method: string;
+	endpoint: string;
+	request: { path: string } | null;
+}): boolean {
+	if (active.method !== "GET") return false;
+	if (active.request?.path === "/logging/tags") return true;
+	return active.endpoint.includes("/logging/tags");
 }

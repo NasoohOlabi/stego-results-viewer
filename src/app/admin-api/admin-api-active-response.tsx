@@ -6,12 +6,17 @@ import {
 	buildCopyRequestAndResponseText,
 	buildCurlBash,
 	buildStreamEventItems,
+	extractLoggingTagsFromAdminResponse,
+	extractStateLogsFromAdminResponse,
 	extractValidatePostFromAdminResponse,
 	extractWorkflowRunsFromAdminResponse,
+	formatBytes,
 	formatResponseForClipboard,
 	getHeartbeatElapsedMs,
 	isHeartbeatEvent,
+	isLoggingTagsEndpoint,
 	isSsePayload,
+	isStateLogsEndpoint,
 	isValidatePostEndpoint,
 	isWorkflowRunsEndpoint
 } from "./utils";
@@ -58,6 +63,20 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 		activeTabResponse.status === "success" &&
 		isValidatePostEndpoint(activeTabResponse)
 			? extractValidatePostFromAdminResponse(activeTabResponse.data)
+			: null;
+
+	const stateLogsView =
+		!ssePayload &&
+		activeTabResponse.status === "success" &&
+		isStateLogsEndpoint(activeTabResponse)
+			? extractStateLogsFromAdminResponse(activeTabResponse.data)
+			: null;
+
+	const loggingTagsView =
+		!ssePayload &&
+		activeTabResponse.status === "success" &&
+		isLoggingTagsEndpoint(activeTabResponse)
+			? extractLoggingTagsFromAdminResponse(activeTabResponse.data)
 			: null;
 
 	const streamItems = useMemo(
@@ -490,6 +509,79 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 										</tbody>
 									</table>
 								</div>
+							</div>
+						) : null}
+						{stateLogsView ? (
+							<div className="mb-4 space-y-2 rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3">
+								<div className="text-xs font-semibold text-white/70">
+									API JSONL log file
+								</div>
+								<div className="flex flex-wrap gap-2 text-xs">
+									<span
+										className={`rounded px-2 py-1 font-medium ${
+											stateLogsView.file_logging_enabled
+												? "bg-emerald-500/20 text-emerald-200"
+												: "bg-white/10 text-white/55"
+										}`}
+									>
+										file_logging_enabled:{" "}
+										{stateLogsView.file_logging_enabled ? "true" : "false"}
+									</span>
+									<span className="rounded bg-white/10 px-2 py-1 tabular-nums text-white/80">
+										on disk: {formatBytes(stateLogsView.bytes)}
+									</span>
+								</div>
+								<p className="break-all font-mono text-[11px] text-white/65">
+									{stateLogsView.path ?? (
+										<span className="text-white/45">path: null</span>
+									)}
+								</p>
+								<p className="text-[11px] text-white/45">
+									DELETE /state/logs truncates this file when file logging is
+									enabled; otherwise the API returns 400.
+								</p>
+							</div>
+						) : null}
+						{loggingTagsView ? (
+							<div className="mb-4 space-y-2">
+								<div className="text-xs font-semibold text-white/70">
+									Structured log tags ({loggingTagsView.tags.length})
+								</div>
+								<div className="overflow-x-auto rounded-md border border-white/10">
+									<table className="w-full min-w-[480px] text-left text-xs">
+										<thead className="border-b border-white/10 bg-white/5 text-white/60">
+											<tr>
+												<th className="px-2 py-2 font-medium">id</th>
+												<th className="px-2 py-2 font-medium">description</th>
+											</tr>
+										</thead>
+										<tbody className="divide-y divide-white/10">
+											{loggingTagsView.tags.map((row) => (
+												<tr
+													key={row.id}
+													className="text-white/85 hover:bg-white/5"
+												>
+													<td className="px-2 py-2 font-mono text-[11px] text-violet-200/90">
+														{row.id}
+													</td>
+													<td className="px-2 py-2 text-white/70">
+														{row.description}
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+								{loggingTagsView.tag_ids.length > 0 ? (
+									<details className="rounded border border-white/10 bg-black/20 p-2 text-[11px] text-white/55">
+										<summary className="cursor-pointer text-white/70">
+											tag_ids ({loggingTagsView.tag_ids.length})
+										</summary>
+										<pre className="mt-2 overflow-x-auto whitespace-pre-wrap font-mono text-[10px] text-white/60">
+											{JSON.stringify(loggingTagsView.tag_ids, null, 2)}
+										</pre>
+									</details>
+								) : null}
 							</div>
 						) : null}
 						{renderInspectorValue(activeTabResponse.data)}

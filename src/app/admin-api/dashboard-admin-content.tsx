@@ -84,6 +84,23 @@ export function DashboardAdminContent() {
 	const [protocolIncludePost, setProtocolIncludePost] = useState(false);
 	const [protocolUseCache, setProtocolUseCache] = useState(false);
 	const [protocolPersistCache, setProtocolPersistCache] = useState(false);
+	const [batchAnglesDeterminismPostIds, setBatchAnglesDeterminismPostIds] =
+		useState("");
+	const [batchAnglesDeterminismStep, setBatchAnglesDeterminismStep] = useState(
+		"angles-step"
+	);
+	const [batchAnglesDeterminismStream, setBatchAnglesDeterminismStream] =
+		useState(false);
+	const [receiverPostJson, setReceiverPostJson] = useState(
+		'{\n  "id": "example-post",\n  "author": "sender",\n  "selftext": "",\n  "comments": []\n}'
+	);
+	const [receiverSenderUserId, setReceiverSenderUserId] = useState("");
+	const [receiverCompressedBitstring, setReceiverCompressedBitstring] =
+		useState("");
+	const [receiverStream, setReceiverStream] = useState(false);
+	const [receiverPreviewUseCache, setReceiverPreviewUseCache] =
+		useState(false);
+	const [receiverMaxPaddingBits, setReceiverMaxPaddingBits] = useState("");
 	const [workflowBody, setWorkflowBody] = useState(
 		getWorkflowTemplate("data-load")
 	);
@@ -172,6 +189,26 @@ export function DashboardAdminContent() {
 				setProtocolUseCache(parsed.protocolUseCache);
 			if (typeof parsed.protocolPersistCache === "boolean")
 				setProtocolPersistCache(parsed.protocolPersistCache);
+			if (typeof parsed.batchAnglesDeterminismPostIds === "string")
+				setBatchAnglesDeterminismPostIds(
+					parsed.batchAnglesDeterminismPostIds
+				);
+			if (typeof parsed.batchAnglesDeterminismStep === "string")
+				setBatchAnglesDeterminismStep(parsed.batchAnglesDeterminismStep);
+			if (typeof parsed.batchAnglesDeterminismStream === "boolean")
+				setBatchAnglesDeterminismStream(parsed.batchAnglesDeterminismStream);
+			if (typeof parsed.receiverPostJson === "string")
+				setReceiverPostJson(parsed.receiverPostJson);
+			if (typeof parsed.receiverSenderUserId === "string")
+				setReceiverSenderUserId(parsed.receiverSenderUserId);
+			if (typeof parsed.receiverCompressedBitstring === "string")
+				setReceiverCompressedBitstring(parsed.receiverCompressedBitstring);
+			if (typeof parsed.receiverStream === "boolean")
+				setReceiverStream(parsed.receiverStream);
+			if (typeof parsed.receiverPreviewUseCache === "boolean")
+				setReceiverPreviewUseCache(parsed.receiverPreviewUseCache);
+			if (typeof parsed.receiverMaxPaddingBits === "string")
+				setReceiverMaxPaddingBits(parsed.receiverMaxPaddingBits);
 			if (typeof parsed.kvKey === "string") setKvKey(parsed.kvKey);
 			if (typeof parsed.kvValue === "string") setKvValue(parsed.kvValue);
 			if (typeof parsed.kvLimit === "string") setKvLimit(parsed.kvLimit);
@@ -257,6 +294,15 @@ export function DashboardAdminContent() {
 			protocolIncludePost,
 			protocolUseCache,
 			protocolPersistCache,
+			batchAnglesDeterminismPostIds,
+			batchAnglesDeterminismStep,
+			batchAnglesDeterminismStream,
+			receiverPostJson,
+			receiverSenderUserId,
+			receiverCompressedBitstring,
+			receiverStream,
+			receiverPreviewUseCache,
+			receiverMaxPaddingBits,
 			kvKey,
 			kvValue,
 			kvLimit,
@@ -296,6 +342,15 @@ export function DashboardAdminContent() {
 		protocolIncludePost,
 		protocolUseCache,
 		protocolPersistCache,
+		batchAnglesDeterminismPostIds,
+		batchAnglesDeterminismStep,
+		batchAnglesDeterminismStream,
+		receiverPostJson,
+		receiverSenderUserId,
+		receiverCompressedBitstring,
+		receiverStream,
+		receiverPreviewUseCache,
+		receiverMaxPaddingBits,
 		kvKey,
 		kvValue,
 		kvLimit,
@@ -496,6 +551,15 @@ export function DashboardAdminContent() {
 			protocolIncludePost,
 			protocolUseCache,
 			protocolPersistCache,
+			batchAnglesDeterminismPostIds,
+			batchAnglesDeterminismStep,
+			batchAnglesDeterminismStream,
+			receiverPostJson,
+			receiverSenderUserId,
+			receiverCompressedBitstring,
+			receiverStream,
+			receiverPreviewUseCache,
+			receiverMaxPaddingBits,
 			callApi,
 			setTabError,
 			submitWorkflowRequest: submitWorkflowRequestForTab
@@ -588,6 +652,28 @@ export function DashboardAdminContent() {
 						setProtocolUseCache={setProtocolUseCache}
 						protocolPersistCache={protocolPersistCache}
 						setProtocolPersistCache={setProtocolPersistCache}
+						batchAnglesDeterminismPostIds={batchAnglesDeterminismPostIds}
+						setBatchAnglesDeterminismPostIds={
+							setBatchAnglesDeterminismPostIds
+						}
+						batchAnglesDeterminismStep={batchAnglesDeterminismStep}
+						setBatchAnglesDeterminismStep={setBatchAnglesDeterminismStep}
+						batchAnglesDeterminismStream={batchAnglesDeterminismStream}
+						setBatchAnglesDeterminismStream={
+							setBatchAnglesDeterminismStream
+						}
+						receiverPostJson={receiverPostJson}
+						setReceiverPostJson={setReceiverPostJson}
+						receiverSenderUserId={receiverSenderUserId}
+						setReceiverSenderUserId={setReceiverSenderUserId}
+						receiverCompressedBitstring={receiverCompressedBitstring}
+						setReceiverCompressedBitstring={setReceiverCompressedBitstring}
+						receiverStream={receiverStream}
+						setReceiverStream={setReceiverStream}
+						receiverPreviewUseCache={receiverPreviewUseCache}
+						setReceiverPreviewUseCache={setReceiverPreviewUseCache}
+						receiverMaxPaddingBits={receiverMaxPaddingBits}
+						setReceiverMaxPaddingBits={setReceiverMaxPaddingBits}
 						kvKey={kvKey}
 						setKvKey={setKvKey}
 						kvValue={kvValue}
