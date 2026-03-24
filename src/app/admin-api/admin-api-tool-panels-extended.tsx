@@ -2,17 +2,14 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import {
-	WORKFLOW_COMMAND_OPTIONS,
-	type WorkflowCommand
-} from "./types";
+import type { AdminApiToolPanelsProps } from "./admin-api-tool-panels-props";
+import type { CallApiFn, SetTabErrorFn } from "./tab-actions";
+import { WORKFLOW_COMMAND_OPTIONS, type WorkflowCommand } from "./types";
 import {
 	getWorkflowRunAllTemplate,
 	getWorkflowTemplate,
-	parsePostIdsFromMultiline
+	parsePostIdsFromMultiline,
 } from "./utils";
-import type { AdminApiToolPanelsProps } from "./admin-api-tool-panels-props";
-import type { CallApiFn, SetTabErrorFn } from "./tab-actions";
 
 const WORKFLOW_ENDPOINT_PATH = "/workflows/run";
 
@@ -69,7 +66,7 @@ function ValidatePostWorkflowPanel(props: {
 		setProtocolPersistCache,
 		callApi,
 		setTabError,
-		base
+		base,
 	} = props;
 
 	const endpointMap = {
@@ -77,7 +74,7 @@ function ValidatePostWorkflowPanel(props: {
 		"protocol-gen-terms": "/tools/protocol/gen-terms",
 		"protocol-data-load-preview": "/tools/protocol/data-load-preview",
 		"protocol-research-preview": "/tools/protocol/research-preview",
-		"protocol-angles-preview": "/tools/protocol/angles-preview"
+		"protocol-angles-preview": "/tools/protocol/angles-preview",
 	} as const;
 	const endpoint = endpointMap[apiActionId];
 
@@ -86,7 +83,7 @@ function ValidatePostWorkflowPanel(props: {
 		"protocol-gen-terms": "Protocol: Generate Terms",
 		"protocol-data-load-preview": "Protocol: Data-load Preview",
 		"protocol-research-preview": "Protocol: Research Preview",
-		"protocol-angles-preview": "Protocol: Angles Preview"
+		"protocol-angles-preview": "Protocol: Angles Preview",
 	} as const;
 
 	const send = () => {
@@ -104,21 +101,21 @@ function ValidatePostWorkflowPanel(props: {
 					use_terms_cache: validateUseTermsCache,
 					persist_terms_cache: validatePersistTermsCache,
 					use_fetch_cache: validateUseFetchCache,
-					allow_angles_fallback: validateAllowAnglesFallback
+					allow_angles_fallback: validateAllowAnglesFallback,
 				};
 				break;
 			case "protocol-gen-terms":
 				body = {
 					post_id: postId,
 					use_cache: protocolUseCache,
-					persist_cache: protocolPersistCache
+					persist_cache: protocolPersistCache,
 				};
 				break;
 			case "protocol-data-load-preview":
 				body = {
 					post_id: postId,
 					use_cache: protocolUseCache,
-					include_post: protocolIncludePost
+					include_post: protocolIncludePost,
 				};
 				break;
 			case "protocol-research-preview":
@@ -127,7 +124,7 @@ function ValidatePostWorkflowPanel(props: {
 					use_terms_cache: validateUseTermsCache,
 					persist_terms_cache: validatePersistTermsCache,
 					use_fetch_cache: validateUseFetchCache,
-					include_post: protocolIncludePost
+					include_post: protocolIncludePost,
 				};
 				break;
 			case "protocol-angles-preview":
@@ -137,7 +134,7 @@ function ValidatePostWorkflowPanel(props: {
 					persist_terms_cache: validatePersistTermsCache,
 					use_fetch_cache: validateUseFetchCache,
 					allow_angles_fallback: validateAllowAnglesFallback,
-					include_post: protocolIncludePost
+					include_post: protocolIncludePost,
 				};
 				break;
 		}
@@ -145,33 +142,33 @@ function ValidatePostWorkflowPanel(props: {
 	};
 
 	return (
-		<section className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
-			<h2 className="text-lg font-semibold">{titleMap[apiActionId]}</h2>
-			<p className="text-xs text-white/60">
+		<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+			<h2 className="font-semibold text-lg">{titleMap[apiActionId]}</h2>
+			<p className="text-white/60 text-xs">
 				<code className="text-white/80">POST {endpoint}</code>
 			</p>
 			<div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
 				<input
-					value={validatePostId}
+					className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
 					onChange={(e) => setValidatePostId(e.target.value)}
-					className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm font-mono"
 					placeholder="post_id (required)"
+					value={validatePostId}
 				/>
 				<button
-					type="button"
-					onClick={send}
 					className="rounded-md bg-teal-500/25 px-3 py-2 text-sm hover:bg-teal-500/35"
+					onClick={send}
+					type="button"
 				>
 					Run
 				</button>
 			</div>
-			<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 text-xs text-white/70">
+			<div className="grid grid-cols-1 gap-2 text-white/70 text-xs sm:grid-cols-2 lg:grid-cols-3">
 				{apiActionId === "workflows-validate-post" ? (
 					<label className="flex cursor-pointer items-center gap-2">
 						<input
-							type="checkbox"
 							checked={validatePostStream}
 							onChange={(e) => setValidatePostStream(e.target.checked)}
+							type="checkbox"
 						/>
 						stream
 					</label>
@@ -182,31 +179,25 @@ function ValidatePostWorkflowPanel(props: {
 					<>
 						<label className="flex cursor-pointer items-center gap-2">
 							<input
-								type="checkbox"
 								checked={validateUseTermsCache}
-								onChange={(e) =>
-									setValidateUseTermsCache(e.target.checked)
-								}
+								onChange={(e) => setValidateUseTermsCache(e.target.checked)}
+								type="checkbox"
 							/>
 							use_terms_cache
 						</label>
 						<label className="flex cursor-pointer items-center gap-2">
 							<input
-								type="checkbox"
 								checked={validatePersistTermsCache}
-								onChange={(e) =>
-									setValidatePersistTermsCache(e.target.checked)
-								}
+								onChange={(e) => setValidatePersistTermsCache(e.target.checked)}
+								type="checkbox"
 							/>
 							persist_terms_cache
 						</label>
 						<label className="flex cursor-pointer items-center gap-2">
 							<input
-								type="checkbox"
 								checked={validateUseFetchCache}
-								onChange={(e) =>
-									setValidateUseFetchCache(e.target.checked)
-								}
+								onChange={(e) => setValidateUseFetchCache(e.target.checked)}
+								type="checkbox"
 							/>
 							use_fetch_cache
 						</label>
@@ -216,11 +207,9 @@ function ValidatePostWorkflowPanel(props: {
 				apiActionId === "protocol-angles-preview" ? (
 					<label className="flex cursor-pointer items-center gap-2">
 						<input
-							type="checkbox"
 							checked={validateAllowAnglesFallback}
-							onChange={(e) =>
-								setValidateAllowAnglesFallback(e.target.checked)
-							}
+							onChange={(e) => setValidateAllowAnglesFallback(e.target.checked)}
+							type="checkbox"
 						/>
 						allow_angles_fallback
 					</label>
@@ -230,20 +219,18 @@ function ValidatePostWorkflowPanel(props: {
 					<>
 						<label className="flex cursor-pointer items-center gap-2">
 							<input
-								type="checkbox"
 								checked={protocolUseCache}
 								onChange={(e) => setProtocolUseCache(e.target.checked)}
+								type="checkbox"
 							/>
 							use_cache
 						</label>
 						{apiActionId === "protocol-gen-terms" ? (
 							<label className="flex cursor-pointer items-center gap-2">
 								<input
-									type="checkbox"
 									checked={protocolPersistCache}
-									onChange={(e) =>
-										setProtocolPersistCache(e.target.checked)
-									}
+									onChange={(e) => setProtocolPersistCache(e.target.checked)}
+									type="checkbox"
 								/>
 								persist_cache
 							</label>
@@ -255,9 +242,9 @@ function ValidatePostWorkflowPanel(props: {
 				apiActionId === "protocol-angles-preview" ? (
 					<label className="flex cursor-pointer items-center gap-2">
 						<input
-							type="checkbox"
 							checked={protocolIncludePost}
 							onChange={(e) => setProtocolIncludePost(e.target.checked)}
+							type="checkbox"
 						/>
 						include_post
 					</label>
@@ -319,13 +306,18 @@ function ReceiverWorkflowPanel(props: {
 		validateAllowAnglesFallback,
 		setValidateAllowAnglesFallback,
 		callApi,
-		setTabError
+		setTabError,
 	} = props;
 
 	const send = () => {
 		const sender = receiverSenderUserId.trim();
 		if (!sender) {
-			setTabError(tabId, `${base}${RECEIVER_PATH}`, "POST", "sender_user_id is required");
+			setTabError(
+				tabId,
+				`${base}${RECEIVER_PATH}`,
+				"POST",
+				"sender_user_id is required",
+			);
 			return;
 		}
 		let post: unknown;
@@ -336,7 +328,7 @@ function ReceiverWorkflowPanel(props: {
 				tabId,
 				`${base}${RECEIVER_PATH}`,
 				"POST",
-				"post must be valid JSON object"
+				"post must be valid JSON object",
 			);
 			return;
 		}
@@ -345,7 +337,7 @@ function ReceiverWorkflowPanel(props: {
 				tabId,
 				`${base}${RECEIVER_PATH}`,
 				"POST",
-				"post must be a JSON object"
+				"post must be a JSON object",
 			);
 			return;
 		}
@@ -357,7 +349,7 @@ function ReceiverWorkflowPanel(props: {
 			use_terms_cache: validateUseTermsCache,
 			persist_terms_cache: validatePersistTermsCache,
 			use_fetch_cache: validateUseFetchCache,
-			allow_angles_fallback: validateAllowAnglesFallback
+			allow_angles_fallback: validateAllowAnglesFallback,
 		};
 		const cbs = receiverCompressedBitstring.trim();
 		if (cbs) body.compressed_bitstring = cbs;
@@ -369,7 +361,7 @@ function ReceiverWorkflowPanel(props: {
 					tabId,
 					`${base}${RECEIVER_PATH}`,
 					"POST",
-					"max_padding_bits must be a non-negative integer"
+					"max_padding_bits must be a non-negative integer",
 				);
 				return;
 			}
@@ -379,101 +371,101 @@ function ReceiverWorkflowPanel(props: {
 	};
 
 	return (
-		<section className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
-			<h2 className="text-lg font-semibold">Receiver workflow</h2>
-			<p className="text-xs text-white/60">
-				<code className="text-white/80">POST {RECEIVER_PATH}</code>
-				— locate stego comment by <code className="text-white/80">sender_user_id</code>
-				, strip, preview → research → gen-angles → decode → payload recovery. Optional{" "}
-				<code className="text-white/80">compressed_bitstring</code>{" "}
-				(sender <code className="text-white/80">embedding.compression.compressed</code>
-				) for exact recovery; omit for brute-force + round-trip (may be ambiguous).
+		<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+			<h2 className="font-semibold text-lg">Receiver workflow</h2>
+			<p className="text-white/60 text-xs">
+				<code className="text-white/80">POST {RECEIVER_PATH}</code>— locate
+				stego comment by <code className="text-white/80">sender_user_id</code>,
+				strip, preview → research → gen-angles → decode → payload recovery.
+				Optional <code className="text-white/80">compressed_bitstring</code>{" "}
+				(sender{" "}
+				<code className="text-white/80">embedding.compression.compressed</code>)
+				for exact recovery; omit for brute-force + round-trip (may be
+				ambiguous).
 			</p>
 			<div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
 				<input
-					value={receiverSenderUserId}
+					className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
 					onChange={(e) => setReceiverSenderUserId(e.target.value)}
-					className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm font-mono"
 					placeholder="sender_user_id (required)"
+					value={receiverSenderUserId}
 				/>
 				<button
-					type="button"
-					onClick={send}
 					className="rounded-md bg-teal-500/25 px-3 py-2 text-sm hover:bg-teal-500/35"
+					onClick={send}
+					type="button"
 				>
 					Run
 				</button>
 			</div>
-			<label className="text-xs text-white/60">post (JSON object)</label>
+			<p className="text-white/60 text-xs">post (JSON object)</p>
 			<textarea
-				title="Receiver post JSON"
-				value={receiverPostJson}
+				className="min-h-32 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
 				onChange={(e) => setReceiverPostJson(e.target.value)}
 				placeholder='{"id":"…","comments":[…]}'
-				className="min-h-32 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-xs font-mono"
+				title="Receiver post JSON"
+				value={receiverPostJson}
 			/>
-			<label className="text-xs text-white/60">
-				compressed_bitstring (optional)
-			</label>
+			<p className="text-white/60 text-xs">compressed_bitstring (optional)</p>
 			<textarea
-				title="compressed_bitstring from sender embedding"
-				value={receiverCompressedBitstring}
+				className="min-h-16 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
 				onChange={(e) => setReceiverCompressedBitstring(e.target.value)}
 				placeholder="omit for brute-force recovery"
-				className="min-h-16 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-xs font-mono"
+				title="compressed_bitstring from sender embedding"
+				value={receiverCompressedBitstring}
 			/>
 			<input
-				value={receiverMaxPaddingBits}
+				className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
 				onChange={(e) => setReceiverMaxPaddingBits(e.target.value)}
-				className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm font-mono"
 				placeholder="max_padding_bits (optional int)"
+				value={receiverMaxPaddingBits}
 			/>
-			<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 text-xs text-white/70">
+			<div className="grid grid-cols-1 gap-2 text-white/70 text-xs sm:grid-cols-2 lg:grid-cols-3">
 				<label className="flex cursor-pointer items-center gap-2">
 					<input
-						type="checkbox"
 						checked={receiverStream}
 						onChange={(e) => setReceiverStream(e.target.checked)}
+						type="checkbox"
 					/>
 					stream
 				</label>
 				<label className="flex cursor-pointer items-center gap-2">
 					<input
-						type="checkbox"
 						checked={receiverPreviewUseCache}
 						onChange={(e) => setReceiverPreviewUseCache(e.target.checked)}
+						type="checkbox"
 					/>
 					use_cache (preview_post)
 				</label>
 				<label className="flex cursor-pointer items-center gap-2">
 					<input
-						type="checkbox"
 						checked={validateUseTermsCache}
 						onChange={(e) => setValidateUseTermsCache(e.target.checked)}
+						type="checkbox"
 					/>
 					use_terms_cache
 				</label>
 				<label className="flex cursor-pointer items-center gap-2">
 					<input
-						type="checkbox"
 						checked={validatePersistTermsCache}
 						onChange={(e) => setValidatePersistTermsCache(e.target.checked)}
+						type="checkbox"
 					/>
 					persist_terms_cache
 				</label>
 				<label className="flex cursor-pointer items-center gap-2">
 					<input
-						type="checkbox"
 						checked={validateUseFetchCache}
 						onChange={(e) => setValidateUseFetchCache(e.target.checked)}
+						type="checkbox"
 					/>
 					use_fetch_cache
 				</label>
 				<label className="flex cursor-pointer items-center gap-2">
 					<input
-						type="checkbox"
 						checked={validateAllowAnglesFallback}
 						onChange={(e) => setValidateAllowAnglesFallback(e.target.checked)}
+						type="checkbox"
 					/>
 					allow_angles_fallback
 				</label>
@@ -506,7 +498,7 @@ function BatchAnglesDeterminismPanel(props: {
 		batchAnglesDeterminismStream,
 		setBatchAnglesDeterminismStream,
 		callApi,
-		setTabError
+		setTabError,
 	} = props;
 
 	const send = () => {
@@ -516,7 +508,7 @@ function BatchAnglesDeterminismPanel(props: {
 				tabId,
 				`${base}${BATCH_ANGLES_DETERMINISM_PATH}`,
 				"POST",
-				"At least one post_id is required (one per line or comma-separated)"
+				"At least one post_id is required (one per line or comma-separated)",
 			);
 			return;
 		}
@@ -528,19 +520,20 @@ function BatchAnglesDeterminismPanel(props: {
 			{
 				post_ids: postIds,
 				...(stepTrimmed ? { step: stepTrimmed } : {}),
-				stream: batchAnglesDeterminismStream
+				stream: batchAnglesDeterminismStream,
 			},
-			tabId
+			tabId,
 		);
 	};
 
-	const previewCount = parsePostIdsFromMultiline(batchAnglesDeterminismPostIds)
-		.length;
+	const previewCount = parsePostIdsFromMultiline(
+		batchAnglesDeterminismPostIds,
+	).length;
 
 	return (
-		<section className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
-			<h2 className="text-lg font-semibold">Batch angles determinism</h2>
-			<p className="text-xs text-white/60">
+		<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+			<h2 className="font-semibold text-lg">Batch angles determinism</h2>
+			<p className="text-white/60 text-xs">
 				<code className="text-white/80">
 					POST {BATCH_ANGLES_DETERMINISM_PATH}
 				</code>
@@ -551,16 +544,16 @@ function BatchAnglesDeterminismPanel(props: {
 			</p>
 			<div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
 				<textarea
-					title="post_ids — one per line or comma-separated"
-					placeholder={"post_id_one\npost_id_two"}
-					value={batchAnglesDeterminismPostIds}
+					className="min-h-24 rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
 					onChange={(e) => setBatchAnglesDeterminismPostIds(e.target.value)}
-					className="min-h-24 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-xs font-mono"
+					placeholder={"post_id_one\npost_id_two"}
+					title="post_ids — one per line or comma-separated"
+					value={batchAnglesDeterminismPostIds}
 				/>
 				<button
-					type="button"
-					onClick={send}
 					className="h-fit rounded-md bg-teal-500/25 px-3 py-2 text-sm hover:bg-teal-500/35"
+					onClick={send}
+					type="button"
 				>
 					Run
 				</button>
@@ -571,18 +564,16 @@ function BatchAnglesDeterminismPanel(props: {
 			</p>
 			<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
 				<input
-					value={batchAnglesDeterminismStep}
+					className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
 					onChange={(e) => setBatchAnglesDeterminismStep(e.target.value)}
-					className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm font-mono"
 					placeholder="step (default: angles-step)"
+					value={batchAnglesDeterminismStep}
 				/>
-				<label className="flex cursor-pointer items-center gap-2 text-xs text-white/70">
+				<label className="flex cursor-pointer items-center gap-2 text-white/70 text-xs">
 					<input
-						type="checkbox"
 						checked={batchAnglesDeterminismStream}
-						onChange={(e) =>
-							setBatchAnglesDeterminismStream(e.target.checked)
-						}
+						onChange={(e) => setBatchAnglesDeterminismStream(e.target.checked)}
+						type="checkbox"
 					/>
 					stream (SSE)
 				</label>
@@ -591,10 +582,7 @@ function BatchAnglesDeterminismPanel(props: {
 	);
 }
 
-function WorkflowRunsToolPanel(props: {
-	tabId: string;
-	callApi: CallApiFn;
-}) {
+function WorkflowRunsToolPanel(props: { tabId: string; callApi: CallApiFn }) {
 	const { tabId, callApi } = props;
 	const [autoMs, setAutoMs] = useState(0);
 	const callApiRef = useRef(callApi);
@@ -608,7 +596,7 @@ function WorkflowRunsToolPanel(props: {
 				"/workflows/runs",
 				undefined,
 				undefined,
-				tabId
+				tabId,
 			);
 		};
 		tick();
@@ -617,31 +605,31 @@ function WorkflowRunsToolPanel(props: {
 	}, [autoMs, tabId]);
 
 	return (
-		<section className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
-			<h2 className="text-lg font-semibold">Workflow runs</h2>
-			<p className="text-xs text-white/60">
+		<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+			<h2 className="font-semibold text-lg">Workflow runs</h2>
+			<p className="text-white/60 text-xs">
 				<code className="text-white/80">GET /workflows/runs</code> — active
 				workflow runs in the API process. Use{" "}
-				<strong className="text-white/70">Run selected API</strong> for a one-shot
-				fetch, or refresh / auto-refresh here.
+				<strong className="text-white/70">Run selected API</strong> for a
+				one-shot fetch, or refresh / auto-refresh here.
 			</p>
 			<div className="flex flex-wrap items-center gap-2">
 				<button
-					type="button"
+					className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
 					onClick={() =>
 						void callApi("GET", "/workflows/runs", undefined, undefined, tabId)
 					}
-					className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+					type="button"
 				>
 					Refresh now
 				</button>
-				<label className="inline-flex items-center gap-2 text-xs text-white/70">
+				<label className="inline-flex items-center gap-2 text-white/70 text-xs">
 					<span>Auto-refresh</span>
 					<select
+						className="rounded-md border border-white/10 bg-black/30 px-2 py-1 text-sm"
+						onChange={(e) => setAutoMs(Number(e.target.value))}
 						title="Auto-refresh interval"
 						value={String(autoMs)}
-						onChange={(e) => setAutoMs(Number(e.target.value))}
-						className="rounded-md border border-white/10 bg-black/30 px-2 py-1 text-sm"
 					>
 						<option value="0">Off</option>
 						<option value="2000">2s</option>
@@ -655,7 +643,7 @@ function WorkflowRunsToolPanel(props: {
 }
 
 export function AdminApiToolPanelsExtended(
-	props: AdminApiToolPanelsProps
+	props: AdminApiToolPanelsProps,
 ): ReactNode {
 	const {
 		tab,
@@ -716,65 +704,236 @@ export function AdminApiToolPanelsExtended(
 		setSearchQuery,
 		searchProvider,
 		setSearchProvider,
+		artifactsStep,
+		setArtifactsStep,
+		artifactsListCount,
+		setArtifactsListCount,
+		artifactsListOffset,
+		setArtifactsListOffset,
+		artifactsListTag,
+		setArtifactsListTag,
+		artifactsPostFilename,
+		setArtifactsPostFilename,
+		artifactsPostSaveBody,
+		setArtifactsPostSaveBody,
+		artifactsObjectFilename,
+		setArtifactsObjectFilename,
+		artifactsObjectBody,
+		setArtifactsObjectBody,
+		toolsProcessFileName,
+		setToolsProcessFileName,
+		toolsProcessFileStep,
+		setToolsProcessFileStep,
+		toolsFetchUrl,
+		setToolsFetchUrl,
+		toolsFetchUseCrawl4ai,
+		setToolsFetchUseCrawl4ai,
+		toolsSemanticText,
+		setToolsSemanticText,
+		toolsSemanticObjectsJson,
+		setToolsSemanticObjectsJson,
+		toolsSemanticN,
+		setToolsSemanticN,
+		toolsNeedle,
+		setToolsNeedle,
+		toolsHaystackJson,
+		setToolsHaystackJson,
+		toolsAnglesTextsJson,
+		setToolsAnglesTextsJson,
 		callApi,
 		setTabError,
-		submitWorkflowRequest
+		submitWorkflowRequest,
 	} = props;
 
 	switch (tab.apiToolId) {
 		case "artifacts-workflows":
-			if (tab.apiActionId === "workflows-runs") {
+			if (tab.apiActionId === "workflows-pipelines") {
 				return (
-					<WorkflowRunsToolPanel tabId={tab.id} callApi={callApi} />
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Workflow pipelines</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">GET /workflows/pipelines</code> —
+							available pipeline commands and workflow execution endpoints.
+						</p>
+						<button
+							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+							onClick={() =>
+								void callApi(
+									"GET",
+									"/workflows/pipelines",
+									undefined,
+									undefined,
+									tab.id,
+								)
+							}
+							type="button"
+						>
+							Fetch pipelines
+						</button>
+					</section>
 				);
+			}
+			if (tab.apiActionId === "artifacts-posts-list") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">List artifact posts</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">GET /artifacts/posts</code>
+						</p>
+						<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+							<input
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+								onChange={(e) => setArtifactsStep(e.target.value)}
+								placeholder="step (required)"
+								value={artifactsStep}
+							/>
+							<input
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+								onChange={(e) => setArtifactsListTag(e.target.value)}
+								placeholder="tag (optional)"
+								value={artifactsListTag}
+							/>
+							<input
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+								onChange={(e) => setArtifactsListCount(e.target.value)}
+								placeholder="count"
+								value={artifactsListCount}
+							/>
+							<input
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+								onChange={(e) => setArtifactsListOffset(e.target.value)}
+								placeholder="offset"
+								value={artifactsListOffset}
+							/>
+						</div>
+					</section>
+				);
+			}
+			if (tab.apiActionId === "artifacts-post-get") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Get one artifact post</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">GET /artifacts/post</code>
+						</p>
+						<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+							<input
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+								onChange={(e) => setArtifactsStep(e.target.value)}
+								placeholder="step"
+								value={artifactsStep}
+							/>
+							<input
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+								onChange={(e) => setArtifactsPostFilename(e.target.value)}
+								placeholder="post filename"
+								value={artifactsPostFilename}
+							/>
+						</div>
+					</section>
+				);
+			}
+			if (tab.apiActionId === "artifacts-post-save") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Save artifact post</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">POST /artifacts/post</code> — body
+							must include <code className="text-white/80">id</code>.
+						</p>
+						<input
+							className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+							onChange={(e) => setArtifactsStep(e.target.value)}
+							placeholder="step (query)"
+							value={artifactsStep}
+						/>
+						<textarea
+							className="min-h-28 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
+							onChange={(e) => setArtifactsPostSaveBody(e.target.value)}
+							placeholder='{\n  "id": "post-id",\n  "field": "..."\n}'
+							title="Post JSON body"
+							value={artifactsPostSaveBody}
+						/>
+					</section>
+				);
+			}
+			if (tab.apiActionId === "artifacts-object-save") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Save artifact object</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">POST /artifacts/object</code>
+						</p>
+						<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+							<input
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+								onChange={(e) => setArtifactsStep(e.target.value)}
+								placeholder="step"
+								value={artifactsStep}
+							/>
+							<input
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+								onChange={(e) => setArtifactsObjectFilename(e.target.value)}
+								placeholder="filename.json"
+								value={artifactsObjectFilename}
+							/>
+						</div>
+						<textarea
+							className="min-h-28 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
+							onChange={(e) => setArtifactsObjectBody(e.target.value)}
+							placeholder="{}"
+							title="Object JSON body"
+							value={artifactsObjectBody}
+						/>
+					</section>
+				);
+			}
+			if (tab.apiActionId === "workflows-runs") {
+				return <WorkflowRunsToolPanel callApi={callApi} tabId={tab.id} />;
 			}
 			if (tab.apiActionId === "workflows-receiver") {
 				return (
 					<ReceiverWorkflowPanel
-						tabId={tab.id}
 						base={base}
-						receiverPostJson={receiverPostJson}
-						setReceiverPostJson={setReceiverPostJson}
-						receiverSenderUserId={receiverSenderUserId}
-						setReceiverSenderUserId={setReceiverSenderUserId}
-						receiverCompressedBitstring={receiverCompressedBitstring}
-						setReceiverCompressedBitstring={setReceiverCompressedBitstring}
-						receiverStream={receiverStream}
-						setReceiverStream={setReceiverStream}
-						receiverPreviewUseCache={receiverPreviewUseCache}
-						setReceiverPreviewUseCache={setReceiverPreviewUseCache}
-						receiverMaxPaddingBits={receiverMaxPaddingBits}
-						setReceiverMaxPaddingBits={setReceiverMaxPaddingBits}
-						validateUseTermsCache={validateUseTermsCache}
-						setValidateUseTermsCache={setValidateUseTermsCache}
-						validatePersistTermsCache={validatePersistTermsCache}
-						setValidatePersistTermsCache={setValidatePersistTermsCache}
-						validateUseFetchCache={validateUseFetchCache}
-						setValidateUseFetchCache={setValidateUseFetchCache}
-						validateAllowAnglesFallback={validateAllowAnglesFallback}
-						setValidateAllowAnglesFallback={setValidateAllowAnglesFallback}
 						callApi={callApi}
+						receiverCompressedBitstring={receiverCompressedBitstring}
+						receiverMaxPaddingBits={receiverMaxPaddingBits}
+						receiverPostJson={receiverPostJson}
+						receiverPreviewUseCache={receiverPreviewUseCache}
+						receiverSenderUserId={receiverSenderUserId}
+						receiverStream={receiverStream}
+						setReceiverCompressedBitstring={setReceiverCompressedBitstring}
+						setReceiverMaxPaddingBits={setReceiverMaxPaddingBits}
+						setReceiverPostJson={setReceiverPostJson}
+						setReceiverPreviewUseCache={setReceiverPreviewUseCache}
+						setReceiverSenderUserId={setReceiverSenderUserId}
+						setReceiverStream={setReceiverStream}
 						setTabError={setTabError}
+						setValidateAllowAnglesFallback={setValidateAllowAnglesFallback}
+						setValidatePersistTermsCache={setValidatePersistTermsCache}
+						setValidateUseFetchCache={setValidateUseFetchCache}
+						setValidateUseTermsCache={setValidateUseTermsCache}
+						tabId={tab.id}
+						validateAllowAnglesFallback={validateAllowAnglesFallback}
+						validatePersistTermsCache={validatePersistTermsCache}
+						validateUseFetchCache={validateUseFetchCache}
+						validateUseTermsCache={validateUseTermsCache}
 					/>
 				);
 			}
 			if (tab.apiActionId === "workflows-batch-angles-determinism") {
 				return (
 					<BatchAnglesDeterminismPanel
-						tabId={tab.id}
 						base={base}
 						batchAnglesDeterminismPostIds={batchAnglesDeterminismPostIds}
-						setBatchAnglesDeterminismPostIds={
-							setBatchAnglesDeterminismPostIds
-						}
 						batchAnglesDeterminismStep={batchAnglesDeterminismStep}
-						setBatchAnglesDeterminismStep={setBatchAnglesDeterminismStep}
 						batchAnglesDeterminismStream={batchAnglesDeterminismStream}
-						setBatchAnglesDeterminismStream={
-							setBatchAnglesDeterminismStream
-						}
 						callApi={callApi}
+						setBatchAnglesDeterminismPostIds={setBatchAnglesDeterminismPostIds}
+						setBatchAnglesDeterminismStep={setBatchAnglesDeterminismStep}
+						setBatchAnglesDeterminismStream={setBatchAnglesDeterminismStream}
 						setTabError={setTabError}
+						tabId={tab.id}
 					/>
 				);
 			}
@@ -787,45 +946,45 @@ export function AdminApiToolPanelsExtended(
 			) {
 				return (
 					<ValidatePostWorkflowPanel
-						tabId={tab.id}
 						apiActionId={tab.apiActionId}
 						base={base}
-						validatePostId={validatePostId}
-						setValidatePostId={setValidatePostId}
-						validatePostStream={validatePostStream}
-						setValidatePostStream={setValidatePostStream}
-						validateUseTermsCache={validateUseTermsCache}
-						setValidateUseTermsCache={setValidateUseTermsCache}
-						validatePersistTermsCache={validatePersistTermsCache}
-						setValidatePersistTermsCache={setValidatePersistTermsCache}
-						validateUseFetchCache={validateUseFetchCache}
-						setValidateUseFetchCache={setValidateUseFetchCache}
-						validateAllowAnglesFallback={validateAllowAnglesFallback}
-						setValidateAllowAnglesFallback={setValidateAllowAnglesFallback}
-						protocolIncludePost={protocolIncludePost}
-						setProtocolIncludePost={setProtocolIncludePost}
-						protocolUseCache={protocolUseCache}
-						setProtocolUseCache={setProtocolUseCache}
-						protocolPersistCache={protocolPersistCache}
-						setProtocolPersistCache={setProtocolPersistCache}
 						callApi={callApi}
+						protocolIncludePost={protocolIncludePost}
+						protocolPersistCache={protocolPersistCache}
+						protocolUseCache={protocolUseCache}
+						setProtocolIncludePost={setProtocolIncludePost}
+						setProtocolPersistCache={setProtocolPersistCache}
+						setProtocolUseCache={setProtocolUseCache}
 						setTabError={setTabError}
+						setValidateAllowAnglesFallback={setValidateAllowAnglesFallback}
+						setValidatePersistTermsCache={setValidatePersistTermsCache}
+						setValidatePostId={setValidatePostId}
+						setValidatePostStream={setValidatePostStream}
+						setValidateUseFetchCache={setValidateUseFetchCache}
+						setValidateUseTermsCache={setValidateUseTermsCache}
+						tabId={tab.id}
+						validateAllowAnglesFallback={validateAllowAnglesFallback}
+						validatePersistTermsCache={validatePersistTermsCache}
+						validatePostId={validatePostId}
+						validatePostStream={validatePostStream}
+						validateUseFetchCache={validateUseFetchCache}
+						validateUseTermsCache={validateUseTermsCache}
 					/>
 				);
 			}
 			return (
-				<section className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
-					<h2 className="text-lg font-semibold">Artifacts + Workflows</h2>
+				<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+					<h2 className="font-semibold text-lg">Artifacts + Workflows</h2>
 					<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
 						<select
-							title="Workflow command"
-							value={workflowCommand}
+							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
 							onChange={(e) => {
 								const next = e.target.value as WorkflowCommand;
 								setWorkflowCommand(next);
 								setWorkflowBody(getWorkflowTemplate(next));
 							}}
-							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+							title="Workflow command"
+							value={workflowCommand}
 						>
 							{WORKFLOW_COMMAND_OPTIONS.map((cmd) => (
 								<option key={cmd} value={cmd}>
@@ -834,76 +993,76 @@ export function AdminApiToolPanelsExtended(
 							))}
 						</select>
 						<input
-							value={artifactTag}
-							onChange={(e) => setArtifactTag(e.target.value)}
 							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+							onChange={(e) => setArtifactTag(e.target.value)}
 							placeholder="tag (optional)"
+							value={artifactTag}
 						/>
 					</div>
 					{workflowCommand === "stego" ? (
 						<div className="space-y-1">
-							<label className="text-xs text-white/60">
+							<p className="text-white/60 text-xs">
 								Payload (optional — string or JSON; empty omits and uses API
 								default)
-							</label>
+							</p>
 							<textarea
-								title="Stego secret payload"
-								value={stegoPayload}
+								className="min-h-18 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
 								onChange={(e) => setStegoPayload(e.target.value)}
 								placeholder='e.g. hello world or {"k":"v"}'
-								className="min-h-18 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-xs font-mono"
+								title="Stego secret payload"
+								value={stegoPayload}
 							/>
 						</div>
 					) : null}
-					<p className="text-xs text-white/60">
+					<p className="text-white/60 text-xs">
 						Generic runner: body JSON (no <code>command</code> required inside —
-						it is set from the dropdown) plus optional <code>stream: false</code>.
-						{" "}
+						it is set from the dropdown) plus optional{" "}
+						<code>stream: false</code>.{" "}
 						<code>POST {WORKFLOW_ENDPOINT_PATH}</code> with{" "}
 						<code>command: {workflowCommand}</code>.
 					</p>
 					<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
 						<button
-							type="button"
+							className="rounded-md bg-violet-500/20 px-3 py-2 text-sm hover:bg-violet-500/30"
 							onClick={() => {
 								setWorkflowBody(getWorkflowTemplate(workflowCommand));
 								if (workflowCommand === "stego") {
 									setStegoPayload("hello world");
 								}
 							}}
-							className="rounded-md bg-violet-500/20 px-3 py-2 text-sm hover:bg-violet-500/30"
+							type="button"
 						>
 							Fill sample body
 						</button>
 						<button
-							type="button"
+							className="rounded-md bg-fuchsia-500/20 px-3 py-2 text-sm hover:bg-fuchsia-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+							disabled={workflowCommand !== "stego"}
 							onClick={() => {
 								setWorkflowBody(getWorkflowRunAllTemplate(workflowCommand));
 								if (workflowCommand === "stego") {
 									setStegoPayload("hello world");
 								}
 							}}
-							disabled={workflowCommand !== "stego"}
-							className="rounded-md bg-fuchsia-500/20 px-3 py-2 text-sm hover:bg-fuchsia-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+							type="button"
 						>
 							Fill run-all sample
 						</button>
 						<button
-							type="button"
+							className="rounded-md bg-indigo-500/20 px-3 py-2 text-sm hover:bg-indigo-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+							disabled={workflowCommand !== "stego"}
 							onClick={() => {
 								void submitWorkflowRequest(tab.id, { forceRunAll: true });
 							}}
-							disabled={workflowCommand !== "stego"}
-							className="rounded-md bg-indigo-500/20 px-3 py-2 text-sm hover:bg-indigo-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+							type="button"
 						>
 							Run all now
 						</button>
 						<button
-							type="button"
+							className="rounded-md bg-blue-500/20 px-3 py-2 text-sm hover:bg-blue-500/30"
 							onClick={() => {
 								void submitWorkflowRequest(tab.id);
 							}}
-							className="rounded-md bg-blue-500/20 px-3 py-2 text-sm hover:bg-blue-500/30"
+							type="button"
 						>
 							Send request
 						</button>
@@ -912,72 +1071,72 @@ export function AdminApiToolPanelsExtended(
 						Tag field is auto-injected for stego requests.
 					</p>
 					<textarea
-						title="Workflow request body JSON"
-						placeholder='{"count":3}'
-						value={workflowBody}
+						className="min-h-24 rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
 						onChange={(e) => setWorkflowBody(e.target.value)}
-						className="min-h-24 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-xs font-mono"
+						placeholder='{"count":3}'
+						title="Workflow request body JSON"
+						value={workflowBody}
 					/>
 				</section>
 			);
 		case "kv-store":
 			return (
-				<section className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
-					<h2 className="text-lg font-semibold">KV Store</h2>
+				<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+					<h2 className="font-semibold text-lg">KV Store</h2>
 					<div className="grid grid-cols-2 gap-2">
 						<input
-							value={kvLimit}
-							onChange={(e) => setKvLimit(e.target.value)}
 							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+							onChange={(e) => setKvLimit(e.target.value)}
 							placeholder="limit"
+							value={kvLimit}
 						/>
 						<input
-							value={kvOffset}
-							onChange={(e) => setKvOffset(e.target.value)}
 							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+							onChange={(e) => setKvOffset(e.target.value)}
 							placeholder="offset"
+							value={kvOffset}
 						/>
 					</div>
 					<button
-						type="button"
+						className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
 						onClick={() =>
 							callApi(
 								"GET",
 								"/kv",
 								{ limit: kvLimit, offset: kvOffset },
 								undefined,
-								tab.id
+								tab.id,
 							)
 						}
-						className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+						type="button"
 					>
 						List KV
 					</button>
 
 					<input
-						value={kvKey}
-						onChange={(e) => setKvKey(e.target.value)}
 						className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+						onChange={(e) => setKvKey(e.target.value)}
 						placeholder="key"
+						value={kvKey}
 					/>
 					<div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
 						<button
-							type="button"
+							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
 							onClick={() =>
 								callApi(
 									"GET",
 									`/kv/${encodeURIComponent(kvKey)}`,
 									undefined,
 									undefined,
-									tab.id
+									tab.id,
 								)
 							}
-							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+							type="button"
 						>
 							Get
 						</button>
 						<button
-							type="button"
+							className="rounded-md bg-amber-500/20 px-3 py-2 text-sm hover:bg-amber-500/30"
 							onClick={() => {
 								try {
 									callApi(
@@ -985,91 +1144,218 @@ export function AdminApiToolPanelsExtended(
 										`/kv/${encodeURIComponent(kvKey)}`,
 										undefined,
 										JSON.parse(kvValue),
-										tab.id
+										tab.id,
 									);
 								} catch {
 									setTabError(
 										tab.id,
 										`${base}/kv/${encodeURIComponent(kvKey)}`,
 										"PUT",
-										"Invalid JSON for KV value body"
+										"Invalid JSON for KV value body",
 									);
 								}
 							}}
-							className="rounded-md bg-amber-500/20 px-3 py-2 text-sm hover:bg-amber-500/30"
+							type="button"
 						>
 							Put
 						</button>
 						<button
-							type="button"
+							className="rounded-md bg-rose-500/20 px-3 py-2 text-sm hover:bg-rose-500/30"
 							onClick={() =>
 								callApi(
 									"DELETE",
 									`/kv/${encodeURIComponent(kvKey)}`,
 									undefined,
 									undefined,
-									tab.id
+									tab.id,
 								)
 							}
-							className="rounded-md bg-rose-500/20 px-3 py-2 text-sm hover:bg-rose-500/30"
+							type="button"
 						>
 							Delete
 						</button>
 					</div>
 					<textarea
-						title="KV PUT request body JSON"
-						placeholder='{"value":{"ok":true}}'
-						value={kvValue}
+						className="min-h-24 rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
 						onChange={(e) => setKvValue(e.target.value)}
-						className="min-h-24 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-xs font-mono"
+						placeholder='{"value":{"ok":true}}'
+						title="KV PUT request body JSON"
+						value={kvValue}
 					/>
 				</section>
 			);
 		case "search-tools":
-			return (
-				<section className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
-					<h2 className="text-lg font-semibold">Search Tools</h2>
-					<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-						<select
-							title="Search provider"
-							value={searchProvider}
-							onChange={(e) => setSearchProvider(e.target.value)}
-							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+			if (tab.apiActionId === "search-run") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Provider search</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">GET /tools/search/…</code>
+						</p>
+						<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+							<select
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+								onChange={(e) => setSearchProvider(e.target.value)}
+								title="Search provider"
+								value={searchProvider}
+							>
+								<option value="news">news</option>
+								<option value="ollama">ollama</option>
+								<option value="bing">bing</option>
+								<option value="google">google</option>
+							</select>
+							<input
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+								onChange={(e) => setSearchQuery(e.target.value)}
+								placeholder="query"
+								value={searchQuery}
+							/>
+						</div>
+						<button
+							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+							onClick={() => {
+								const query =
+									searchProvider === "bing" || searchProvider === "google"
+										? { query: searchQuery, first: 0, count: 5 }
+										: { query: searchQuery };
+								callApi(
+									"GET",
+									`/tools/search/${searchProvider}`,
+									query,
+									undefined,
+									tab.id,
+								);
+							}}
+							type="button"
 						>
-							<option value="news">news</option>
-							<option value="ollama">ollama</option>
-							<option value="bing">bing</option>
-							<option value="google">google</option>
-						</select>
+							Run search
+						</button>
+					</section>
+				);
+			}
+			if (tab.apiActionId === "tools-process-file") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Process file</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">POST /tools/process-file</code>
+						</p>
+						<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+							<input
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+								onChange={(e) => setToolsProcessFileName(e.target.value)}
+								placeholder="name (stem)"
+								value={toolsProcessFileName}
+							/>
+							<input
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+								onChange={(e) => setToolsProcessFileStep(e.target.value)}
+								placeholder="step"
+								value={toolsProcessFileStep}
+							/>
+						</div>
+					</section>
+				);
+			}
+			if (tab.apiActionId === "tools-fetch-url") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Fetch URL</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">POST /tools/fetch-url</code>
+						</p>
 						<input
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
-							placeholder="query"
+							className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+							onChange={(e) => setToolsFetchUrl(e.target.value)}
+							placeholder="https://…"
+							value={toolsFetchUrl}
 						/>
-					</div>
-					<button
-						type="button"
-						onClick={() => {
-							const query =
-								searchProvider === "bing" ||
-								searchProvider === "google"
-									? { query: searchQuery, first: 0, count: 5 }
-									: { query: searchQuery };
-							callApi(
-								"GET",
-								`/tools/search/${searchProvider}`,
-								query,
-								undefined,
-								tab.id
-							);
-						}}
-						className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
-					>
-						Run search
-					</button>
-				</section>
-			);
+						<label className="flex cursor-pointer items-center gap-2 text-white/70 text-xs">
+							<input
+								checked={toolsFetchUseCrawl4ai}
+								onChange={(e) => setToolsFetchUseCrawl4ai(e.target.checked)}
+								type="checkbox"
+							/>
+							use_crawl4ai
+						</label>
+					</section>
+				);
+			}
+			if (tab.apiActionId === "tools-semantic-search") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Semantic search</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">POST /tools/semantic/search</code>
+						</p>
+						<input
+							className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+							onChange={(e) => setToolsSemanticText(e.target.value)}
+							placeholder="text"
+							value={toolsSemanticText}
+						/>
+						<p className="text-white/50 text-xs">objects (JSON)</p>
+						<textarea
+							className="min-h-20 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
+							onChange={(e) => setToolsSemanticObjectsJson(e.target.value)}
+							placeholder="[]"
+							title="objects JSON"
+							value={toolsSemanticObjectsJson}
+						/>
+						<input
+							className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+							onChange={(e) => setToolsSemanticN(e.target.value)}
+							placeholder="n (optional)"
+							value={toolsSemanticN}
+						/>
+					</section>
+				);
+			}
+			if (tab.apiActionId === "tools-semantic-needle") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Semantic needle</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">POST /tools/semantic/needle</code>
+						</p>
+						<input
+							className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+							onChange={(e) => setToolsNeedle(e.target.value)}
+							placeholder="needle"
+							value={toolsNeedle}
+						/>
+						<p className="text-white/50 text-xs">
+							haystack (JSON string array)
+						</p>
+						<textarea
+							className="min-h-24 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
+							onChange={(e) => setToolsHaystackJson(e.target.value)}
+							placeholder='["a","b"]'
+							title="haystack JSON array"
+							value={toolsHaystackJson}
+						/>
+					</section>
+				);
+			}
+			if (tab.apiActionId === "tools-angles-analyze") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Angles analyze</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">POST /tools/angles/analyze</code>
+						</p>
+						<p className="text-white/50 text-xs">texts (JSON string array)</p>
+						<textarea
+							className="min-h-28 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
+							onChange={(e) => setToolsAnglesTextsJson(e.target.value)}
+							placeholder='["paragraph one","paragraph two"]'
+							title="texts JSON"
+							value={toolsAnglesTextsJson}
+						/>
+					</section>
+				);
+			}
+			return null;
 		default:
 			return null;
 	}

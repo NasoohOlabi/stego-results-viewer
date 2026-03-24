@@ -112,6 +112,31 @@ export function DashboardAdminContent() {
 	const [kvOffset, setKvOffset] = useState("0");
 	const [searchQuery, setSearchQuery] = useState("steganography");
 	const [searchProvider, setSearchProvider] = useState("bing");
+	const [artifactsStep, setArtifactsStep] = useState("angles-step");
+	const [artifactsListCount, setArtifactsListCount] = useState("20");
+	const [artifactsListOffset, setArtifactsListOffset] = useState("0");
+	const [artifactsListTag, setArtifactsListTag] = useState("");
+	const [artifactsPostFilename, setArtifactsPostFilename] = useState("");
+	const [artifactsPostSaveBody, setArtifactsPostSaveBody] = useState(
+		'{\n  "id": "example-post"\n}'
+	);
+	const [artifactsObjectFilename, setArtifactsObjectFilename] =
+		useState("object.json");
+	const [artifactsObjectBody, setArtifactsObjectBody] = useState("{}");
+	const [toolsProcessFileName, setToolsProcessFileName] = useState("");
+	const [toolsProcessFileStep, setToolsProcessFileStep] =
+		useState("angles-step");
+	const [toolsFetchUrl, setToolsFetchUrl] = useState("");
+	const [toolsFetchUseCrawl4ai, setToolsFetchUseCrawl4ai] = useState(false);
+	const [toolsSemanticText, setToolsSemanticText] = useState("");
+	const [toolsSemanticObjectsJson, setToolsSemanticObjectsJson] =
+		useState("[]");
+	const [toolsSemanticN, setToolsSemanticN] = useState("");
+	const [toolsNeedle, setToolsNeedle] = useState("");
+	const [toolsHaystackJson, setToolsHaystackJson] = useState('["a","b"]');
+	const [toolsAnglesTextsJson, setToolsAnglesTextsJson] = useState(
+		'["Sample text"]'
+	);
 	const [copyErrorReportState, setCopyErrorReportState] = useState<
 		"idle" | "copied" | "failed"
 	>("idle");
@@ -217,6 +242,42 @@ export function DashboardAdminContent() {
 				setSearchQuery(parsed.searchQuery);
 			if (typeof parsed.searchProvider === "string")
 				setSearchProvider(parsed.searchProvider);
+			if (typeof parsed.artifactsStep === "string")
+				setArtifactsStep(parsed.artifactsStep);
+			if (typeof parsed.artifactsListCount === "string")
+				setArtifactsListCount(parsed.artifactsListCount);
+			if (typeof parsed.artifactsListOffset === "string")
+				setArtifactsListOffset(parsed.artifactsListOffset);
+			if (typeof parsed.artifactsListTag === "string")
+				setArtifactsListTag(parsed.artifactsListTag);
+			if (typeof parsed.artifactsPostFilename === "string")
+				setArtifactsPostFilename(parsed.artifactsPostFilename);
+			if (typeof parsed.artifactsPostSaveBody === "string")
+				setArtifactsPostSaveBody(parsed.artifactsPostSaveBody);
+			if (typeof parsed.artifactsObjectFilename === "string")
+				setArtifactsObjectFilename(parsed.artifactsObjectFilename);
+			if (typeof parsed.artifactsObjectBody === "string")
+				setArtifactsObjectBody(parsed.artifactsObjectBody);
+			if (typeof parsed.toolsProcessFileName === "string")
+				setToolsProcessFileName(parsed.toolsProcessFileName);
+			if (typeof parsed.toolsProcessFileStep === "string")
+				setToolsProcessFileStep(parsed.toolsProcessFileStep);
+			if (typeof parsed.toolsFetchUrl === "string")
+				setToolsFetchUrl(parsed.toolsFetchUrl);
+			if (typeof parsed.toolsFetchUseCrawl4ai === "boolean")
+				setToolsFetchUseCrawl4ai(parsed.toolsFetchUseCrawl4ai);
+			if (typeof parsed.toolsSemanticText === "string")
+				setToolsSemanticText(parsed.toolsSemanticText);
+			if (typeof parsed.toolsSemanticObjectsJson === "string")
+				setToolsSemanticObjectsJson(parsed.toolsSemanticObjectsJson);
+			if (typeof parsed.toolsSemanticN === "string")
+				setToolsSemanticN(parsed.toolsSemanticN);
+			if (typeof parsed.toolsNeedle === "string")
+				setToolsNeedle(parsed.toolsNeedle);
+			if (typeof parsed.toolsHaystackJson === "string")
+				setToolsHaystackJson(parsed.toolsHaystackJson);
+			if (typeof parsed.toolsAnglesTextsJson === "string")
+				setToolsAnglesTextsJson(parsed.toolsAnglesTextsJson);
 			if (typeof parsed.showHeartbeatEvents === "boolean")
 				setShowHeartbeatEvents(parsed.showHeartbeatEvents);
 			if (typeof parsed.streamSearchText === "string")
@@ -309,6 +370,24 @@ export function DashboardAdminContent() {
 			kvOffset,
 			searchQuery,
 			searchProvider,
+			artifactsStep,
+			artifactsListCount,
+			artifactsListOffset,
+			artifactsListTag,
+			artifactsPostFilename,
+			artifactsPostSaveBody,
+			artifactsObjectFilename,
+			artifactsObjectBody,
+			toolsProcessFileName,
+			toolsProcessFileStep,
+			toolsFetchUrl,
+			toolsFetchUseCrawl4ai,
+			toolsSemanticText,
+			toolsSemanticObjectsJson,
+			toolsSemanticN,
+			toolsNeedle,
+			toolsHaystackJson,
+			toolsAnglesTextsJson,
 			showHeartbeatEvents,
 			streamSearchText,
 			showAdvancedApiControls
@@ -357,6 +436,24 @@ export function DashboardAdminContent() {
 		kvOffset,
 		searchQuery,
 		searchProvider,
+		artifactsStep,
+		artifactsListCount,
+		artifactsListOffset,
+		artifactsListTag,
+		artifactsPostFilename,
+		artifactsPostSaveBody,
+		artifactsObjectFilename,
+		artifactsObjectBody,
+		toolsProcessFileName,
+		toolsProcessFileStep,
+		toolsFetchUrl,
+		toolsFetchUseCrawl4ai,
+		toolsSemanticText,
+		toolsSemanticObjectsJson,
+		toolsSemanticN,
+		toolsNeedle,
+		toolsHaystackJson,
+		toolsAnglesTextsJson,
 		showHeartbeatEvents,
 		streamSearchText,
 		showAdvancedApiControls
@@ -542,6 +639,24 @@ export function DashboardAdminContent() {
 			kvOffset,
 			searchQuery,
 			searchProvider,
+			artifactsStep,
+			artifactsListCount,
+			artifactsListOffset,
+			artifactsListTag,
+			artifactsPostFilename,
+			artifactsPostSaveBody,
+			artifactsObjectFilename,
+			artifactsObjectBody,
+			toolsProcessFileName,
+			toolsProcessFileStep,
+			toolsFetchUrl,
+			toolsFetchUseCrawl4ai,
+			toolsSemanticText,
+			toolsSemanticObjectsJson,
+			toolsSemanticN,
+			toolsNeedle,
+			toolsHaystackJson,
+			toolsAnglesTextsJson,
 			validatePostId,
 			validatePostStream,
 			validateUseTermsCache,
@@ -686,6 +801,42 @@ export function DashboardAdminContent() {
 						setSearchQuery={setSearchQuery}
 						searchProvider={searchProvider}
 						setSearchProvider={setSearchProvider}
+						artifactsStep={artifactsStep}
+						setArtifactsStep={setArtifactsStep}
+						artifactsListCount={artifactsListCount}
+						setArtifactsListCount={setArtifactsListCount}
+						artifactsListOffset={artifactsListOffset}
+						setArtifactsListOffset={setArtifactsListOffset}
+						artifactsListTag={artifactsListTag}
+						setArtifactsListTag={setArtifactsListTag}
+						artifactsPostFilename={artifactsPostFilename}
+						setArtifactsPostFilename={setArtifactsPostFilename}
+						artifactsPostSaveBody={artifactsPostSaveBody}
+						setArtifactsPostSaveBody={setArtifactsPostSaveBody}
+						artifactsObjectFilename={artifactsObjectFilename}
+						setArtifactsObjectFilename={setArtifactsObjectFilename}
+						artifactsObjectBody={artifactsObjectBody}
+						setArtifactsObjectBody={setArtifactsObjectBody}
+						toolsProcessFileName={toolsProcessFileName}
+						setToolsProcessFileName={setToolsProcessFileName}
+						toolsProcessFileStep={toolsProcessFileStep}
+						setToolsProcessFileStep={setToolsProcessFileStep}
+						toolsFetchUrl={toolsFetchUrl}
+						setToolsFetchUrl={setToolsFetchUrl}
+						toolsFetchUseCrawl4ai={toolsFetchUseCrawl4ai}
+						setToolsFetchUseCrawl4ai={setToolsFetchUseCrawl4ai}
+						toolsSemanticText={toolsSemanticText}
+						setToolsSemanticText={setToolsSemanticText}
+						toolsSemanticObjectsJson={toolsSemanticObjectsJson}
+						setToolsSemanticObjectsJson={setToolsSemanticObjectsJson}
+						toolsSemanticN={toolsSemanticN}
+						setToolsSemanticN={setToolsSemanticN}
+						toolsNeedle={toolsNeedle}
+						setToolsNeedle={setToolsNeedle}
+						toolsHaystackJson={toolsHaystackJson}
+						setToolsHaystackJson={setToolsHaystackJson}
+						toolsAnglesTextsJson={toolsAnglesTextsJson}
+						setToolsAnglesTextsJson={setToolsAnglesTextsJson}
 						callApi={callApi}
 						setTabError={setTabError}
 						submitWorkflowRequest={submitWorkflowRequestForTab}

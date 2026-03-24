@@ -92,6 +92,42 @@ export interface AdminApiTabWorkspaceProps {
 	setSearchQuery: (value: string) => void;
 	searchProvider: string;
 	setSearchProvider: (value: string) => void;
+	artifactsStep: string;
+	setArtifactsStep: (value: string) => void;
+	artifactsListCount: string;
+	setArtifactsListCount: (value: string) => void;
+	artifactsListOffset: string;
+	setArtifactsListOffset: (value: string) => void;
+	artifactsListTag: string;
+	setArtifactsListTag: (value: string) => void;
+	artifactsPostFilename: string;
+	setArtifactsPostFilename: (value: string) => void;
+	artifactsPostSaveBody: string;
+	setArtifactsPostSaveBody: (value: string) => void;
+	artifactsObjectFilename: string;
+	setArtifactsObjectFilename: (value: string) => void;
+	artifactsObjectBody: string;
+	setArtifactsObjectBody: (value: string) => void;
+	toolsProcessFileName: string;
+	setToolsProcessFileName: (value: string) => void;
+	toolsProcessFileStep: string;
+	setToolsProcessFileStep: (value: string) => void;
+	toolsFetchUrl: string;
+	setToolsFetchUrl: (value: string) => void;
+	toolsFetchUseCrawl4ai: boolean;
+	setToolsFetchUseCrawl4ai: (value: boolean) => void;
+	toolsSemanticText: string;
+	setToolsSemanticText: (value: string) => void;
+	toolsSemanticObjectsJson: string;
+	setToolsSemanticObjectsJson: (value: string) => void;
+	toolsSemanticN: string;
+	setToolsSemanticN: (value: string) => void;
+	toolsNeedle: string;
+	setToolsNeedle: (value: string) => void;
+	toolsHaystackJson: string;
+	setToolsHaystackJson: (value: string) => void;
+	toolsAnglesTextsJson: string;
+	setToolsAnglesTextsJson: (value: string) => void;
 	callApi: CallApiFn;
 	setTabError: SetTabErrorFn;
 	submitWorkflowRequest: (
@@ -183,6 +219,42 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 		setSearchQuery,
 		searchProvider,
 		setSearchProvider,
+		artifactsStep,
+		setArtifactsStep,
+		artifactsListCount,
+		setArtifactsListCount,
+		artifactsListOffset,
+		setArtifactsListOffset,
+		artifactsListTag,
+		setArtifactsListTag,
+		artifactsPostFilename,
+		setArtifactsPostFilename,
+		artifactsPostSaveBody,
+		setArtifactsPostSaveBody,
+		artifactsObjectFilename,
+		setArtifactsObjectFilename,
+		artifactsObjectBody,
+		setArtifactsObjectBody,
+		toolsProcessFileName,
+		setToolsProcessFileName,
+		toolsProcessFileStep,
+		setToolsProcessFileStep,
+		toolsFetchUrl,
+		setToolsFetchUrl,
+		toolsFetchUseCrawl4ai,
+		setToolsFetchUseCrawl4ai,
+		toolsSemanticText,
+		setToolsSemanticText,
+		toolsSemanticObjectsJson,
+		setToolsSemanticObjectsJson,
+		toolsSemanticN,
+		setToolsSemanticN,
+		toolsNeedle,
+		setToolsNeedle,
+		toolsHaystackJson,
+		setToolsHaystackJson,
+		toolsAnglesTextsJson,
+		setToolsAnglesTextsJson,
 		callApi,
 		setTabError,
 		submitWorkflowRequest
@@ -353,6 +425,42 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 							setSearchQuery={setSearchQuery}
 							searchProvider={searchProvider}
 							setSearchProvider={setSearchProvider}
+							artifactsStep={artifactsStep}
+							setArtifactsStep={setArtifactsStep}
+							artifactsListCount={artifactsListCount}
+							setArtifactsListCount={setArtifactsListCount}
+							artifactsListOffset={artifactsListOffset}
+							setArtifactsListOffset={setArtifactsListOffset}
+							artifactsListTag={artifactsListTag}
+							setArtifactsListTag={setArtifactsListTag}
+							artifactsPostFilename={artifactsPostFilename}
+							setArtifactsPostFilename={setArtifactsPostFilename}
+							artifactsPostSaveBody={artifactsPostSaveBody}
+							setArtifactsPostSaveBody={setArtifactsPostSaveBody}
+							artifactsObjectFilename={artifactsObjectFilename}
+							setArtifactsObjectFilename={setArtifactsObjectFilename}
+							artifactsObjectBody={artifactsObjectBody}
+							setArtifactsObjectBody={setArtifactsObjectBody}
+							toolsProcessFileName={toolsProcessFileName}
+							setToolsProcessFileName={setToolsProcessFileName}
+							toolsProcessFileStep={toolsProcessFileStep}
+							setToolsProcessFileStep={setToolsProcessFileStep}
+							toolsFetchUrl={toolsFetchUrl}
+							setToolsFetchUrl={setToolsFetchUrl}
+							toolsFetchUseCrawl4ai={toolsFetchUseCrawl4ai}
+							setToolsFetchUseCrawl4ai={setToolsFetchUseCrawl4ai}
+							toolsSemanticText={toolsSemanticText}
+							setToolsSemanticText={setToolsSemanticText}
+							toolsSemanticObjectsJson={toolsSemanticObjectsJson}
+							setToolsSemanticObjectsJson={setToolsSemanticObjectsJson}
+							toolsSemanticN={toolsSemanticN}
+							setToolsSemanticN={setToolsSemanticN}
+							toolsNeedle={toolsNeedle}
+							setToolsNeedle={setToolsNeedle}
+							toolsHaystackJson={toolsHaystackJson}
+							setToolsHaystackJson={setToolsHaystackJson}
+							toolsAnglesTextsJson={toolsAnglesTextsJson}
+							setToolsAnglesTextsJson={setToolsAnglesTextsJson}
 							callApi={callApi}
 							setTabError={setTabError}
 							submitWorkflowRequest={submitWorkflowRequest}

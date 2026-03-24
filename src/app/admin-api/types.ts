@@ -11,7 +11,7 @@ export const WORKFLOW_COMMAND_OPTIONS = [
 	"stego",
 	"decode",
 	"gen-terms",
-	"full"
+	"full",
 ] as const;
 export type WorkflowCommand = (typeof WORKFLOW_COMMAND_OPTIONS)[number];
 
@@ -68,6 +68,11 @@ export type ApiActionId =
 	| "fs-delete"
 	| "fs-read-json"
 	| "fs-write-json"
+	| "workflows-pipelines"
+	| "artifacts-posts-list"
+	| "artifacts-post-get"
+	| "artifacts-post-save"
+	| "artifacts-object-save"
 	| "workflows-runs"
 	| "workflows-validate-post"
 	| "workflows-receiver"
@@ -81,7 +86,12 @@ export type ApiActionId =
 	| "kv-get"
 	| "kv-put"
 	| "kv-delete"
-	| "search-run";
+	| "search-run"
+	| "tools-process-file"
+	| "tools-fetch-url"
+	| "tools-semantic-search"
+	| "tools-semantic-needle"
+	| "tools-angles-analyze";
 
 export interface ApiWorkspaceTab {
 	id: string;
@@ -96,7 +106,7 @@ export const API_TOOL_OPTIONS: Array<{ id: ApiToolId; label: string }> = [
 	{ id: "state-filesystem", label: "State Filesystem" },
 	{ id: "artifacts-workflows", label: "Artifacts + Workflows" },
 	{ id: "kv-store", label: "KV Store" },
-	{ id: "search-tools", label: "Search Tools" }
+	{ id: "search-tools", label: "Search & tools" },
 ];
 export const API_ACTION_OPTIONS: Array<{
 	id: ApiActionId;
@@ -107,103 +117,128 @@ export const API_ACTION_OPTIONS: Array<{
 	{
 		id: "service-state-steps",
 		apiToolId: "service",
-		label: "GET /state/steps"
+		label: "GET /state/steps",
 	},
 	{
 		id: "service-state-paths",
 		apiToolId: "service",
-		label: "GET /state/paths"
+		label: "GET /state/paths",
 	},
 	{
 		id: "service-state-logs",
 		apiToolId: "service",
-		label: "GET /state/logs"
+		label: "GET /state/logs",
 	},
 	{
 		id: "service-state-logs-truncate",
 		apiToolId: "service",
-		label: "DELETE /state/logs"
+		label: "DELETE /state/logs",
 	},
 	{
 		id: "service-logging-tags",
 		apiToolId: "service",
-		label: "GET /logging/tags"
+		label: "GET /logging/tags",
 	},
 	{
 		id: "service-kv-migrate",
 		apiToolId: "service",
-		label: "POST /admin/kv/migrate"
+		label: "POST /admin/kv/migrate",
 	},
 	{
 		id: "cache-stats",
 		apiToolId: "cache-admin",
-		label: "GET /admin/cache/stats"
+		label: "GET /admin/cache/stats",
 	},
 	{
 		id: "cache-clear",
 		apiToolId: "cache-admin",
-		label: "POST /admin/cache/clear"
+		label: "POST /admin/cache/clear",
 	},
 	{ id: "fs-list", apiToolId: "state-filesystem", label: "GET /state/fs/list" },
 	{
 		id: "fs-delete",
 		apiToolId: "state-filesystem",
-		label: "DELETE /state/fs/delete"
+		label: "DELETE /state/fs/delete",
 	},
 	{
 		id: "fs-read-json",
 		apiToolId: "state-filesystem",
-		label: "GET /state/fs/read-json"
+		label: "GET /state/fs/read-json",
 	},
 	{
 		id: "fs-write-json",
 		apiToolId: "state-filesystem",
-		label: "POST /state/fs/write-json"
+		label: "POST /state/fs/write-json",
 	},
 	{
 		id: "workflows-runs",
 		apiToolId: "artifacts-workflows",
-		label: "GET /workflows/runs"
+		label: "GET /workflows/runs",
 	},
 	{
 		id: "workflows-validate-post",
 		apiToolId: "artifacts-workflows",
-		label: "POST /workflows/validate-post"
+		label: "POST /workflows/validate-post",
 	},
 	{
 		id: "workflows-receiver",
 		apiToolId: "artifacts-workflows",
-		label: "POST /workflows/receiver"
+		label: "POST /workflows/receiver",
 	},
 	{
 		id: "workflows-batch-angles-determinism",
 		apiToolId: "artifacts-workflows",
-		label: "POST /workflows/batch-angles-determinism"
+		label: "POST /workflows/batch-angles-determinism",
 	},
 	{
 		id: "protocol-gen-terms",
 		apiToolId: "artifacts-workflows",
-		label: "POST /tools/protocol/gen-terms"
+		label: "POST /tools/protocol/gen-terms",
 	},
 	{
 		id: "protocol-data-load-preview",
 		apiToolId: "artifacts-workflows",
-		label: "POST /tools/protocol/data-load-preview"
+		label: "POST /tools/protocol/data-load-preview",
 	},
 	{
 		id: "protocol-research-preview",
 		apiToolId: "artifacts-workflows",
-		label: "POST /tools/protocol/research-preview"
+		label: "POST /tools/protocol/research-preview",
 	},
 	{
 		id: "protocol-angles-preview",
 		apiToolId: "artifacts-workflows",
-		label: "POST /tools/protocol/angles-preview"
+		label: "POST /tools/protocol/angles-preview",
 	},
 	{
 		id: "workflows-run",
 		apiToolId: "artifacts-workflows",
-		label: "POST /workflows/run"
+		label: "POST /workflows/run",
+	},
+	{
+		id: "workflows-pipelines",
+		apiToolId: "artifacts-workflows",
+		label: "GET /workflows/pipelines",
+	},
+	{
+		id: "artifacts-posts-list",
+		apiToolId: "artifacts-workflows",
+		label: "GET /artifacts/posts",
+	},
+	{
+		id: "artifacts-post-get",
+		apiToolId: "artifacts-workflows",
+		label: "GET /artifacts/post",
+	},
+	{
+		id: "artifacts-post-save",
+		apiToolId: "artifacts-workflows",
+		label: "POST /artifacts/post",
+	},
+	{
+		id: "artifacts-object-save",
+		apiToolId: "artifacts-workflows",
+		label: "POST /artifacts/object",
 	},
 	{ id: "kv-list", apiToolId: "kv-store", label: "GET /kv" },
 	{ id: "kv-get", apiToolId: "kv-store", label: "GET /kv/{key}" },
@@ -212,8 +247,33 @@ export const API_ACTION_OPTIONS: Array<{
 	{
 		id: "search-run",
 		apiToolId: "search-tools",
-		label: "GET /tools/search/{provider}"
-	}
+		label: "GET /tools/search/{provider}",
+	},
+	{
+		id: "tools-process-file",
+		apiToolId: "search-tools",
+		label: "POST /tools/process-file",
+	},
+	{
+		id: "tools-fetch-url",
+		apiToolId: "search-tools",
+		label: "POST /tools/fetch-url",
+	},
+	{
+		id: "tools-semantic-search",
+		apiToolId: "search-tools",
+		label: "POST /tools/semantic/search",
+	},
+	{
+		id: "tools-semantic-needle",
+		apiToolId: "search-tools",
+		label: "POST /tools/semantic/needle",
+	},
+	{
+		id: "tools-angles-analyze",
+		apiToolId: "search-tools",
+		label: "POST /tools/angles/analyze",
+	},
 ];
 
 export const ADMIN_API_STORAGE_KEY = "admin-api-console:v1";
@@ -259,7 +319,7 @@ export function createIdleResponse(): ApiResponseView {
 		endpoint: "",
 		method: "GET",
 		request: null,
-		data: null
+		data: null,
 	};
 }
 
@@ -306,6 +366,24 @@ export interface PersistedAdminApiState {
 	kvOffset: string;
 	searchQuery: string;
 	searchProvider: string;
+	artifactsStep: string;
+	artifactsListCount: string;
+	artifactsListOffset: string;
+	artifactsListTag: string;
+	artifactsPostFilename: string;
+	artifactsPostSaveBody: string;
+	artifactsObjectFilename: string;
+	artifactsObjectBody: string;
+	toolsProcessFileName: string;
+	toolsProcessFileStep: string;
+	toolsFetchUrl: string;
+	toolsFetchUseCrawl4ai: boolean;
+	toolsSemanticText: string;
+	toolsSemanticObjectsJson: string;
+	toolsSemanticN: string;
+	toolsNeedle: string;
+	toolsHaystackJson: string;
+	toolsAnglesTextsJson: string;
 	showHeartbeatEvents: boolean;
 	streamSearchText: string;
 	showAdvancedApiControls: boolean;
