@@ -15,9 +15,13 @@ import { PostValidationActions } from "../post-validation-actions";
 
 interface StegoTextOnlyRendererProps {
 	data: StegoTextOnly;
+	filename?: string | null;
 }
 
-export function StegoTextOnlyRenderer({ data }: StegoTextOnlyRendererProps) {
+export function StegoTextOnlyRenderer({
+	data,
+	filename: _filename
+}: StegoTextOnlyRendererProps) {
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between border-b border-white/10 pb-4">
@@ -214,10 +218,10 @@ export function StegoTextOnlyRenderer({ data }: StegoTextOnlyRendererProps) {
 																		allDocs[ref.doc]
 																			? allDocs[
 																					ref.doc
-																			  ].slice(
+																				].slice(
 																					ref.idx,
 																					ref.idx + ref.len
-																			  )
+																				)
 																			: "N/A"}
 																	</div>
 																</div>

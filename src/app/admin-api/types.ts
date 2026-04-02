@@ -6,6 +6,7 @@ export const WORKFLOW_COMMAND_OPTIONS = [
 	"gen-angles",
 	"validate-post",
 	"receiver",
+	"stego-receiver-live",
 	"double-process-new-post",
 	"batch-angles-determinism",
 	"stego",
@@ -18,6 +19,8 @@ export type WorkflowCommand = (typeof WORKFLOW_COMMAND_OPTIONS)[number];
 export function isWorkflowCommand(value: string): value is WorkflowCommand {
 	return (WORKFLOW_COMMAND_OPTIONS as readonly string[]).includes(value);
 }
+
+export type TriggerAnglesMode = "gen-angles" | "stego-receiver-live";
 
 export interface ApiResponseView {
 	status: "idle" | "loading" | "success" | "error";
@@ -77,6 +80,7 @@ export type ApiActionId =
 	| "workflows-validate-post"
 	| "workflows-receiver"
 	| "workflows-batch-angles-determinism"
+	| "workflows-trigger-angles"
 	| "protocol-gen-terms"
 	| "protocol-data-load-preview"
 	| "protocol-research-preview"
@@ -189,6 +193,11 @@ export const API_ACTION_OPTIONS: Array<{
 		id: "workflows-batch-angles-determinism",
 		apiToolId: "artifacts-workflows",
 		label: "POST /workflows/batch-angles-determinism",
+	},
+	{
+		id: "workflows-trigger-angles",
+		apiToolId: "artifacts-workflows",
+		label: "POST gen-angles / stego-receiver-live (trigger angles)",
 	},
 	{
 		id: "protocol-gen-terms",
@@ -353,6 +362,21 @@ export interface PersistedAdminApiState {
 	batchAnglesDeterminismPostIds: string;
 	batchAnglesDeterminismStep: string;
 	batchAnglesDeterminismStream: boolean;
+	triggerAnglesMode: TriggerAnglesMode;
+	genAnglesCount: string;
+	genAnglesOffset: string;
+	genAnglesStream: boolean;
+	stegoReceiverLiveSenderUserId: string;
+	stegoReceiverLivePostId: string;
+	stegoReceiverLivePayload: string;
+	stegoReceiverLiveTag: string;
+	stegoReceiverLiveListOffset: string;
+	stegoReceiverLiveSimulationRoot: string;
+	stegoReceiverLiveCompressedBitstring: string;
+	stegoReceiverLiveAllowFallback: boolean;
+	stegoReceiverLiveMaxPaddingBits: string;
+	stegoReceiverLiveMaxPostAttempts: string;
+	stegoReceiverLiveStream: boolean;
 	validateUseTermsCache: boolean;
 	validatePersistTermsCache: boolean;
 	validateUseFetchCache: boolean;

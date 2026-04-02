@@ -58,7 +58,10 @@ function formatBytes(n: number): string {
 	return `${v < 10 ? v.toFixed(1) : Math.round(v)} ${units[u]}`;
 }
 
-function upsertEntries(prev: ApiLogEntry[], incoming: ApiLogEntry[]): ApiLogEntry[] {
+function upsertEntries(
+	prev: ApiLogEntry[],
+	incoming: ApiLogEntry[]
+): ApiLogEntry[] {
 	const map = new Map(prev.map((entry) => [entry.id, entry]));
 	for (const entry of incoming) {
 		map.set(entry.id, entry);
@@ -133,9 +136,9 @@ export function ApiLogStreamPanel() {
 	const [methodFilter, setMethodFilter] = useState("all");
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [liveEnabled, setLiveEnabled] = useState(true);
-	const [streamState, setStreamState] = useState<"idle" | "connected" | "error">(
-		"idle"
-	);
+	const [streamState, setStreamState] = useState<
+		"idle" | "connected" | "error"
+	>("idle");
 	const [streamError, setStreamError] = useState<string | null>(null);
 	const [stateLogsBase, setStateLogsBase] = useState("");
 	const [stateLogs, setStateLogs] = useState<StateLogsPayload | null>(null);
@@ -305,7 +308,9 @@ export function ApiLogStreamPanel() {
 			return;
 		}
 
-		const source = new EventSource(`/api/prompt-logs/stream?backfill=${numericLimit}`);
+		const source = new EventSource(
+			`/api/prompt-logs/stream?backfill=${numericLimit}`
+		);
 		setStreamState("idle");
 		setStreamError(null);
 
@@ -313,7 +318,9 @@ export function ApiLogStreamPanel() {
 			const payload = JSON.parse((event as MessageEvent).data) as {
 				entries?: ApiLogEntry[];
 			};
-			const initialEntries = Array.isArray(payload.entries) ? payload.entries : [];
+			const initialEntries = Array.isArray(payload.entries)
+				? payload.entries
+				: [];
 			setEntries((prev) => {
 				// Keep the snapshot if stream init has no backfill yet.
 				if (initialEntries.length === 0 && prev.length > 0) return prev;
@@ -326,7 +333,8 @@ export function ApiLogStreamPanel() {
 			const payload = JSON.parse((event as MessageEvent).data) as {
 				entries?: ApiLogEntry[];
 			};
-			if (!Array.isArray(payload.entries) || payload.entries.length === 0) return;
+			if (!Array.isArray(payload.entries) || payload.entries.length === 0)
+				return;
 			setEntries((prev) => upsertEntries(prev, payload.entries ?? []));
 			setStreamState("connected");
 		});
@@ -335,7 +343,9 @@ export function ApiLogStreamPanel() {
 			const payload = JSON.parse((event as MessageEvent).data) as {
 				entries?: ApiLogEntry[];
 			};
-			const resetEntries = Array.isArray(payload.entries) ? payload.entries : [];
+			const resetEntries = Array.isArray(payload.entries)
+				? payload.entries
+				: [];
 			setEntries((prev) => {
 				if (resetEntries.length === 0 && prev.length > 0) {
 					void refetchSnapshot();
@@ -365,7 +375,9 @@ export function ApiLogStreamPanel() {
 		() =>
 			Array.from(
 				new Set(
-					entries.map((entry) => entry.level).filter((value): value is string => !!value)
+					entries
+						.map((entry) => entry.level)
+						.filter((value): value is string => !!value)
 				)
 			).sort((a, b) => a.localeCompare(b)),
 		[entries]
@@ -375,7 +387,9 @@ export function ApiLogStreamPanel() {
 		() =>
 			Array.from(
 				new Set(
-					entries.map((entry) => entry.logger).filter((value): value is string => !!value)
+					entries
+						.map((entry) => entry.logger)
+						.filter((value): value is string => !!value)
 				)
 			).sort((a, b) => a.localeCompare(b)),
 		[entries]
@@ -385,7 +399,9 @@ export function ApiLogStreamPanel() {
 		() =>
 			Array.from(
 				new Set(
-					entries.map((entry) => entry.method).filter((value): value is string => !!value)
+					entries
+						.map((entry) => entry.method)
+						.filter((value): value is string => !!value)
 				)
 			).sort((a, b) => a.localeCompare(b)),
 		[entries]
@@ -420,9 +436,15 @@ export function ApiLogStreamPanel() {
 		const q = search.trim().toLowerCase();
 		return entries.filter((entry) => {
 			if (levelFilter !== "all" && entry.level !== levelFilter) return false;
-			if (loggerFilter !== "all" && entry.logger !== loggerFilter) return false;
-			if (methodFilter !== "all" && entry.method !== methodFilter) return false;
-			if (statusFilter !== "all" && statusGroup(entry.status) !== statusFilter) return false;
+			if (loggerFilter !== "all" && entry.logger !== loggerFilter)
+				return false;
+			if (methodFilter !== "all" && entry.method !== methodFilter)
+				return false;
+			if (
+				statusFilter !== "all" &&
+				statusGroup(entry.status) !== statusFilter
+			)
+				return false;
 
 			const entryTags = tagsByEntryId.get(entry.id) ?? [];
 			if (onlyUntagged) {
@@ -488,13 +510,16 @@ export function ApiLogStreamPanel() {
 		);
 	}, [filteredEntries]);
 
-	const selected = filteredEntries.find((entry) => entry.id === selectedId) ?? null;
+	const selected =
+		filteredEntries.find((entry) => entry.id === selectedId) ?? null;
 
 	return (
 		<section className="space-y-4">
 			<div className="rounded-xl border border-white/10 bg-white/5 p-4">
 				<div className="flex flex-wrap items-center justify-between gap-2">
-					<h2 className="text-sm font-semibold text-white/90">Server log file</h2>
+					<h2 className="text-sm font-semibold text-white/90">
+						Server log file
+					</h2>
 					<div className="flex flex-wrap gap-2">
 						<button
 							type="button"
@@ -524,19 +549,23 @@ export function ApiLogStreamPanel() {
 						<>
 							{" "}
 							· base{" "}
-							<code className="text-white/70">{stateLogsBase}</code> (from Admin
-							API console storage)
+							<code className="text-white/70">{stateLogsBase}</code>{" "}
+							(from Admin API console storage)
 						</>
 					) : null}
 				</p>
 				{stateLogsLoading ? (
-					<p className="mt-2 text-xs text-white/55">Loading server log state…</p>
+					<p className="mt-2 text-xs text-white/55">
+						Loading server log state…
+					</p>
 				) : stateLogs ? (
 					<dl className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
 						<div className="rounded-md border border-white/10 bg-black/20 px-2 py-1.5">
 							<dt className="text-white/50">File logging</dt>
 							<dd className="font-mono text-white/85">
-								{stateLogs.file_logging_enabled ? "enabled" : "disabled"}
+								{stateLogs.file_logging_enabled
+									? "enabled"
+									: "disabled"}
 							</dd>
 						</div>
 						<div className="rounded-md border border-white/10 bg-black/20 px-2 py-1.5 sm:col-span-2">
@@ -558,310 +587,323 @@ export function ApiLogStreamPanel() {
 				) : null}
 			</div>
 			<div className="grid grid-cols-1 gap-4 xl:grid-cols-[460px_minmax(0,1fr)]">
-			<div className="space-y-3">
-				<div className="flex items-center justify-between gap-2">
-					<label className="flex items-center gap-2 text-xs text-white/70">
+				<div className="space-y-3">
+					<div className="flex items-center justify-between gap-2">
+						<label className="flex items-center gap-2 text-xs text-white/70">
+							<input
+								type="checkbox"
+								checked={liveEnabled}
+								onChange={(e) => setLiveEnabled(e.target.checked)}
+							/>
+							Stream
+						</label>
+					</div>
+					<p className="text-xs text-white/55">
+						{data?.logFilePath ?? "Loading log path..."}
+					</p>
+					<div className="grid grid-cols-2 gap-2">
 						<input
-							type="checkbox"
-							checked={liveEnabled}
-							onChange={(e) => setLiveEnabled(e.target.checked)}
+							value={limit}
+							onChange={(e) => setLimit(e.target.value)}
+							className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+							placeholder="snapshot limit"
 						/>
-						Stream
-					</label>
-				</div>
-				<p className="text-xs text-white/55">{data?.logFilePath ?? "Loading log path..."}</p>
-				<div className="grid grid-cols-2 gap-2">
+						<button
+							type="button"
+							onClick={() => void refetchSnapshot()}
+							className="rounded-md border border-white/15 bg-white/10 px-2 py-1.5 text-sm hover:bg-white/15"
+						>
+							Reload Snapshot
+						</button>
+					</div>
 					<input
-						value={limit}
-						onChange={(e) => setLimit(e.target.value)}
-						className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
-						placeholder="snapshot limit"
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+						placeholder="Search message, path, run id..."
 					/>
-					<button
-						type="button"
-						onClick={() => void refetchSnapshot()}
-						className="rounded-md border border-white/15 bg-white/10 px-2 py-1.5 text-sm hover:bg-white/15"
-					>
-						Reload Snapshot
-					</button>
-				</div>
-				<input
-					value={search}
-					onChange={(e) => setSearch(e.target.value)}
-					className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
-					placeholder="Search message, path, run id..."
-				/>
-				<div className="grid grid-cols-2 gap-2">
-					<select
-						value={levelFilter}
-						onChange={(e) => setLevelFilter(e.target.value)}
-						aria-label="Filter logs by level"
-						className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
-					>
-						<option value="all">All levels</option>
-						{levelOptions.map((value) => (
-							<option key={value} value={value}>
-								{value}
-							</option>
-						))}
-					</select>
-					<select
-						value={statusFilter}
-						onChange={(e) => setStatusFilter(e.target.value)}
-						aria-label="Filter logs by status class"
-						className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
-					>
-						<option value="all">Any status class</option>
-						<option value="2xx">2xx</option>
-						<option value="4xx">4xx</option>
-						<option value="5xx">5xx</option>
-						<option value="other">other</option>
-					</select>
-					<select
-						value={loggerFilter}
-						onChange={(e) => setLoggerFilter(e.target.value)}
-						aria-label="Filter logs by logger"
-						className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
-					>
-						<option value="all">All loggers</option>
-						{loggerOptions.map((value) => (
-							<option key={value} value={value}>
-								{value}
-							</option>
-						))}
-					</select>
-					<select
-						value={methodFilter}
-						onChange={(e) => setMethodFilter(e.target.value)}
-						aria-label="Filter logs by HTTP method"
-						className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
-					>
-						<option value="all">Any method</option>
-						{methodOptions.map((value) => (
-							<option key={value} value={value}>
-								{value}
-							</option>
-						))}
-					</select>
-				</div>
+					<div className="grid grid-cols-2 gap-2">
+						<select
+							value={levelFilter}
+							onChange={(e) => setLevelFilter(e.target.value)}
+							aria-label="Filter logs by level"
+							className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+						>
+							<option value="all">All levels</option>
+							{levelOptions.map((value) => (
+								<option key={value} value={value}>
+									{value}
+								</option>
+							))}
+						</select>
+						<select
+							value={statusFilter}
+							onChange={(e) => setStatusFilter(e.target.value)}
+							aria-label="Filter logs by status class"
+							className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+						>
+							<option value="all">Any status class</option>
+							<option value="2xx">2xx</option>
+							<option value="4xx">4xx</option>
+							<option value="5xx">5xx</option>
+							<option value="other">other</option>
+						</select>
+						<select
+							value={loggerFilter}
+							onChange={(e) => setLoggerFilter(e.target.value)}
+							aria-label="Filter logs by logger"
+							className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+						>
+							<option value="all">All loggers</option>
+							{loggerOptions.map((value) => (
+								<option key={value} value={value}>
+									{value}
+								</option>
+							))}
+						</select>
+						<select
+							value={methodFilter}
+							onChange={(e) => setMethodFilter(e.target.value)}
+							aria-label="Filter logs by HTTP method"
+							className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+						>
+							<option value="all">Any method</option>
+							{methodOptions.map((value) => (
+								<option key={value} value={value}>
+									{value}
+								</option>
+							))}
+						</select>
+					</div>
 
-				<div className="rounded-lg border border-violet-500/20 bg-violet-500/5 p-3 space-y-2">
-					<div className="flex flex-wrap items-center justify-between gap-2">
-						<span className="text-xs font-medium text-white/75">
-							Structured tags
-						</span>
-						<div className="flex flex-wrap gap-2">
-							<button
-								type="button"
-								disabled={tagCatalogLoading}
-								onClick={() => void refreshTagCatalog()}
-								className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] hover:bg-white/15 disabled:opacity-50"
-							>
-								{tagCatalogLoading ? "Loading catalog…" : "Refresh catalog"}
-							</button>
-							<button
-								type="button"
-								disabled={
-									tagFilterSelected.length === 0 && !onlyUntagged
-								}
-								onClick={clearTagFilter}
-								className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] hover:bg-white/15 disabled:opacity-40"
-							>
-								Clear tag filter
-							</button>
+					<div className="rounded-lg border border-violet-500/20 bg-violet-500/5 p-3 space-y-2">
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<span className="text-xs font-medium text-white/75">
+								Structured tags
+							</span>
+							<div className="flex flex-wrap gap-2">
+								<button
+									type="button"
+									disabled={tagCatalogLoading}
+									onClick={() => void refreshTagCatalog()}
+									className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] hover:bg-white/15 disabled:opacity-50"
+								>
+									{tagCatalogLoading
+										? "Loading catalog…"
+										: "Refresh catalog"}
+								</button>
+								<button
+									type="button"
+									disabled={
+										tagFilterSelected.length === 0 && !onlyUntagged
+									}
+									onClick={clearTagFilter}
+									className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] hover:bg-white/15 disabled:opacity-40"
+								>
+									Clear tag filter
+								</button>
+							</div>
+						</div>
+						<p className="text-[11px] leading-snug text-white/45">
+							Uses{" "}
+							<code className="text-white/60">GET /logging/tags</code>{" "}
+							for order and descriptions (hover a chip). Click chips to
+							show lines that match{" "}
+							<span className="text-white/55">any</span> selected tag.
+						</p>
+						{tagCatalogError ? (
+							<p className="text-[11px] text-amber-200/90">
+								Catalog: {tagCatalogError} — chips still include tags
+								seen in loaded lines.
+							</p>
+						) : null}
+						<label className="flex cursor-pointer items-center gap-2 text-xs text-white/65">
+							<input
+								type="checkbox"
+								checked={onlyUntagged}
+								onChange={(e) => {
+									setOnlyUntagged(e.target.checked);
+									if (e.target.checked) setTagFilterSelected([]);
+								}}
+							/>
+							Only untagged lines
+						</label>
+						<div className="max-h-36 overflow-y-auto rounded-md border border-white/10 bg-black/25 p-2">
+							{tagChipOptions.length === 0 ? (
+								<p className="text-[11px] text-white/45">
+									No tag ids yet — load logs or fix catalog fetch.
+								</p>
+							) : (
+								<div className="flex flex-wrap gap-1.5">
+									{tagChipOptions.map((id) => {
+										const on = tagFilterSelected.includes(id);
+										const desc = tagDescriptionById.get(id);
+										return (
+											<button
+												key={id}
+												type="button"
+												disabled={onlyUntagged}
+												title={desc || id}
+												onClick={() => toggleTagFilter(id)}
+												className={`rounded-md border px-2 py-1 font-mono text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+													on
+														? "border-violet-400/60 bg-violet-500/30 text-violet-100"
+														: "border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:bg-white/10"
+												}`}
+											>
+												{id}
+											</button>
+										);
+									})}
+								</div>
+							)}
 						</div>
 					</div>
-					<p className="text-[11px] leading-snug text-white/45">
-						Uses <code className="text-white/60">GET /logging/tags</code> for
-						order and descriptions (hover a chip). Click chips to show lines that
-						match <span className="text-white/55">any</span> selected tag.
-					</p>
-					{tagCatalogError ? (
-						<p className="text-[11px] text-amber-200/90">
-							Catalog: {tagCatalogError} — chips still include tags seen in
-							loaded lines.
-						</p>
-					) : null}
-					<label className="flex cursor-pointer items-center gap-2 text-xs text-white/65">
-						<input
-							type="checkbox"
-							checked={onlyUntagged}
-							onChange={(e) => {
-								setOnlyUntagged(e.target.checked);
-								if (e.target.checked) setTagFilterSelected([]);
-							}}
-						/>
-						Only untagged lines
-					</label>
-					<div className="max-h-36 overflow-y-auto rounded-md border border-white/10 bg-black/25 p-2">
-						{tagChipOptions.length === 0 ? (
-							<p className="text-[11px] text-white/45">
-								No tag ids yet — load logs or fix catalog fetch.
-							</p>
-						) : (
-							<div className="flex flex-wrap gap-1.5">
-								{tagChipOptions.map((id) => {
-									const on = tagFilterSelected.includes(id);
-									const desc = tagDescriptionById.get(id);
-									return (
-										<button
-											key={id}
-											type="button"
-											disabled={onlyUntagged}
-											title={desc || id}
-											onClick={() => toggleTagFilter(id)}
-											className={`rounded-md border px-2 py-1 font-mono text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-												on
-													? "border-violet-400/60 bg-violet-500/30 text-violet-100"
-													: "border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:bg-white/10"
-											}`}
-										>
-											{id}
-										</button>
-									);
-								})}
+
+					<div className="text-xs text-white/55">
+						{isLoading
+							? "Loading..."
+							: `${filteredEntries.length} of ${data?.totalEntries ?? entries.length} entries`}
+						{onlyUntagged ? " · untagged only" : null}
+						{!onlyUntagged && tagFilterSelected.length > 0
+							? ` · tags: ${tagFilterSelected.join(", ")}`
+							: null}
+						{streamState === "connected" ? " · stream connected" : ""}
+						{streamState === "error" ? " · stream error" : ""}
+					</div>
+					{(error || streamError) && (
+						<div className="rounded-md border border-red-500/40 bg-red-500/10 p-2 text-xs text-red-100">
+							{error?.message ?? streamError}
+						</div>
+					)}
+					<div className="max-h-[540px] space-y-2 overflow-y-auto pr-1">
+						{filteredEntries.map((entry) => {
+							const selectedRow = selectedId === entry.id;
+							const rowTags = tagsByEntryId.get(entry.id) ?? [];
+							const maxTagPills = 4;
+							const tagPills = rowTags.slice(0, maxTagPills);
+							const tagOverflow =
+								rowTags.length > maxTagPills
+									? rowTags.length - maxTagPills
+									: 0;
+							return (
+								<button
+									type="button"
+									key={entry.id}
+									onClick={() => setSelectedId(entry.id)}
+									className={`w-full rounded-md border p-2 text-left ${
+										selectedRow
+											? "border-cyan-400/50 bg-cyan-500/10"
+											: "border-white/10 bg-white/5 hover:bg-white/10"
+									}`}
+								>
+									<div className="mb-1 flex flex-wrap gap-1 text-[11px] text-white/70">
+										<span className="rounded bg-white/10 px-1.5 py-0.5">
+											{entry.level ?? "n/a"}
+										</span>
+										<span className="rounded bg-white/10 px-1.5 py-0.5">
+											{entry.method ?? "method?"}
+										</span>
+										<span className="rounded bg-white/10 px-1.5 py-0.5">
+											{entry.status ?? "status?"}
+										</span>
+										<span className="rounded bg-white/10 px-1.5 py-0.5">
+											L{entry.lineNumber}
+										</span>
+										{tagPills.map((tid) => (
+											<span
+												key={tid}
+												title={tagDescriptionById.get(tid) ?? tid}
+												className="rounded bg-violet-500/25 px-1.5 py-0.5 font-mono text-violet-100/95"
+											>
+												{tid}
+											</span>
+										))}
+										{tagOverflow > 0 ? (
+											<span className="rounded bg-white/10 px-1.5 py-0.5 text-white/55">
+												+{tagOverflow}
+											</span>
+										) : null}
+									</div>
+									<div className="line-clamp-2 text-sm text-white/90">
+										{entry.msg || "(empty message)"}
+									</div>
+									<div className="mt-1 truncate text-[11px] text-white/55">
+										{entry.logger ?? "unknown logger"} -{" "}
+										{formatTs(entry.ts)}
+									</div>
+								</button>
+							);
+						})}
+						{!isLoading && filteredEntries.length === 0 && (
+							<div className="rounded-md border border-white/10 bg-white/5 p-3 text-sm text-white/60">
+								No logs match your filters.
 							</div>
 						)}
 					</div>
 				</div>
 
-				<div className="text-xs text-white/55">
-					{isLoading
-						? "Loading..."
-						: `${filteredEntries.length} of ${data?.totalEntries ?? entries.length} entries`}
-					{onlyUntagged ? " · untagged only" : null}
-					{!onlyUntagged && tagFilterSelected.length > 0
-						? ` · tags: ${tagFilterSelected.join(", ")}`
-						: null}
-					{streamState === "connected" ? " · stream connected" : ""}
-					{streamState === "error" ? " · stream error" : ""}
-				</div>
-				{(error || streamError) && (
-					<div className="rounded-md border border-red-500/40 bg-red-500/10 p-2 text-xs text-red-100">
-						{error?.message ?? streamError}
-					</div>
-				)}
-				<div className="max-h-[540px] space-y-2 overflow-y-auto pr-1">
-					{filteredEntries.map((entry) => {
-						const selectedRow = selectedId === entry.id;
-						const rowTags = tagsByEntryId.get(entry.id) ?? [];
-						const maxTagPills = 4;
-						const tagPills = rowTags.slice(0, maxTagPills);
-						const tagOverflow =
-							rowTags.length > maxTagPills
-								? rowTags.length - maxTagPills
-								: 0;
-						return (
-							<button
-								type="button"
-								key={entry.id}
-								onClick={() => setSelectedId(entry.id)}
-								className={`w-full rounded-md border p-2 text-left ${
-									selectedRow
-										? "border-cyan-400/50 bg-cyan-500/10"
-										: "border-white/10 bg-white/5 hover:bg-white/10"
-								}`}
-							>
-								<div className="mb-1 flex flex-wrap gap-1 text-[11px] text-white/70">
-									<span className="rounded bg-white/10 px-1.5 py-0.5">
-										{entry.level ?? "n/a"}
-									</span>
-									<span className="rounded bg-white/10 px-1.5 py-0.5">
-										{entry.method ?? "method?"}
-									</span>
-									<span className="rounded bg-white/10 px-1.5 py-0.5">
-										{entry.status ?? "status?"}
-									</span>
-									<span className="rounded bg-white/10 px-1.5 py-0.5">
-										L{entry.lineNumber}
-									</span>
-									{tagPills.map((tid) => (
-										<span
-											key={tid}
-											title={tagDescriptionById.get(tid) ?? tid}
-											className="rounded bg-violet-500/25 px-1.5 py-0.5 font-mono text-violet-100/95"
-										>
-											{tid}
-										</span>
-									))}
-									{tagOverflow > 0 ? (
-										<span className="rounded bg-white/10 px-1.5 py-0.5 text-white/55">
-											+{tagOverflow}
-										</span>
-									) : null}
+				<div className="min-h-[420px] rounded-lg border border-white/10 bg-black/20 p-4">
+					{selected ? (
+						<div className="space-y-3">
+							<div className="flex flex-wrap gap-2 text-xs">
+								<span className="rounded bg-white/10 px-2 py-1">
+									{formatTs(selected.ts)}
+								</span>
+								<span className="rounded bg-white/10 px-2 py-1">
+									{selected.level ?? "n/a"}
+								</span>
+								<span className="rounded bg-white/10 px-2 py-1">
+									{selected.logger ?? "n/a"}
+								</span>
+								<span className="rounded bg-white/10 px-2 py-1">
+									{selected.method ?? "n/a"} {selected.path ?? ""}
+								</span>
+								<span className="rounded bg-white/10 px-2 py-1">
+									Status: {selected.status ?? "n/a"}
+								</span>
+								<span className="rounded bg-white/10 px-2 py-1">
+									Duration: {selected.durationMs ?? "n/a"} ms
+								</span>
+							</div>
+							{(tagsByEntryId.get(selected.id) ?? []).length > 0 ? (
+								<div className="flex flex-wrap gap-1.5">
+									{(tagsByEntryId.get(selected.id) ?? []).map(
+										(tid) => (
+											<span
+												key={tid}
+												title={tagDescriptionById.get(tid) ?? tid}
+												className="rounded-md border border-violet-500/30 bg-violet-500/15 px-2 py-1 font-mono text-xs text-violet-100/90"
+											>
+												{tid}
+											</span>
+										)
+									)}
 								</div>
-								<div className="line-clamp-2 text-sm text-white/90">
-									{entry.msg || "(empty message)"}
+							) : null}
+							<div className="rounded-md border border-white/10 bg-black/30 p-3">
+								<div className="mb-1 text-xs text-white/60 uppercase">
+									Message
 								</div>
-								<div className="mt-1 truncate text-[11px] text-white/55">
-									{entry.logger ?? "unknown logger"} - {formatTs(entry.ts)}
+								<pre className="max-h-[180px] overflow-auto whitespace-pre-wrap text-sm text-white/90">
+									{selected.msg || "(empty)"}
+								</pre>
+							</div>
+							<div className="rounded-md border border-white/10 bg-black/30 p-3">
+								<div className="mb-1 text-xs text-white/60 uppercase">
+									Raw JSON
 								</div>
-							</button>
-						);
-					})}
-					{!isLoading && filteredEntries.length === 0 && (
-						<div className="rounded-md border border-white/10 bg-white/5 p-3 text-sm text-white/60">
-							No logs match your filters.
+								<pre className="max-h-[320px] overflow-auto whitespace-pre-wrap text-xs text-white/75">
+									{JSON.stringify(selected.raw, null, 2)}
+								</pre>
+							</div>
+						</div>
+					) : (
+						<div className="flex h-full items-center justify-center text-sm text-white/50">
+							Select a log line to inspect details.
 						</div>
 					)}
 				</div>
-			</div>
-
-			<div className="min-h-[420px] rounded-lg border border-white/10 bg-black/20 p-4">
-				{selected ? (
-					<div className="space-y-3">
-						<div className="flex flex-wrap gap-2 text-xs">
-							<span className="rounded bg-white/10 px-2 py-1">
-								{formatTs(selected.ts)}
-							</span>
-							<span className="rounded bg-white/10 px-2 py-1">
-								{selected.level ?? "n/a"}
-							</span>
-							<span className="rounded bg-white/10 px-2 py-1">
-								{selected.logger ?? "n/a"}
-							</span>
-							<span className="rounded bg-white/10 px-2 py-1">
-								{selected.method ?? "n/a"} {selected.path ?? ""}
-							</span>
-							<span className="rounded bg-white/10 px-2 py-1">
-								Status: {selected.status ?? "n/a"}
-							</span>
-							<span className="rounded bg-white/10 px-2 py-1">
-								Duration: {selected.durationMs ?? "n/a"} ms
-							</span>
-						</div>
-						{(tagsByEntryId.get(selected.id) ?? []).length > 0 ? (
-							<div className="flex flex-wrap gap-1.5">
-								{(tagsByEntryId.get(selected.id) ?? []).map((tid) => (
-									<span
-										key={tid}
-										title={tagDescriptionById.get(tid) ?? tid}
-										className="rounded-md border border-violet-500/30 bg-violet-500/15 px-2 py-1 font-mono text-xs text-violet-100/90"
-									>
-										{tid}
-									</span>
-								))}
-							</div>
-						) : null}
-						<div className="rounded-md border border-white/10 bg-black/30 p-3">
-							<div className="mb-1 text-xs text-white/60 uppercase">Message</div>
-							<pre className="max-h-[180px] overflow-auto whitespace-pre-wrap text-sm text-white/90">
-								{selected.msg || "(empty)"}
-							</pre>
-						</div>
-						<div className="rounded-md border border-white/10 bg-black/30 p-3">
-							<div className="mb-1 text-xs text-white/60 uppercase">Raw JSON</div>
-							<pre className="max-h-[320px] overflow-auto whitespace-pre-wrap text-xs text-white/75">
-								{JSON.stringify(selected.raw, null, 2)}
-							</pre>
-						</div>
-					</div>
-				) : (
-					<div className="flex h-full items-center justify-center text-sm text-white/50">
-						Select a log line to inspect details.
-					</div>
-				)}
-			</div>
 			</div>
 		</section>
 	);

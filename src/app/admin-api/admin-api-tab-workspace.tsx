@@ -1,14 +1,15 @@
+import { AdminApiToolPanels } from "./admin-api-tool-panels";
+import type { CallApiFn, SetTabErrorFn } from "./tab-actions";
 import {
 	API_ACTION_OPTIONS,
 	API_TOOL_OPTIONS,
 	type ApiActionId,
 	type ApiWorkspaceTab,
-	type WorkflowCommand,
 	getApiActionLabel,
-	getApiToolLabel
+	getApiToolLabel,
+	type TriggerAnglesMode,
+	type WorkflowCommand,
 } from "./types";
-import { AdminApiToolPanels } from "./admin-api-tool-panels";
-import type { CallApiFn, SetTabErrorFn } from "./tab-actions";
 
 export interface AdminApiTabWorkspaceProps {
 	tabs: ApiWorkspaceTab[];
@@ -68,6 +69,36 @@ export interface AdminApiTabWorkspaceProps {
 	setBatchAnglesDeterminismStep: (value: string) => void;
 	batchAnglesDeterminismStream: boolean;
 	setBatchAnglesDeterminismStream: (value: boolean) => void;
+	triggerAnglesMode: TriggerAnglesMode;
+	setTriggerAnglesMode: (value: TriggerAnglesMode) => void;
+	genAnglesCount: string;
+	setGenAnglesCount: (value: string) => void;
+	genAnglesOffset: string;
+	setGenAnglesOffset: (value: string) => void;
+	genAnglesStream: boolean;
+	setGenAnglesStream: (value: boolean) => void;
+	stegoReceiverLiveSenderUserId: string;
+	setStegoReceiverLiveSenderUserId: (value: string) => void;
+	stegoReceiverLivePostId: string;
+	setStegoReceiverLivePostId: (value: string) => void;
+	stegoReceiverLivePayload: string;
+	setStegoReceiverLivePayload: (value: string) => void;
+	stegoReceiverLiveTag: string;
+	setStegoReceiverLiveTag: (value: string) => void;
+	stegoReceiverLiveListOffset: string;
+	setStegoReceiverLiveListOffset: (value: string) => void;
+	stegoReceiverLiveSimulationRoot: string;
+	setStegoReceiverLiveSimulationRoot: (value: string) => void;
+	stegoReceiverLiveCompressedBitstring: string;
+	setStegoReceiverLiveCompressedBitstring: (value: string) => void;
+	stegoReceiverLiveAllowFallback: boolean;
+	setStegoReceiverLiveAllowFallback: (value: boolean) => void;
+	stegoReceiverLiveMaxPaddingBits: string;
+	setStegoReceiverLiveMaxPaddingBits: (value: string) => void;
+	stegoReceiverLiveMaxPostAttempts: string;
+	setStegoReceiverLiveMaxPostAttempts: (value: string) => void;
+	stegoReceiverLiveStream: boolean;
+	setStegoReceiverLiveStream: (value: boolean) => void;
 	receiverPostJson: string;
 	setReceiverPostJson: (value: string) => void;
 	receiverSenderUserId: string;
@@ -132,7 +163,7 @@ export interface AdminApiTabWorkspaceProps {
 	setTabError: SetTabErrorFn;
 	submitWorkflowRequest: (
 		tabId: string,
-		options?: { forceRunAll?: boolean }
+		options?: { forceRunAll?: boolean },
 	) => void | Promise<void>;
 }
 
@@ -195,6 +226,36 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 		setBatchAnglesDeterminismStep,
 		batchAnglesDeterminismStream,
 		setBatchAnglesDeterminismStream,
+		triggerAnglesMode,
+		setTriggerAnglesMode,
+		genAnglesCount,
+		setGenAnglesCount,
+		genAnglesOffset,
+		setGenAnglesOffset,
+		genAnglesStream,
+		setGenAnglesStream,
+		stegoReceiverLiveSenderUserId,
+		setStegoReceiverLiveSenderUserId,
+		stegoReceiverLivePostId,
+		setStegoReceiverLivePostId,
+		stegoReceiverLivePayload,
+		setStegoReceiverLivePayload,
+		stegoReceiverLiveTag,
+		setStegoReceiverLiveTag,
+		stegoReceiverLiveListOffset,
+		setStegoReceiverLiveListOffset,
+		stegoReceiverLiveSimulationRoot,
+		setStegoReceiverLiveSimulationRoot,
+		stegoReceiverLiveCompressedBitstring,
+		setStegoReceiverLiveCompressedBitstring,
+		stegoReceiverLiveAllowFallback,
+		setStegoReceiverLiveAllowFallback,
+		stegoReceiverLiveMaxPaddingBits,
+		setStegoReceiverLiveMaxPaddingBits,
+		stegoReceiverLiveMaxPostAttempts,
+		setStegoReceiverLiveMaxPostAttempts,
+		stegoReceiverLiveStream,
+		setStegoReceiverLiveStream,
 		receiverPostJson,
 		setReceiverPostJson,
 		receiverSenderUserId,
@@ -257,43 +318,43 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 		setToolsAnglesTextsJson,
 		callApi,
 		setTabError,
-		submitWorkflowRequest
+		submitWorkflowRequest,
 	} = props;
 
 	return (
-		<div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-4">
+		<div className="space-y-4 rounded-xl border border-white/10 bg-white/5 p-4">
 			<div className="flex flex-wrap items-center gap-2">
 				{tabs.map((tab, index) => (
 					<div
-						key={tab.id}
 						className={`flex items-center gap-1 rounded-md border px-2 py-1 ${
 							tab.id === activeTabId
 								? "border-blue-400/60 bg-blue-500/20"
 								: "border-white/10 bg-black/20"
 						}`}
+						key={tab.id}
 					>
 						<button
-							type="button"
-							onClick={() => onSelectTab(tab.id)}
 							className="text-sm hover:text-blue-200"
+							onClick={() => onSelectTab(tab.id)}
+							type="button"
 						>
 							Tab {index + 1}: {getApiActionLabel(tab.apiActionId)}
 						</button>
 						<button
-							type="button"
-							onClick={() => onCloseTab(tab.id)}
+							className="rounded px-1 text-white/60 text-xs hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
 							disabled={tabs.length === 1}
-							className="rounded px-1 text-xs text-white/60 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+							onClick={() => onCloseTab(tab.id)}
 							title="Close tab"
+							type="button"
 						>
 							x
 						</button>
 					</div>
 				))}
 				<button
-					type="button"
-					onClick={onAddTab}
 					className="rounded-md border border-white/20 bg-white/10 px-3 py-1 text-sm hover:bg-white/20"
+					onClick={onAddTab}
+					type="button"
 				>
 					+ New Tab
 				</button>
@@ -302,23 +363,23 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 			{activeTab ? (
 				<div className="space-y-4">
 					<div className="rounded-lg border border-white/10 bg-black/20 p-3">
-						<label className="text-xs text-white/60">API in this tab</label>
+						<label className="text-white/60 text-xs">API in this tab</label>
 						<div className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
 							<select
-								title="API in active tab"
-								value={activeTab.apiActionId}
+								className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
 								onChange={(e) =>
 									onUpdateTabApiAction(
 										activeTab.id,
-										e.target.value as ApiActionId
+										e.target.value as ApiActionId,
 									)
 								}
-								className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+								title="API in active tab"
+								value={activeTab.apiActionId}
 							>
 								{API_TOOL_OPTIONS.map((tool) => (
 									<optgroup key={tool.id} label={tool.label}>
 										{API_ACTION_OPTIONS.filter(
-											(option) => option.apiToolId === tool.id
+											(option) => option.apiToolId === tool.id,
 										).map((option) => (
 											<option key={option.id} value={option.id}>
 												{option.label}
@@ -328,20 +389,20 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 								))}
 							</select>
 							<button
-								type="button"
-								onClick={() => void onRunTabAction(activeTab)}
 								className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+								onClick={() => void onRunTabAction(activeTab)}
+								type="button"
 							>
 								Run selected API
 							</button>
 						</div>
-						<label className="mt-2 inline-flex items-center gap-2 text-xs text-white/70">
+						<label className="mt-2 inline-flex items-center gap-2 text-white/70 text-xs">
 							<input
-								type="checkbox"
 								checked={showAdvancedApiControls}
 								onChange={(e) =>
 									onShowAdvancedApiControlsChange(e.target.checked)
 								}
+								type="checkbox"
 							/>
 							Show advanced controls for this API section (
 							{getApiToolLabel(activeTab.apiToolId)})
@@ -349,121 +410,165 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 					</div>
 					{showAdvancedApiControls ? (
 						<AdminApiToolPanels
-							tab={activeTab}
-							base={base}
-							cacheTarget={cacheTarget}
-							setCacheTarget={setCacheTarget}
-							fsPath={fsPath}
-							setFsPath={setFsPath}
-							fsRecursive={fsRecursive}
-							setFsRecursive={setFsRecursive}
-							fsLimit={fsLimit}
-							setFsLimit={setFsLimit}
-							jsonReadPath={jsonReadPath}
-							setJsonReadPath={setJsonReadPath}
-							jsonWritePath={jsonWritePath}
-							setJsonWritePath={setJsonWritePath}
-							jsonWriteBody={jsonWriteBody}
-							setJsonWriteBody={setJsonWriteBody}
-							workflowCommand={workflowCommand}
-							setWorkflowCommand={setWorkflowCommand}
+							artifactsListCount={artifactsListCount}
+							artifactsListOffset={artifactsListOffset}
+							artifactsListTag={artifactsListTag}
+							artifactsObjectBody={artifactsObjectBody}
+							artifactsObjectFilename={artifactsObjectFilename}
+							artifactsPostFilename={artifactsPostFilename}
+							artifactsPostSaveBody={artifactsPostSaveBody}
+							artifactsStep={artifactsStep}
 							artifactTag={artifactTag}
-							setArtifactTag={setArtifactTag}
-							workflowBody={workflowBody}
-							setWorkflowBody={setWorkflowBody}
-							stegoPayload={stegoPayload}
-							setStegoPayload={setStegoPayload}
-							validatePostId={validatePostId}
-							setValidatePostId={setValidatePostId}
-							validatePostStream={validatePostStream}
-							setValidatePostStream={setValidatePostStream}
-							validateUseTermsCache={validateUseTermsCache}
-							setValidateUseTermsCache={setValidateUseTermsCache}
-							validatePersistTermsCache={validatePersistTermsCache}
-							setValidatePersistTermsCache={setValidatePersistTermsCache}
-							validateUseFetchCache={validateUseFetchCache}
-							setValidateUseFetchCache={setValidateUseFetchCache}
-							validateAllowAnglesFallback={validateAllowAnglesFallback}
-							setValidateAllowAnglesFallback={setValidateAllowAnglesFallback}
-							protocolIncludePost={protocolIncludePost}
-							setProtocolIncludePost={setProtocolIncludePost}
-							protocolUseCache={protocolUseCache}
-							setProtocolUseCache={setProtocolUseCache}
-							protocolPersistCache={protocolPersistCache}
-							setProtocolPersistCache={setProtocolPersistCache}
+							base={base}
 							batchAnglesDeterminismPostIds={batchAnglesDeterminismPostIds}
+							batchAnglesDeterminismStep={batchAnglesDeterminismStep}
+							batchAnglesDeterminismStream={batchAnglesDeterminismStream}
+							cacheTarget={cacheTarget}
+							callApi={callApi}
+							fsLimit={fsLimit}
+							fsPath={fsPath}
+							fsRecursive={fsRecursive}
+							genAnglesCount={genAnglesCount}
+							genAnglesOffset={genAnglesOffset}
+							genAnglesStream={genAnglesStream}
+							jsonReadPath={jsonReadPath}
+							jsonWriteBody={jsonWriteBody}
+							jsonWritePath={jsonWritePath}
+							kvKey={kvKey}
+							kvLimit={kvLimit}
+							kvOffset={kvOffset}
+							kvValue={kvValue}
+							protocolIncludePost={protocolIncludePost}
+							protocolPersistCache={protocolPersistCache}
+							protocolUseCache={protocolUseCache}
+							receiverCompressedBitstring={receiverCompressedBitstring}
+							receiverMaxPaddingBits={receiverMaxPaddingBits}
+							receiverPostJson={receiverPostJson}
+							receiverPreviewUseCache={receiverPreviewUseCache}
+							receiverSenderUserId={receiverSenderUserId}
+							receiverStream={receiverStream}
+							searchProvider={searchProvider}
+							searchQuery={searchQuery}
+							setArtifactsListCount={setArtifactsListCount}
+							setArtifactsListOffset={setArtifactsListOffset}
+							setArtifactsListTag={setArtifactsListTag}
+							setArtifactsObjectBody={setArtifactsObjectBody}
+							setArtifactsObjectFilename={setArtifactsObjectFilename}
+							setArtifactsPostFilename={setArtifactsPostFilename}
+							setArtifactsPostSaveBody={setArtifactsPostSaveBody}
+							setArtifactsStep={setArtifactsStep}
+							setArtifactTag={setArtifactTag}
 							setBatchAnglesDeterminismPostIds={
 								setBatchAnglesDeterminismPostIds
 							}
-							batchAnglesDeterminismStep={batchAnglesDeterminismStep}
 							setBatchAnglesDeterminismStep={setBatchAnglesDeterminismStep}
-							batchAnglesDeterminismStream={batchAnglesDeterminismStream}
-							setBatchAnglesDeterminismStream={
-								setBatchAnglesDeterminismStream
-							}
-							receiverPostJson={receiverPostJson}
-							setReceiverPostJson={setReceiverPostJson}
-							receiverSenderUserId={receiverSenderUserId}
-							setReceiverSenderUserId={setReceiverSenderUserId}
-							receiverCompressedBitstring={receiverCompressedBitstring}
-							setReceiverCompressedBitstring={setReceiverCompressedBitstring}
-							receiverStream={receiverStream}
-							setReceiverStream={setReceiverStream}
-							receiverPreviewUseCache={receiverPreviewUseCache}
-							setReceiverPreviewUseCache={setReceiverPreviewUseCache}
-							receiverMaxPaddingBits={receiverMaxPaddingBits}
-							setReceiverMaxPaddingBits={setReceiverMaxPaddingBits}
-							kvKey={kvKey}
+							setBatchAnglesDeterminismStream={setBatchAnglesDeterminismStream}
+							setCacheTarget={setCacheTarget}
+							setFsLimit={setFsLimit}
+							setFsPath={setFsPath}
+							setFsRecursive={setFsRecursive}
+							setGenAnglesCount={setGenAnglesCount}
+							setGenAnglesOffset={setGenAnglesOffset}
+							setGenAnglesStream={setGenAnglesStream}
+							setJsonReadPath={setJsonReadPath}
+							setJsonWriteBody={setJsonWriteBody}
+							setJsonWritePath={setJsonWritePath}
 							setKvKey={setKvKey}
-							kvValue={kvValue}
-							setKvValue={setKvValue}
-							kvLimit={kvLimit}
 							setKvLimit={setKvLimit}
-							kvOffset={kvOffset}
 							setKvOffset={setKvOffset}
-							searchQuery={searchQuery}
-							setSearchQuery={setSearchQuery}
-							searchProvider={searchProvider}
+							setKvValue={setKvValue}
+							setProtocolIncludePost={setProtocolIncludePost}
+							setProtocolPersistCache={setProtocolPersistCache}
+							setProtocolUseCache={setProtocolUseCache}
+							setReceiverCompressedBitstring={setReceiverCompressedBitstring}
+							setReceiverMaxPaddingBits={setReceiverMaxPaddingBits}
+							setReceiverPostJson={setReceiverPostJson}
+							setReceiverPreviewUseCache={setReceiverPreviewUseCache}
+							setReceiverSenderUserId={setReceiverSenderUserId}
+							setReceiverStream={setReceiverStream}
 							setSearchProvider={setSearchProvider}
-							artifactsStep={artifactsStep}
-							setArtifactsStep={setArtifactsStep}
-							artifactsListCount={artifactsListCount}
-							setArtifactsListCount={setArtifactsListCount}
-							artifactsListOffset={artifactsListOffset}
-							setArtifactsListOffset={setArtifactsListOffset}
-							artifactsListTag={artifactsListTag}
-							setArtifactsListTag={setArtifactsListTag}
-							artifactsPostFilename={artifactsPostFilename}
-							setArtifactsPostFilename={setArtifactsPostFilename}
-							artifactsPostSaveBody={artifactsPostSaveBody}
-							setArtifactsPostSaveBody={setArtifactsPostSaveBody}
-							artifactsObjectFilename={artifactsObjectFilename}
-							setArtifactsObjectFilename={setArtifactsObjectFilename}
-							artifactsObjectBody={artifactsObjectBody}
-							setArtifactsObjectBody={setArtifactsObjectBody}
-							toolsProcessFileName={toolsProcessFileName}
-							setToolsProcessFileName={setToolsProcessFileName}
-							toolsProcessFileStep={toolsProcessFileStep}
-							setToolsProcessFileStep={setToolsProcessFileStep}
-							toolsFetchUrl={toolsFetchUrl}
-							setToolsFetchUrl={setToolsFetchUrl}
-							toolsFetchUseCrawl4ai={toolsFetchUseCrawl4ai}
-							setToolsFetchUseCrawl4ai={setToolsFetchUseCrawl4ai}
-							toolsSemanticText={toolsSemanticText}
-							setToolsSemanticText={setToolsSemanticText}
-							toolsSemanticObjectsJson={toolsSemanticObjectsJson}
-							setToolsSemanticObjectsJson={setToolsSemanticObjectsJson}
-							toolsSemanticN={toolsSemanticN}
-							setToolsSemanticN={setToolsSemanticN}
-							toolsNeedle={toolsNeedle}
-							setToolsNeedle={setToolsNeedle}
-							toolsHaystackJson={toolsHaystackJson}
-							setToolsHaystackJson={setToolsHaystackJson}
-							toolsAnglesTextsJson={toolsAnglesTextsJson}
-							setToolsAnglesTextsJson={setToolsAnglesTextsJson}
-							callApi={callApi}
+							setSearchQuery={setSearchQuery}
+							setStegoPayload={setStegoPayload}
+							setStegoReceiverLiveAllowFallback={
+								setStegoReceiverLiveAllowFallback
+							}
+							setStegoReceiverLiveCompressedBitstring={
+								setStegoReceiverLiveCompressedBitstring
+							}
+							setStegoReceiverLiveListOffset={setStegoReceiverLiveListOffset}
+							setStegoReceiverLiveMaxPaddingBits={
+								setStegoReceiverLiveMaxPaddingBits
+							}
+							setStegoReceiverLiveMaxPostAttempts={
+								setStegoReceiverLiveMaxPostAttempts
+							}
+							setStegoReceiverLivePayload={setStegoReceiverLivePayload}
+							setStegoReceiverLivePostId={setStegoReceiverLivePostId}
+							setStegoReceiverLiveSenderUserId={
+								setStegoReceiverLiveSenderUserId
+							}
+							setStegoReceiverLiveSimulationRoot={
+								setStegoReceiverLiveSimulationRoot
+							}
+							setStegoReceiverLiveStream={setStegoReceiverLiveStream}
+							setStegoReceiverLiveTag={setStegoReceiverLiveTag}
 							setTabError={setTabError}
+							setToolsAnglesTextsJson={setToolsAnglesTextsJson}
+							setToolsFetchUrl={setToolsFetchUrl}
+							setToolsFetchUseCrawl4ai={setToolsFetchUseCrawl4ai}
+							setToolsHaystackJson={setToolsHaystackJson}
+							setToolsNeedle={setToolsNeedle}
+							setToolsProcessFileName={setToolsProcessFileName}
+							setToolsProcessFileStep={setToolsProcessFileStep}
+							setToolsSemanticN={setToolsSemanticN}
+							setToolsSemanticObjectsJson={setToolsSemanticObjectsJson}
+							setToolsSemanticText={setToolsSemanticText}
+							setTriggerAnglesMode={setTriggerAnglesMode}
+							setValidateAllowAnglesFallback={setValidateAllowAnglesFallback}
+							setValidatePersistTermsCache={setValidatePersistTermsCache}
+							setValidatePostId={setValidatePostId}
+							setValidatePostStream={setValidatePostStream}
+							setValidateUseFetchCache={setValidateUseFetchCache}
+							setValidateUseTermsCache={setValidateUseTermsCache}
+							setWorkflowBody={setWorkflowBody}
+							setWorkflowCommand={setWorkflowCommand}
+							stegoPayload={stegoPayload}
+							stegoReceiverLiveAllowFallback={stegoReceiverLiveAllowFallback}
+							stegoReceiverLiveCompressedBitstring={
+								stegoReceiverLiveCompressedBitstring
+							}
+							stegoReceiverLiveListOffset={stegoReceiverLiveListOffset}
+							stegoReceiverLiveMaxPaddingBits={stegoReceiverLiveMaxPaddingBits}
+							stegoReceiverLiveMaxPostAttempts={
+								stegoReceiverLiveMaxPostAttempts
+							}
+							stegoReceiverLivePayload={stegoReceiverLivePayload}
+							stegoReceiverLivePostId={stegoReceiverLivePostId}
+							stegoReceiverLiveSenderUserId={stegoReceiverLiveSenderUserId}
+							stegoReceiverLiveSimulationRoot={stegoReceiverLiveSimulationRoot}
+							stegoReceiverLiveStream={stegoReceiverLiveStream}
+							stegoReceiverLiveTag={stegoReceiverLiveTag}
 							submitWorkflowRequest={submitWorkflowRequest}
+							tab={activeTab}
+							toolsAnglesTextsJson={toolsAnglesTextsJson}
+							toolsFetchUrl={toolsFetchUrl}
+							toolsFetchUseCrawl4ai={toolsFetchUseCrawl4ai}
+							toolsHaystackJson={toolsHaystackJson}
+							toolsNeedle={toolsNeedle}
+							toolsProcessFileName={toolsProcessFileName}
+							toolsProcessFileStep={toolsProcessFileStep}
+							toolsSemanticN={toolsSemanticN}
+							toolsSemanticObjectsJson={toolsSemanticObjectsJson}
+							toolsSemanticText={toolsSemanticText}
+							triggerAnglesMode={triggerAnglesMode}
+							validateAllowAnglesFallback={validateAllowAnglesFallback}
+							validatePersistTermsCache={validatePersistTermsCache}
+							validatePostId={validatePostId}
+							validatePostStream={validatePostStream}
+							validateUseFetchCache={validateUseFetchCache}
+							validateUseTermsCache={validateUseTermsCache}
+							workflowBody={workflowBody}
+							workflowCommand={workflowCommand}
 						/>
 					) : null}
 				</div>

@@ -5,6 +5,7 @@ import { useState } from "react";
 interface JsonTreeRendererProps {
 	data: unknown;
 	hideMessage?: boolean;
+	filename?: string | null;
 }
 
 function JsonValue({ value, path = "" }: { value: unknown; path?: string }) {

@@ -1,5 +1,9 @@
-import type { ApiWorkspaceTab, WorkflowCommand } from "./types";
 import type { CallApiFn, SetTabErrorFn } from "./tab-actions";
+import type {
+	ApiWorkspaceTab,
+	TriggerAnglesMode,
+	WorkflowCommand,
+} from "./types";
 
 export interface AdminApiToolPanelsProps {
 	tab: ApiWorkspaceTab;
@@ -50,6 +54,36 @@ export interface AdminApiToolPanelsProps {
 	setBatchAnglesDeterminismStep: (value: string) => void;
 	batchAnglesDeterminismStream: boolean;
 	setBatchAnglesDeterminismStream: (value: boolean) => void;
+	triggerAnglesMode: TriggerAnglesMode;
+	setTriggerAnglesMode: (value: TriggerAnglesMode) => void;
+	genAnglesCount: string;
+	setGenAnglesCount: (value: string) => void;
+	genAnglesOffset: string;
+	setGenAnglesOffset: (value: string) => void;
+	genAnglesStream: boolean;
+	setGenAnglesStream: (value: boolean) => void;
+	stegoReceiverLiveSenderUserId: string;
+	setStegoReceiverLiveSenderUserId: (value: string) => void;
+	stegoReceiverLivePostId: string;
+	setStegoReceiverLivePostId: (value: string) => void;
+	stegoReceiverLivePayload: string;
+	setStegoReceiverLivePayload: (value: string) => void;
+	stegoReceiverLiveTag: string;
+	setStegoReceiverLiveTag: (value: string) => void;
+	stegoReceiverLiveListOffset: string;
+	setStegoReceiverLiveListOffset: (value: string) => void;
+	stegoReceiverLiveSimulationRoot: string;
+	setStegoReceiverLiveSimulationRoot: (value: string) => void;
+	stegoReceiverLiveCompressedBitstring: string;
+	setStegoReceiverLiveCompressedBitstring: (value: string) => void;
+	stegoReceiverLiveAllowFallback: boolean;
+	setStegoReceiverLiveAllowFallback: (value: boolean) => void;
+	stegoReceiverLiveMaxPaddingBits: string;
+	setStegoReceiverLiveMaxPaddingBits: (value: string) => void;
+	stegoReceiverLiveMaxPostAttempts: string;
+	setStegoReceiverLiveMaxPostAttempts: (value: string) => void;
+	stegoReceiverLiveStream: boolean;
+	setStegoReceiverLiveStream: (value: boolean) => void;
 	receiverPostJson: string;
 	setReceiverPostJson: (value: string) => void;
 	receiverSenderUserId: string;
@@ -114,6 +148,6 @@ export interface AdminApiToolPanelsProps {
 	setTabError: SetTabErrorFn;
 	submitWorkflowRequest: (
 		tabId: string,
-		options?: { forceRunAll?: boolean }
+		options?: { forceRunAll?: boolean },
 	) => void | Promise<void>;
 }

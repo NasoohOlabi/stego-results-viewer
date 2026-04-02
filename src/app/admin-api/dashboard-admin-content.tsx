@@ -9,24 +9,25 @@ import { AdminApiActiveResponse } from "./admin-api-active-response";
 import { AdminApiTabWorkspace } from "./admin-api-tab-workspace";
 import { executeAdminApiRequest } from "./fetch-admin-api";
 import {
+	type CallApiFn,
 	runTabAction,
 	submitWorkflowRequest as submitWorkflowRequestImpl,
-	type CallApiFn
 } from "./tab-actions";
 import {
 	ADMIN_API_STORAGE_KEY,
+	type ApiActionId,
+	type ApiResponseView,
+	type ApiWorkspaceTab,
 	createIdleResponse,
 	getApiToolForAction,
 	getDefaultApiActionForTool,
 	isApiActionId,
 	isApiToolId,
 	isWorkflowCommand,
-	type ApiActionId,
-	type ApiResponseView,
-	type ApiWorkspaceTab,
 	type PersistedAdminApiState,
 	type StreamEventView,
-	type WorkflowCommand
+	type TriggerAnglesMode,
+	type WorkflowCommand,
 } from "./types";
 import { getWorkflowTemplate, toPrettyJson } from "./utils";
 
@@ -42,7 +43,7 @@ export function DashboardAdminContent() {
 
 	const { data: files = [] } = api.files.listFiles.useQuery(
 		{ pathId: apiPathId },
-		{ enabled: isValidPath }
+		{ enabled: isValidPath },
 	);
 
 	const [baseUrl, setBaseUrl] = useState("http://localhost:5001/api/v1");
@@ -51,8 +52,8 @@ export function DashboardAdminContent() {
 			id: "tab-1",
 			apiToolId: "service",
 			apiActionId: "service-health",
-			response: createIdleResponse()
-		}
+			response: createIdleResponse(),
+		},
 	]);
 	const [activeTabId, setActiveTabId] = useState("tab-1");
 
@@ -61,13 +62,13 @@ export function DashboardAdminContent() {
 	const [fsRecursive, setFsRecursive] = useState(false);
 	const [fsLimit, setFsLimit] = useState("100");
 	const [jsonReadPath, setJsonReadPath] = useState(
-		"metrics/divergence_metrics_latest.json"
+		"metrics/divergence_metrics_latest.json",
 	);
 	const [jsonWritePath, setJsonWritePath] = useState(
-		"metrics/manual_write.json"
+		"metrics/manual_write.json",
 	);
 	const [jsonWriteBody, setJsonWriteBody] = useState(
-		'{\n  "hello": "world"\n}'
+		'{\n  "hello": "world"\n}',
 	);
 	const [workflowCommand, setWorkflowCommand] =
 		useState<WorkflowCommand>("data-load");
@@ -86,27 +87,53 @@ export function DashboardAdminContent() {
 	const [protocolPersistCache, setProtocolPersistCache] = useState(false);
 	const [batchAnglesDeterminismPostIds, setBatchAnglesDeterminismPostIds] =
 		useState("");
-	const [batchAnglesDeterminismStep, setBatchAnglesDeterminismStep] = useState(
-		"angles-step"
-	);
+	const [batchAnglesDeterminismStep, setBatchAnglesDeterminismStep] =
+		useState("angles-step");
 	const [batchAnglesDeterminismStream, setBatchAnglesDeterminismStream] =
 		useState(false);
+	const [triggerAnglesMode, setTriggerAnglesMode] = useState<TriggerAnglesMode>(
+		"stego-receiver-live",
+	);
+	const [genAnglesCount, setGenAnglesCount] = useState("1");
+	const [genAnglesOffset, setGenAnglesOffset] = useState("0");
+	const [genAnglesStream, setGenAnglesStream] = useState(true);
+	const [stegoReceiverLiveSenderUserId, setStegoReceiverLiveSenderUserId] =
+		useState("");
+	const [stegoReceiverLivePostId, setStegoReceiverLivePostId] = useState("");
+	const [stegoReceiverLivePayload, setStegoReceiverLivePayload] = useState("");
+	const [stegoReceiverLiveTag, setStegoReceiverLiveTag] = useState("");
+	const [stegoReceiverLiveListOffset, setStegoReceiverLiveListOffset] =
+		useState("");
+	const [stegoReceiverLiveSimulationRoot, setStegoReceiverLiveSimulationRoot] =
+		useState("");
+	const [
+		stegoReceiverLiveCompressedBitstring,
+		setStegoReceiverLiveCompressedBitstring,
+	] = useState("");
+	const [stegoReceiverLiveAllowFallback, setStegoReceiverLiveAllowFallback] =
+		useState(false);
+	const [stegoReceiverLiveMaxPaddingBits, setStegoReceiverLiveMaxPaddingBits] =
+		useState("");
+	const [
+		stegoReceiverLiveMaxPostAttempts,
+		setStegoReceiverLiveMaxPostAttempts,
+	] = useState("");
+	const [stegoReceiverLiveStream, setStegoReceiverLiveStream] = useState(true);
 	const [receiverPostJson, setReceiverPostJson] = useState(
-		'{\n  "id": "example-post",\n  "author": "sender",\n  "selftext": "",\n  "comments": []\n}'
+		'{\n  "id": "example-post",\n  "author": "sender",\n  "selftext": "",\n  "comments": []\n}',
 	);
 	const [receiverSenderUserId, setReceiverSenderUserId] = useState("");
 	const [receiverCompressedBitstring, setReceiverCompressedBitstring] =
 		useState("");
 	const [receiverStream, setReceiverStream] = useState(false);
-	const [receiverPreviewUseCache, setReceiverPreviewUseCache] =
-		useState(false);
+	const [receiverPreviewUseCache, setReceiverPreviewUseCache] = useState(false);
 	const [receiverMaxPaddingBits, setReceiverMaxPaddingBits] = useState("");
 	const [workflowBody, setWorkflowBody] = useState(
-		getWorkflowTemplate("data-load")
+		getWorkflowTemplate("data-load"),
 	);
 	const [kvKey, setKvKey] = useState("test_key");
 	const [kvValue, setKvValue] = useState(
-		'{\n  "value": {\n    "ok": true\n  }\n}'
+		'{\n  "value": {\n    "ok": true\n  }\n}',
 	);
 	const [kvLimit, setKvLimit] = useState("20");
 	const [kvOffset, setKvOffset] = useState("0");
@@ -118,7 +145,7 @@ export function DashboardAdminContent() {
 	const [artifactsListTag, setArtifactsListTag] = useState("");
 	const [artifactsPostFilename, setArtifactsPostFilename] = useState("");
 	const [artifactsPostSaveBody, setArtifactsPostSaveBody] = useState(
-		'{\n  "id": "example-post"\n}'
+		'{\n  "id": "example-post"\n}',
 	);
 	const [artifactsObjectFilename, setArtifactsObjectFilename] =
 		useState("object.json");
@@ -134,9 +161,8 @@ export function DashboardAdminContent() {
 	const [toolsSemanticN, setToolsSemanticN] = useState("");
 	const [toolsNeedle, setToolsNeedle] = useState("");
 	const [toolsHaystackJson, setToolsHaystackJson] = useState('["a","b"]');
-	const [toolsAnglesTextsJson, setToolsAnglesTextsJson] = useState(
-		'["Sample text"]'
-	);
+	const [toolsAnglesTextsJson, setToolsAnglesTextsJson] =
+		useState('["Sample text"]');
 	const [copyErrorReportState, setCopyErrorReportState] = useState<
 		"idle" | "copied" | "failed"
 	>("idle");
@@ -145,8 +171,7 @@ export function DashboardAdminContent() {
 	>(null);
 	const [showHeartbeatEvents, setShowHeartbeatEvents] = useState(false);
 	const [streamSearchText, setStreamSearchText] = useState("");
-	const [showAdvancedApiControls, setShowAdvancedApiControls] =
-		useState(false);
+	const [showAdvancedApiControls, setShowAdvancedApiControls] = useState(false);
 	const didHydrateFromStorageRef = useRef(false);
 
 	useEffect(() => {
@@ -177,15 +202,14 @@ export function DashboardAdminContent() {
 			) {
 				setWorkflowCommand(parsed.workflowCommand);
 			} else if (
-				typeof (parsed as { artifactStep?: string }).artifactStep ===
-				"string"
+				typeof (parsed as { artifactStep?: string }).artifactStep === "string"
 			) {
 				const legacy = (parsed as { artifactStep: string }).artifactStep;
 				const fromStep: Partial<Record<string, WorkflowCommand>> = {
 					"filter-url-unresolved": "data-load",
 					"filter-researched": "research",
 					"angles-step": "gen-angles",
-					"final-step": "stego"
+					"final-step": "stego",
 				};
 				const mapped = fromStep[legacy];
 				if (mapped) setWorkflowCommand(mapped);
@@ -215,13 +239,55 @@ export function DashboardAdminContent() {
 			if (typeof parsed.protocolPersistCache === "boolean")
 				setProtocolPersistCache(parsed.protocolPersistCache);
 			if (typeof parsed.batchAnglesDeterminismPostIds === "string")
-				setBatchAnglesDeterminismPostIds(
-					parsed.batchAnglesDeterminismPostIds
-				);
+				setBatchAnglesDeterminismPostIds(parsed.batchAnglesDeterminismPostIds);
 			if (typeof parsed.batchAnglesDeterminismStep === "string")
 				setBatchAnglesDeterminismStep(parsed.batchAnglesDeterminismStep);
 			if (typeof parsed.batchAnglesDeterminismStream === "boolean")
 				setBatchAnglesDeterminismStream(parsed.batchAnglesDeterminismStream);
+			if (
+				parsed.triggerAnglesMode === "gen-angles" ||
+				parsed.triggerAnglesMode === "stego-receiver-live"
+			) {
+				setTriggerAnglesMode(parsed.triggerAnglesMode);
+			}
+			if (typeof parsed.genAnglesCount === "string")
+				setGenAnglesCount(parsed.genAnglesCount);
+			if (typeof parsed.genAnglesOffset === "string")
+				setGenAnglesOffset(parsed.genAnglesOffset);
+			if (typeof parsed.genAnglesStream === "boolean")
+				setGenAnglesStream(parsed.genAnglesStream);
+			if (typeof parsed.stegoReceiverLiveSenderUserId === "string")
+				setStegoReceiverLiveSenderUserId(parsed.stegoReceiverLiveSenderUserId);
+			if (typeof parsed.stegoReceiverLivePostId === "string")
+				setStegoReceiverLivePostId(parsed.stegoReceiverLivePostId);
+			if (typeof parsed.stegoReceiverLivePayload === "string")
+				setStegoReceiverLivePayload(parsed.stegoReceiverLivePayload);
+			if (typeof parsed.stegoReceiverLiveTag === "string")
+				setStegoReceiverLiveTag(parsed.stegoReceiverLiveTag);
+			if (typeof parsed.stegoReceiverLiveListOffset === "string")
+				setStegoReceiverLiveListOffset(parsed.stegoReceiverLiveListOffset);
+			if (typeof parsed.stegoReceiverLiveSimulationRoot === "string")
+				setStegoReceiverLiveSimulationRoot(
+					parsed.stegoReceiverLiveSimulationRoot,
+				);
+			if (typeof parsed.stegoReceiverLiveCompressedBitstring === "string")
+				setStegoReceiverLiveCompressedBitstring(
+					parsed.stegoReceiverLiveCompressedBitstring,
+				);
+			if (typeof parsed.stegoReceiverLiveAllowFallback === "boolean")
+				setStegoReceiverLiveAllowFallback(
+					parsed.stegoReceiverLiveAllowFallback,
+				);
+			if (typeof parsed.stegoReceiverLiveMaxPaddingBits === "string")
+				setStegoReceiverLiveMaxPaddingBits(
+					parsed.stegoReceiverLiveMaxPaddingBits,
+				);
+			if (typeof parsed.stegoReceiverLiveMaxPostAttempts === "string")
+				setStegoReceiverLiveMaxPostAttempts(
+					parsed.stegoReceiverLiveMaxPostAttempts,
+				);
+			if (typeof parsed.stegoReceiverLiveStream === "boolean")
+				setStegoReceiverLiveStream(parsed.stegoReceiverLiveStream);
 			if (typeof parsed.receiverPostJson === "string")
 				setReceiverPostJson(parsed.receiverPostJson);
 			if (typeof parsed.receiverSenderUserId === "string")
@@ -303,8 +369,7 @@ export function DashboardAdminContent() {
 						const response =
 							candidate.response &&
 							typeof candidate.response === "object" &&
-							typeof (candidate.response as ApiResponseView).status ===
-								"string"
+							typeof (candidate.response as ApiResponseView).status === "string"
 								? (candidate.response as ApiResponseView)
 								: createIdleResponse();
 						return { id, apiToolId, apiActionId, response };
@@ -358,6 +423,21 @@ export function DashboardAdminContent() {
 			batchAnglesDeterminismPostIds,
 			batchAnglesDeterminismStep,
 			batchAnglesDeterminismStream,
+			triggerAnglesMode,
+			genAnglesCount,
+			genAnglesOffset,
+			genAnglesStream,
+			stegoReceiverLiveSenderUserId,
+			stegoReceiverLivePostId,
+			stegoReceiverLivePayload,
+			stegoReceiverLiveTag,
+			stegoReceiverLiveListOffset,
+			stegoReceiverLiveSimulationRoot,
+			stegoReceiverLiveCompressedBitstring,
+			stegoReceiverLiveAllowFallback,
+			stegoReceiverLiveMaxPaddingBits,
+			stegoReceiverLiveMaxPostAttempts,
+			stegoReceiverLiveStream,
 			receiverPostJson,
 			receiverSenderUserId,
 			receiverCompressedBitstring,
@@ -390,7 +470,7 @@ export function DashboardAdminContent() {
 			toolsAnglesTextsJson,
 			showHeartbeatEvents,
 			streamSearchText,
-			showAdvancedApiControls
+			showAdvancedApiControls,
 		};
 		try {
 			localStorage.setItem(ADMIN_API_STORAGE_KEY, JSON.stringify(state));
@@ -424,6 +504,21 @@ export function DashboardAdminContent() {
 		batchAnglesDeterminismPostIds,
 		batchAnglesDeterminismStep,
 		batchAnglesDeterminismStream,
+		triggerAnglesMode,
+		genAnglesCount,
+		genAnglesOffset,
+		genAnglesStream,
+		stegoReceiverLiveSenderUserId,
+		stegoReceiverLivePostId,
+		stegoReceiverLivePayload,
+		stegoReceiverLiveTag,
+		stegoReceiverLiveListOffset,
+		stegoReceiverLiveSimulationRoot,
+		stegoReceiverLiveCompressedBitstring,
+		stegoReceiverLiveAllowFallback,
+		stegoReceiverLiveMaxPaddingBits,
+		stegoReceiverLiveMaxPostAttempts,
+		stegoReceiverLiveStream,
 		receiverPostJson,
 		receiverSenderUserId,
 		receiverCompressedBitstring,
@@ -456,7 +551,7 @@ export function DashboardAdminContent() {
 		toolsAnglesTextsJson,
 		showHeartbeatEvents,
 		streamSearchText,
-		showAdvancedApiControls
+		showAdvancedApiControls,
 	]);
 
 	const base = useMemo(() => baseUrl.replace(/\/+$/, ""), [baseUrl]);
@@ -465,7 +560,7 @@ export function DashboardAdminContent() {
 
 	const updateTabResponse = (tabId: string, response: ApiResponseView) => {
 		setTabs((prevTabs) =>
-			prevTabs.map((tab) => (tab.id === tabId ? { ...tab, response } : tab))
+			prevTabs.map((tab) => (tab.id === tabId ? { ...tab, response } : tab)),
 		);
 	};
 
@@ -474,7 +569,7 @@ export function DashboardAdminContent() {
 		path,
 		query,
 		body,
-		tabId = activeTabId
+		tabId = activeTabId,
 	) => {
 		setCopyErrorReportState("idle");
 		return executeAdminApiRequest({
@@ -484,7 +579,7 @@ export function DashboardAdminContent() {
 			query,
 			body,
 			tabId,
-			updateTabResponse
+			updateTabResponse,
 		});
 	};
 
@@ -493,7 +588,7 @@ export function DashboardAdminContent() {
 		endpoint: string,
 		method: ApiResponseView["method"],
 		message: string,
-		request: ApiResponseView["request"] = null
+		request: ApiResponseView["request"] = null,
 	) => {
 		setCopyErrorReportState("idle");
 		updateTabResponse(tabId, {
@@ -501,7 +596,7 @@ export function DashboardAdminContent() {
 			endpoint,
 			method,
 			request,
-			data: { message }
+			data: { message },
 		});
 	};
 
@@ -514,9 +609,9 @@ export function DashboardAdminContent() {
 				url: activeTabResponse.endpoint,
 				path: "",
 				query: null,
-				body: null
+				body: null,
 			},
-			response: activeTabResponse.data
+			response: activeTabResponse.data,
 		};
 
 		try {
@@ -534,7 +629,7 @@ export function DashboardAdminContent() {
 			retry: event.retry,
 			receivedAt: event.receivedAt,
 			rawData: event.rawData,
-			data: event.data
+			data: event.data,
 		};
 
 		try {
@@ -542,7 +637,7 @@ export function DashboardAdminContent() {
 			setCopiedStreamEventKey(eventKey);
 			setTimeout(() => {
 				setCopiedStreamEventKey((current) =>
-					current === eventKey ? null : current
+					current === eventKey ? null : current,
 				);
 			}, 1200);
 		} catch {
@@ -558,8 +653,8 @@ export function DashboardAdminContent() {
 				id: nextId,
 				apiToolId: "service",
 				apiActionId: "service-health",
-				response: createIdleResponse()
-			}
+				response: createIdleResponse(),
+			},
 		]);
 		setActiveTabId(nextId);
 	};
@@ -585,10 +680,10 @@ export function DashboardAdminContent() {
 							...tab,
 							apiActionId,
 							apiToolId: getApiToolForAction(apiActionId),
-							response: createIdleResponse()
+							response: createIdleResponse(),
 						}
-					: tab
-			)
+					: tab,
+			),
 		);
 	};
 
@@ -604,7 +699,7 @@ export function DashboardAdminContent() {
 
 	const submitWorkflowRequestForTab = async (
 		tabId: string,
-		options?: { forceRunAll?: boolean }
+		options?: { forceRunAll?: boolean },
 	) => {
 		await submitWorkflowRequestImpl({
 			tabId,
@@ -615,7 +710,7 @@ export function DashboardAdminContent() {
 			stegoPayload,
 			callApi,
 			setTabError,
-			options
+			options,
 		});
 	};
 
@@ -669,6 +764,21 @@ export function DashboardAdminContent() {
 			batchAnglesDeterminismPostIds,
 			batchAnglesDeterminismStep,
 			batchAnglesDeterminismStream,
+			triggerAnglesMode,
+			genAnglesCount,
+			genAnglesOffset,
+			genAnglesStream,
+			stegoReceiverLiveSenderUserId,
+			stegoReceiverLivePostId,
+			stegoReceiverLivePayload,
+			stegoReceiverLiveTag,
+			stegoReceiverLiveListOffset,
+			stegoReceiverLiveSimulationRoot,
+			stegoReceiverLiveCompressedBitstring,
+			stegoReceiverLiveAllowFallback,
+			stegoReceiverLiveMaxPaddingBits,
+			stegoReceiverLiveMaxPostAttempts,
+			stegoReceiverLiveStream,
 			receiverPostJson,
 			receiverSenderUserId,
 			receiverCompressedBitstring,
@@ -677,7 +787,7 @@ export function DashboardAdminContent() {
 			receiverMaxPaddingBits,
 			callApi,
 			setTabError,
-			submitWorkflowRequest: submitWorkflowRequestForTab
+			submitWorkflowRequest: submitWorkflowRequestForTab,
 		});
 	};
 
@@ -686,172 +796,206 @@ export function DashboardAdminContent() {
 			<div className="shrink-0">
 				<FileExplorer
 					files={files}
-					selectedFile={null}
 					onFileSelect={handleFileSelect}
-					selectedPathId={selectedPathId}
 					onPathSelect={handlePathSelect}
+					selectedFile={null}
+					selectedPathId={selectedPathId}
 				/>
 			</div>
 
 			<div className="flex-1 overflow-y-auto p-8">
 				<div className="mx-auto max-w-7xl space-y-6">
 					<header className="space-y-2">
-						<h1 className="text-3xl font-bold">Admin API Console</h1>
+						<h1 className="font-bold text-3xl">Admin API Console</h1>
 						<p className="text-sm text-white/50">
 							Open APIs in tabs, run calls, compare responses.
 						</p>
 						<div className="rounded-lg border border-white/10 bg-white/5 p-3">
-							<label className="text-xs text-white/60">
-								Backend Base URL
-							</label>
+							<label className="text-white/60 text-xs">Backend Base URL</label>
 							<input
-								value={baseUrl}
-								onChange={(e) => setBaseUrl(e.target.value)}
 								className="mt-1 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+								onChange={(e) => setBaseUrl(e.target.value)}
 								placeholder="http://localhost:5001/api/v1"
+								value={baseUrl}
 							/>
 						</div>
 					</header>
 
 					<AdminApiTabWorkspace
-						tabs={tabs}
-						activeTabId={activeTabId}
 						activeTab={activeTab}
-						onSelectTab={setActiveTabId}
-						onCloseTab={closeTab}
-						onAddTab={addNewTab}
-						onUpdateTabApiAction={updateTabApiAction}
-						onRunTabAction={runTabActionForTab}
-						showAdvancedApiControls={showAdvancedApiControls}
-						onShowAdvancedApiControlsChange={setShowAdvancedApiControls}
-						base={base}
-						cacheTarget={cacheTarget}
-						setCacheTarget={setCacheTarget}
-						fsPath={fsPath}
-						setFsPath={setFsPath}
-						fsRecursive={fsRecursive}
-						setFsRecursive={setFsRecursive}
-						fsLimit={fsLimit}
-						setFsLimit={setFsLimit}
-						jsonReadPath={jsonReadPath}
-						setJsonReadPath={setJsonReadPath}
-						jsonWritePath={jsonWritePath}
-						setJsonWritePath={setJsonWritePath}
-						jsonWriteBody={jsonWriteBody}
-						setJsonWriteBody={setJsonWriteBody}
-						workflowCommand={workflowCommand}
-						setWorkflowCommand={setWorkflowCommand}
-						artifactTag={artifactTag}
-						setArtifactTag={setArtifactTag}
-						workflowBody={workflowBody}
-						setWorkflowBody={setWorkflowBody}
-						stegoPayload={stegoPayload}
-						setStegoPayload={setStegoPayload}
-						validatePostId={validatePostId}
-						setValidatePostId={setValidatePostId}
-						validatePostStream={validatePostStream}
-						setValidatePostStream={setValidatePostStream}
-						validateUseTermsCache={validateUseTermsCache}
-						setValidateUseTermsCache={setValidateUseTermsCache}
-						validatePersistTermsCache={validatePersistTermsCache}
-						setValidatePersistTermsCache={setValidatePersistTermsCache}
-						validateUseFetchCache={validateUseFetchCache}
-						setValidateUseFetchCache={setValidateUseFetchCache}
-						validateAllowAnglesFallback={validateAllowAnglesFallback}
-						setValidateAllowAnglesFallback={
-							setValidateAllowAnglesFallback
-						}
-						protocolIncludePost={protocolIncludePost}
-						setProtocolIncludePost={setProtocolIncludePost}
-						protocolUseCache={protocolUseCache}
-						setProtocolUseCache={setProtocolUseCache}
-						protocolPersistCache={protocolPersistCache}
-						setProtocolPersistCache={setProtocolPersistCache}
-						batchAnglesDeterminismPostIds={batchAnglesDeterminismPostIds}
-						setBatchAnglesDeterminismPostIds={
-							setBatchAnglesDeterminismPostIds
-						}
-						batchAnglesDeterminismStep={batchAnglesDeterminismStep}
-						setBatchAnglesDeterminismStep={setBatchAnglesDeterminismStep}
-						batchAnglesDeterminismStream={batchAnglesDeterminismStream}
-						setBatchAnglesDeterminismStream={
-							setBatchAnglesDeterminismStream
-						}
-						receiverPostJson={receiverPostJson}
-						setReceiverPostJson={setReceiverPostJson}
-						receiverSenderUserId={receiverSenderUserId}
-						setReceiverSenderUserId={setReceiverSenderUserId}
-						receiverCompressedBitstring={receiverCompressedBitstring}
-						setReceiverCompressedBitstring={setReceiverCompressedBitstring}
-						receiverStream={receiverStream}
-						setReceiverStream={setReceiverStream}
-						receiverPreviewUseCache={receiverPreviewUseCache}
-						setReceiverPreviewUseCache={setReceiverPreviewUseCache}
-						receiverMaxPaddingBits={receiverMaxPaddingBits}
-						setReceiverMaxPaddingBits={setReceiverMaxPaddingBits}
-						kvKey={kvKey}
-						setKvKey={setKvKey}
-						kvValue={kvValue}
-						setKvValue={setKvValue}
-						kvLimit={kvLimit}
-						setKvLimit={setKvLimit}
-						kvOffset={kvOffset}
-						setKvOffset={setKvOffset}
-						searchQuery={searchQuery}
-						setSearchQuery={setSearchQuery}
-						searchProvider={searchProvider}
-						setSearchProvider={setSearchProvider}
-						artifactsStep={artifactsStep}
-						setArtifactsStep={setArtifactsStep}
+						activeTabId={activeTabId}
 						artifactsListCount={artifactsListCount}
-						setArtifactsListCount={setArtifactsListCount}
 						artifactsListOffset={artifactsListOffset}
-						setArtifactsListOffset={setArtifactsListOffset}
 						artifactsListTag={artifactsListTag}
-						setArtifactsListTag={setArtifactsListTag}
-						artifactsPostFilename={artifactsPostFilename}
-						setArtifactsPostFilename={setArtifactsPostFilename}
-						artifactsPostSaveBody={artifactsPostSaveBody}
-						setArtifactsPostSaveBody={setArtifactsPostSaveBody}
-						artifactsObjectFilename={artifactsObjectFilename}
-						setArtifactsObjectFilename={setArtifactsObjectFilename}
 						artifactsObjectBody={artifactsObjectBody}
-						setArtifactsObjectBody={setArtifactsObjectBody}
-						toolsProcessFileName={toolsProcessFileName}
-						setToolsProcessFileName={setToolsProcessFileName}
-						toolsProcessFileStep={toolsProcessFileStep}
-						setToolsProcessFileStep={setToolsProcessFileStep}
-						toolsFetchUrl={toolsFetchUrl}
-						setToolsFetchUrl={setToolsFetchUrl}
-						toolsFetchUseCrawl4ai={toolsFetchUseCrawl4ai}
-						setToolsFetchUseCrawl4ai={setToolsFetchUseCrawl4ai}
-						toolsSemanticText={toolsSemanticText}
-						setToolsSemanticText={setToolsSemanticText}
-						toolsSemanticObjectsJson={toolsSemanticObjectsJson}
-						setToolsSemanticObjectsJson={setToolsSemanticObjectsJson}
-						toolsSemanticN={toolsSemanticN}
-						setToolsSemanticN={setToolsSemanticN}
-						toolsNeedle={toolsNeedle}
-						setToolsNeedle={setToolsNeedle}
-						toolsHaystackJson={toolsHaystackJson}
-						setToolsHaystackJson={setToolsHaystackJson}
-						toolsAnglesTextsJson={toolsAnglesTextsJson}
-						setToolsAnglesTextsJson={setToolsAnglesTextsJson}
+						artifactsObjectFilename={artifactsObjectFilename}
+						artifactsPostFilename={artifactsPostFilename}
+						artifactsPostSaveBody={artifactsPostSaveBody}
+						artifactsStep={artifactsStep}
+						artifactTag={artifactTag}
+						base={base}
+						batchAnglesDeterminismPostIds={batchAnglesDeterminismPostIds}
+						batchAnglesDeterminismStep={batchAnglesDeterminismStep}
+						batchAnglesDeterminismStream={batchAnglesDeterminismStream}
+						cacheTarget={cacheTarget}
 						callApi={callApi}
+						fsLimit={fsLimit}
+						fsPath={fsPath}
+						fsRecursive={fsRecursive}
+						genAnglesCount={genAnglesCount}
+						genAnglesOffset={genAnglesOffset}
+						genAnglesStream={genAnglesStream}
+						jsonReadPath={jsonReadPath}
+						jsonWriteBody={jsonWriteBody}
+						jsonWritePath={jsonWritePath}
+						kvKey={kvKey}
+						kvLimit={kvLimit}
+						kvOffset={kvOffset}
+						kvValue={kvValue}
+						onAddTab={addNewTab}
+						onCloseTab={closeTab}
+						onRunTabAction={runTabActionForTab}
+						onSelectTab={setActiveTabId}
+						onShowAdvancedApiControlsChange={setShowAdvancedApiControls}
+						onUpdateTabApiAction={updateTabApiAction}
+						protocolIncludePost={protocolIncludePost}
+						protocolPersistCache={protocolPersistCache}
+						protocolUseCache={protocolUseCache}
+						receiverCompressedBitstring={receiverCompressedBitstring}
+						receiverMaxPaddingBits={receiverMaxPaddingBits}
+						receiverPostJson={receiverPostJson}
+						receiverPreviewUseCache={receiverPreviewUseCache}
+						receiverSenderUserId={receiverSenderUserId}
+						receiverStream={receiverStream}
+						searchProvider={searchProvider}
+						searchQuery={searchQuery}
+						setArtifactsListCount={setArtifactsListCount}
+						setArtifactsListOffset={setArtifactsListOffset}
+						setArtifactsListTag={setArtifactsListTag}
+						setArtifactsObjectBody={setArtifactsObjectBody}
+						setArtifactsObjectFilename={setArtifactsObjectFilename}
+						setArtifactsPostFilename={setArtifactsPostFilename}
+						setArtifactsPostSaveBody={setArtifactsPostSaveBody}
+						setArtifactsStep={setArtifactsStep}
+						setArtifactTag={setArtifactTag}
+						setBatchAnglesDeterminismPostIds={setBatchAnglesDeterminismPostIds}
+						setBatchAnglesDeterminismStep={setBatchAnglesDeterminismStep}
+						setBatchAnglesDeterminismStream={setBatchAnglesDeterminismStream}
+						setCacheTarget={setCacheTarget}
+						setFsLimit={setFsLimit}
+						setFsPath={setFsPath}
+						setFsRecursive={setFsRecursive}
+						setGenAnglesCount={setGenAnglesCount}
+						setGenAnglesOffset={setGenAnglesOffset}
+						setGenAnglesStream={setGenAnglesStream}
+						setJsonReadPath={setJsonReadPath}
+						setJsonWriteBody={setJsonWriteBody}
+						setJsonWritePath={setJsonWritePath}
+						setKvKey={setKvKey}
+						setKvLimit={setKvLimit}
+						setKvOffset={setKvOffset}
+						setKvValue={setKvValue}
+						setProtocolIncludePost={setProtocolIncludePost}
+						setProtocolPersistCache={setProtocolPersistCache}
+						setProtocolUseCache={setProtocolUseCache}
+						setReceiverCompressedBitstring={setReceiverCompressedBitstring}
+						setReceiverMaxPaddingBits={setReceiverMaxPaddingBits}
+						setReceiverPostJson={setReceiverPostJson}
+						setReceiverPreviewUseCache={setReceiverPreviewUseCache}
+						setReceiverSenderUserId={setReceiverSenderUserId}
+						setReceiverStream={setReceiverStream}
+						setSearchProvider={setSearchProvider}
+						setSearchQuery={setSearchQuery}
+						setStegoPayload={setStegoPayload}
+						setStegoReceiverLiveAllowFallback={
+							setStegoReceiverLiveAllowFallback
+						}
+						setStegoReceiverLiveCompressedBitstring={
+							setStegoReceiverLiveCompressedBitstring
+						}
+						setStegoReceiverLiveListOffset={setStegoReceiverLiveListOffset}
+						setStegoReceiverLiveMaxPaddingBits={
+							setStegoReceiverLiveMaxPaddingBits
+						}
+						setStegoReceiverLiveMaxPostAttempts={
+							setStegoReceiverLiveMaxPostAttempts
+						}
+						setStegoReceiverLivePayload={setStegoReceiverLivePayload}
+						setStegoReceiverLivePostId={setStegoReceiverLivePostId}
+						setStegoReceiverLiveSenderUserId={setStegoReceiverLiveSenderUserId}
+						setStegoReceiverLiveSimulationRoot={
+							setStegoReceiverLiveSimulationRoot
+						}
+						setStegoReceiverLiveStream={setStegoReceiverLiveStream}
+						setStegoReceiverLiveTag={setStegoReceiverLiveTag}
 						setTabError={setTabError}
+						setToolsAnglesTextsJson={setToolsAnglesTextsJson}
+						setToolsFetchUrl={setToolsFetchUrl}
+						setToolsFetchUseCrawl4ai={setToolsFetchUseCrawl4ai}
+						setToolsHaystackJson={setToolsHaystackJson}
+						setToolsNeedle={setToolsNeedle}
+						setToolsProcessFileName={setToolsProcessFileName}
+						setToolsProcessFileStep={setToolsProcessFileStep}
+						setToolsSemanticN={setToolsSemanticN}
+						setToolsSemanticObjectsJson={setToolsSemanticObjectsJson}
+						setToolsSemanticText={setToolsSemanticText}
+						setTriggerAnglesMode={setTriggerAnglesMode}
+						setValidateAllowAnglesFallback={setValidateAllowAnglesFallback}
+						setValidatePersistTermsCache={setValidatePersistTermsCache}
+						setValidatePostId={setValidatePostId}
+						setValidatePostStream={setValidatePostStream}
+						setValidateUseFetchCache={setValidateUseFetchCache}
+						setValidateUseTermsCache={setValidateUseTermsCache}
+						setWorkflowBody={setWorkflowBody}
+						setWorkflowCommand={setWorkflowCommand}
+						showAdvancedApiControls={showAdvancedApiControls}
+						stegoPayload={stegoPayload}
+						stegoReceiverLiveAllowFallback={stegoReceiverLiveAllowFallback}
+						stegoReceiverLiveCompressedBitstring={
+							stegoReceiverLiveCompressedBitstring
+						}
+						stegoReceiverLiveListOffset={stegoReceiverLiveListOffset}
+						stegoReceiverLiveMaxPaddingBits={stegoReceiverLiveMaxPaddingBits}
+						stegoReceiverLiveMaxPostAttempts={stegoReceiverLiveMaxPostAttempts}
+						stegoReceiverLivePayload={stegoReceiverLivePayload}
+						stegoReceiverLivePostId={stegoReceiverLivePostId}
+						stegoReceiverLiveSenderUserId={stegoReceiverLiveSenderUserId}
+						stegoReceiverLiveSimulationRoot={stegoReceiverLiveSimulationRoot}
+						stegoReceiverLiveStream={stegoReceiverLiveStream}
+						stegoReceiverLiveTag={stegoReceiverLiveTag}
 						submitWorkflowRequest={submitWorkflowRequestForTab}
+						tabs={tabs}
+						toolsAnglesTextsJson={toolsAnglesTextsJson}
+						toolsFetchUrl={toolsFetchUrl}
+						toolsFetchUseCrawl4ai={toolsFetchUseCrawl4ai}
+						toolsHaystackJson={toolsHaystackJson}
+						toolsNeedle={toolsNeedle}
+						toolsProcessFileName={toolsProcessFileName}
+						toolsProcessFileStep={toolsProcessFileStep}
+						toolsSemanticN={toolsSemanticN}
+						toolsSemanticObjectsJson={toolsSemanticObjectsJson}
+						toolsSemanticText={toolsSemanticText}
+						triggerAnglesMode={triggerAnglesMode}
+						validateAllowAnglesFallback={validateAllowAnglesFallback}
+						validatePersistTermsCache={validatePersistTermsCache}
+						validatePostId={validatePostId}
+						validatePostStream={validatePostStream}
+						validateUseFetchCache={validateUseFetchCache}
+						validateUseTermsCache={validateUseTermsCache}
+						workflowBody={workflowBody}
+						workflowCommand={workflowCommand}
 					/>
 
 					<AdminApiActiveResponse
 						activeTabResponse={activeTabResponse}
+						copiedStreamEventKey={copiedStreamEventKey}
 						copyErrorReportState={copyErrorReportState}
 						onCopyActiveErrorReport={copyActiveErrorReport}
-						showHeartbeatEvents={showHeartbeatEvents}
-						onShowHeartbeatEventsChange={setShowHeartbeatEvents}
-						streamSearchText={streamSearchText}
-						onStreamSearchTextChange={setStreamSearchText}
-						copiedStreamEventKey={copiedStreamEventKey}
 						onCopyStreamEvent={copyStreamEvent}
+						onShowHeartbeatEventsChange={setShowHeartbeatEvents}
+						onStreamSearchTextChange={setStreamSearchText}
+						showHeartbeatEvents={showHeartbeatEvents}
+						streamSearchText={streamSearchText}
 					/>
 				</div>
 			</div>

@@ -54,56 +54,54 @@ export function CodeViewer({ content, filename }: CodeViewerProps) {
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">
-			<div className="shrink-0 border-b border-white/10 px-4 py-2">
+			<div className="shrink-0 border-white/10 border-b px-4 py-2">
 				<div className="flex items-center justify-between">
 					<h3 className="font-medium text-sm text-white">{filename}</h3>
 					{isJSON && (
 						<div className="flex items-center gap-2">
-							<span className="text-xs text-white/50">Raw</span>
+							<span className="text-white/50 text-xs">Raw</span>
 							<button
-								type="button"
-								onClick={() =>
-									setViewMode(viewMode === "raw" ? "parsed" : "raw")
-								}
+								aria-checked={viewMode === "parsed" ? "true" : "false"}
+								aria-label="Toggle view mode"
 								className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
 									viewMode === "parsed" ? "bg-white/40" : "bg-white/10"
 								}`}
+								onClick={() =>
+									setViewMode(viewMode === "raw" ? "parsed" : "raw")
+								}
 								role="switch"
-								aria-checked={viewMode === "parsed" ? "true" : "false"}
-								aria-label="Toggle view mode"
+								type="button"
 							>
 								<span
 									className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-										viewMode === "parsed"
-											? "translate-x-6"
-											: "translate-x-1"
+										viewMode === "parsed" ? "translate-x-6" : "translate-x-1"
 									}`}
 								/>
 							</button>
-							<span className="text-xs text-white/50">Parsed</span>
+							<span className="text-white/50 text-xs">Parsed</span>
 						</div>
 					)}
 				</div>
 			</div>
-			<div className="flex-1 min-h-0 overflow-hidden">
+			<div className="min-h-0 flex-1 overflow-hidden">
 				{viewMode === "raw" ? (
 					<CodeMirror
-						value={formattedContent ?? content}
-						extensions={[json()]}
-						theme={oneDark}
-						editable={false}
-						height="100%"
-						className="h-full"
 						basicSetup={{
 							lineNumbers: true,
 							foldGutter: true,
 							dropCursor: false,
 							allowMultipleSelections: false,
-							syntaxHighlighting: true
+							syntaxHighlighting: true,
 						}}
+						className="h-full"
+						editable={false}
+						extensions={[json()]}
+						height="100%"
+						theme={oneDark}
+						value={formattedContent ?? content}
 					/>
 				) : (
-					<ParsedView data={parsedData!} filename={filename} />
+					<ParsedView data={parsedData!} filename={filename} key={filename} />
 				)}
 			</div>
 		</div>

@@ -1,7 +1,18 @@
 "use client";
 
-import { ExternalLink, MessageCircle, MessageSquare } from "lucide-react";
+import {
+	ExternalLink,
+	Loader2,
+	MessageCircle,
+	MessageSquare
+} from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
+import { ADMIN_API_STORAGE_KEY } from "~/app/admin-api/types";
+import {
+	normalizeAdminApiBase,
+	postMetricsPost
+} from "~/app/dashboard/_components/metrics-api-client";
 import {
 	Accordion,
 	AccordionContent,
@@ -12,9 +23,32 @@ import type { RedditComment, StegoResult } from "~/schemas/stego-result";
 import { AngleTable } from "../angle-table";
 import { PaginatedTable } from "../paginated-table";
 import { PostValidationActions } from "../post-validation-actions";
+import { JsonTreeRenderer } from "./json-tree-renderer";
 
 interface StegoResultRendererProps {
 	data: StegoResult;
+	filename?: string | null;
+}
+
+function readStoredBase(): string {
+	try {
+		const raw = localStorage.getItem(ADMIN_API_STORAGE_KEY);
+		if (!raw) return "http://localhost:5001/api/v1";
+		const parsed = JSON.parse(raw) as { baseUrl?: string };
+		return typeof parsed.baseUrl === "string"
+			? parsed.baseUrl
+			: "http://localhost:5001/api/v1";
+	} catch {
+		return "http://localhost:5001/api/v1";
+	}
+}
+
+/** Basename suitable for `POST /tools/metrics/post` (`.json`, no path segments). */
+function metricsApiFilename(name: string | null | undefined): string | null {
+	if (!name?.trim()) return null;
+	const base = name.replace(/\\/g, "/").split("/").pop()?.trim() ?? "";
+	if (!base.toLowerCase().endsWith(".json")) return null;
+	return base;
 }
 
 function CommentItem({
@@ -30,7 +64,7 @@ function CommentItem({
 	return (
 		<div className="space-y-2">
 			<div
-				className={`group rounded-lg p-2 -ml-2 transition-colors ${
+				className={`group -ml-2 rounded-lg p-2 transition-colors ${
 					hasReplies ? "cursor-pointer hover:bg-white/5" : ""
 				}`}
 				onClick={() => hasReplies && setIsExpanded(!isExpanded)}
@@ -44,7 +78,7 @@ function CommentItem({
 					{hasReplies && (
 						<>
 							<span>•</span>
-							<span className="text-blue-400/60 font-medium">
+							<span className="font-medium text-blue-400/60">
 								{isExpanded
 									? "Hide replies"
 									: `Show ${comment.replies?.length} replies`}
@@ -53,17 +87,17 @@ function CommentItem({
 					)}
 					<span>•</span>
 					<a
+						className="transition-colors hover:text-white"
 						href={`https://www.reddit.com${comment.permalink}`}
-						target="_blank"
-						rel="noopener noreferrer"
-						title="View comment on Reddit"
-						className="hover:text-white transition-colors"
 						onClick={(e) => e.stopPropagation()}
+						rel="noopener noreferrer"
+						target="_blank"
+						title="View comment on Reddit"
 					>
 						<ExternalLink size={10} />
 					</a>
 				</div>
-				<div className="text-sm text-white/80 leading-relaxed mt-1">
+				<div className="mt-1 text-sm text-white/80 leading-relaxed">
 					{comment.body}
 				</div>
 			</div>
@@ -86,19 +120,117 @@ function CommentTree({
 	return (
 		<div
 			className={`space-y-3 ${
-				depth > 0 ? "ml-4 border-l border-white/10 pl-4" : ""
+				depth > 0 ? "ml-4 border-white/10 border-l pl-4" : ""
 			}`}
 		>
 			{comments.map((comment) => (
-				<CommentItem key={comment.id} comment={comment} depth={depth} />
+				<CommentItem comment={comment} depth={depth} key={comment.id} />
 			))}
 		</div>
 	);
 }
 
-export function StegoResultRenderer({ data }: StegoResultRendererProps) {
+export function StegoResultRenderer({
+	data,
+	filename
+}: StegoResultRendererProps) {
+	const apiFile = metricsApiFilename(filename);
+	const [metricsLoading, setMetricsLoading] = useState(false);
+	const [metricsError, setMetricsError] = useState<string | null>(null);
+	const [metricsResult, setMetricsResult] = useState<Record<
+		string,
+		unknown
+	> | null>(null);
+
+	const runMetricsPost = async () => {
+		if (!apiFile) return;
+		setMetricsLoading(true);
+		setMetricsError(null);
+		const base = normalizeAdminApiBase(readStoredBase());
+		const res = await postMetricsPost(base, {
+			filename: apiFile,
+			output_dir: "output-results",
+			dataset_dir: "datasets/news_cleaned",
+			device: "cpu"
+		});
+		setMetricsLoading(false);
+		if (!res.ok) {
+			setMetricsResult(null);
+			setMetricsError(
+				res.httpStatus !== undefined
+					? `${res.error} (${res.httpStatus})`
+					: res.error
+			);
+			return;
+		}
+		setMetricsResult(res.data);
+	};
+
 	return (
 		<div className="space-y-6">
+			<div className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+					<div className="space-y-1">
+						<h4 className="font-semibold text-sm text-white">
+							Per-file metrics
+						</h4>
+						<p className="text-white/45 text-xs">
+							Calls{" "}
+							<code className="rounded bg-black/30 px-1 py-0.5 text-[10px] text-white/70">
+								POST /tools/metrics/post
+							</code>{" "}
+							on the side-wing host (base URL from{" "}
+							<Link
+								className="text-cyan-400/90 underline-offset-2 hover:underline"
+								href="/admin-api"
+							>
+								/admin-api
+							</Link>
+							). Uses this file as{" "}
+							<code className="text-white/60">{apiFile ?? "—"}</code>
+							{apiFile ? "" : " (select a .json file from the list)"}.
+						</p>
+					</div>
+					<button
+						className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-violet-600/90 px-4 py-2 font-medium text-sm text-white hover:bg-violet-500 disabled:opacity-50"
+						disabled={!apiFile || metricsLoading}
+						onClick={() => void runMetricsPost()}
+						type="button"
+					>
+						{metricsLoading ? (
+							<>
+								<Loader2 className="size-4 animate-spin" />
+								Calculating…
+							</>
+						) : (
+							"Calculate metrics (API)"
+						)}
+					</button>
+				</div>
+				{metricsError && (
+					<p className="text-red-400/90 text-sm">{metricsError}</p>
+				)}
+				{metricsResult && (
+					<Accordion className="w-full" collapsible type="single">
+						<AccordionItem
+							className="border-white/10"
+							value="api-metrics"
+						>
+							<AccordionTrigger className="py-3 hover:no-underline">
+								<span className="font-medium text-sm">
+									API metrics response
+								</span>
+							</AccordionTrigger>
+							<AccordionContent>
+								<div className="px-1 pb-2">
+									<JsonTreeRenderer data={metricsResult} hideMessage />
+								</div>
+							</AccordionContent>
+						</AccordionItem>
+					</Accordion>
+				)}
+			</div>
+
 			<div className="space-y-8">
 				{data.map((item, index) => {
 					const searchResults = Array.isArray(item.post?.search_results)
@@ -142,16 +274,16 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 
 					return (
 						<div
-							key={`${item.post?.id ?? index}-${index}`}
 							className="space-y-4"
+							key={`${item.post?.id ?? index}-${index}`}
 						>
 							<div className="flex items-center justify-between text-sm">
 								<div className="flex gap-4">
 									<div className="flex items-center gap-1.5">
 										<span className="text-white/40">Embedded:</span>
 										<span
+											className="rounded bg-blue-600/30 px-2 py-0.5 font-mono text-blue-400 text-xs"
 											title="Comments"
-											className="bg-blue-600/30 text-blue-400 px-2 py-0.5 rounded text-xs font-mono"
 										>
 											{item.embedding?.commentEmbedding?.bitsUsed?.replace(
 												/(\d{3})(?=\d)/g,
@@ -159,8 +291,8 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 											)}
 										</span>
 										<span
+											className="rounded bg-green-600/30 px-2 py-0.5 font-mono text-green-400 text-xs"
 											title="Angles"
-											className="bg-green-600/30 text-green-400 px-2 py-0.5 rounded text-xs font-mono"
 										>
 											{item.embedding?.angleEmbedding?.bitsUsed?.replace(
 												/(\d{3})(?=\d)/g,
@@ -172,24 +304,24 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 										</span>
 									</div>
 									{(item.embedding?.warnings?.length ?? 0) > 0 && (
-										<div className="text-yellow-500/80 text-xs">
+										<div className="text-xs text-yellow-500/80">
 											⚠️ {item.embedding?.warnings?.length} warnings
 										</div>
 									)}
 								</div>
-								<div className="text-white/20 font-mono">
+								<div className="font-mono text-white/20">
 									#{index + 1}
 								</div>
 							</div>
 
-							<div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-								<div className="p-4 border-b border-white/10 bg-white/5">
+							<div className="overflow-hidden rounded-xl border border-white/10 bg-white/5">
+								<div className="border-white/10 border-b bg-white/5 p-4">
 									<div className="flex items-start justify-between gap-4">
 										<div className="space-y-1">
 											<h5 className="font-semibold text-white leading-tight">
 												{item.post?.title}
 											</h5>
-											<div className="flex items-center gap-2 text-xs text-white/40">
+											<div className="flex items-center gap-2 text-white/40 text-xs">
 												<span>u/{item.post?.author}</span>
 												<span>•</span>
 												<span>r/{item.post?.subreddit}</span>
@@ -198,39 +330,39 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 											</div>
 										</div>
 										<a
+											className="rounded-lg p-2 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
 											href={`https://www.reddit.com${item.post?.permalink}`}
-											target="_blank"
 											rel="noopener noreferrer"
+											target="_blank"
 											title="View on Reddit"
-											className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
 										>
 											<ExternalLink size={18} />
 										</a>
 									</div>
 								</div>
 
-								<div className="p-4 space-y-6">
+								<div className="space-y-6 p-4">
 									<PostValidationActions postId={item.post?.id} />
 									<div className="space-y-2">
-										<label className="text-[10px] font-bold uppercase tracking-wider text-white/30">
+										<label className="font-bold text-[10px] text-white/30 uppercase tracking-wider">
 											Stego Text ({item.stegoText?.length} chars)
 										</label>
-										<div className="rounded-lg bg-black/30 p-4 text-lg leading-relaxed text-white/90 selection:bg-white/20">
+										<div className="rounded-lg bg-black/30 p-4 text-lg text-white/90 leading-relaxed selection:bg-white/20">
 											{item.stegoText}
 										</div>
 									</div>
 
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 										<div className="space-y-2">
-											<label className="text-[10px] font-bold uppercase tracking-wider text-white/30">
+											<label className="font-bold text-[10px] text-white/30 uppercase tracking-wider">
 												Original Payload
 											</label>
-											<div className="rounded-lg bg-black/20 p-3 text-sm italic text-white/60">
+											<div className="rounded-lg bg-black/20 p-3 text-sm text-white/60 italic">
 												{item.embedding?.compression?.payload}
 											</div>
 										</div>
 										<div className="space-y-2">
-											<label className="text-[10px] font-bold uppercase tracking-wider text-white/30 flex justify-between">
+											<label className="flex justify-between font-bold text-[10px] text-white/30 uppercase tracking-wider">
 												<span>
 													{item.embedding?.compression
 														?.usedDict !== undefined
@@ -258,21 +390,21 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 													</span>
 												)}
 											</label>
-											<div className="rounded-lg bg-black/20 p-3 text-sm font-mono break-all text-white/60">
+											<div className="break-all rounded-lg bg-black/20 p-3 font-mono text-sm text-white/60">
 												{item.embedding?.compression?.compressed}
 											</div>
 										</div>
 									</div>
 
-									<Accordion type="multiple" className="w-full">
+									<Accordion className="w-full" type="multiple">
 										{(item.embedding?.compression?.references
 											?.length ?? 0) > 0 && (
 											<AccordionItem
-												value="references"
 												className="border-white/10"
+												value="references"
 											>
-												<AccordionTrigger className="hover:no-underline py-3">
-													<span className="text-sm font-medium">
+												<AccordionTrigger className="py-3 hover:no-underline">
+													<span className="font-medium text-sm">
 														Compression References (
 														{
 															item.embedding?.compression
@@ -282,12 +414,12 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 													</span>
 												</AccordionTrigger>
 												<AccordionContent>
-													<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 px-1">
+													<div className="grid grid-cols-1 gap-2 px-1 sm:grid-cols-2 md:grid-cols-3">
 														{item.embedding?.compression?.references?.map(
 															(ref: any, i: number) => (
 																<div
+																	className="space-y-2 rounded border border-white/5 bg-white/5 p-2 font-mono text-[11px]"
 																	key={i}
-																	className="text-[11px] font-mono bg-white/5 p-2 rounded border border-white/5 space-y-2"
 																>
 																	<div className="flex justify-between text-white/40">
 																		<span>REF #{i}</span>
@@ -303,7 +435,7 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 																			IDX: {ref.idx}
 																		</span>
 																	</div>
-																	<div className="bg-black/40 p-1.5 rounded text-white/90 break-all border border-white/5 text-[10px] leading-tight line-clamp-3">
+																	<div className="line-clamp-3 break-all rounded border border-white/5 bg-black/40 p-1.5 text-[10px] text-white/90 leading-tight">
 																		{ref.doc !== null &&
 																		ref.doc !== undefined &&
 																		allDocs[ref.doc]
@@ -326,11 +458,11 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 										)}
 
 										<AccordionItem
-											value="picked-chain"
 											className="border-white/10"
+											value="picked-chain"
 										>
-											<AccordionTrigger className="hover:no-underline py-3">
-												<span className="text-sm font-medium flex items-center gap-2">
+											<AccordionTrigger className="py-3 hover:no-underline">
+												<span className="flex items-center gap-2 font-medium text-sm">
 													<MessageSquare size={16} />
 													Picked Comment Chain (
 													{item.embedding?.commentEmbedding
@@ -341,8 +473,8 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 											<AccordionContent>
 												<div className="space-y-4 px-1">
 													{/* Post Info */}
-													<div className="rounded-lg bg-black/20 p-3 space-y-2 border border-white/5">
-														<label className="text-[10px] font-bold uppercase tracking-wider text-white/30">
+													<div className="space-y-2 rounded-lg border border-white/5 bg-black/20 p-3">
+														<label className="font-bold text-[10px] text-white/30 uppercase tracking-wider">
 															Post Info
 														</label>
 														<div className="space-y-1.5 text-sm">
@@ -378,15 +510,15 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 																item.embedding?.commentEmbedding
 																	?.context?.url) ? (
 																	<a
+																		className="break-all text-blue-400 hover:underline"
 																		href={
 																			item.post?.url ??
 																			item.embedding
 																				?.commentEmbedding
 																				?.context?.url
 																		}
-																		target="_blank"
 																		rel="noopener noreferrer"
-																		className="text-blue-400 hover:underline break-all"
+																		target="_blank"
 																	>
 																		{item.post?.url ??
 																			item.embedding
@@ -403,7 +535,7 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 																<span className="text-white/40">
 																	URL Content:{" "}
 																</span>
-																<div className="mt-1 rounded bg-black/30 p-2 text-white/70 text-xs leading-relaxed line-clamp-6">
+																<div className="mt-1 line-clamp-6 rounded bg-black/30 p-2 text-white/70 text-xs leading-relaxed">
 																	{item.post?.selftext ??
 																		item.embedding
 																			?.commentEmbedding
@@ -418,24 +550,24 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 													{item.embedding?.commentEmbedding?.pickedCommentChain?.map(
 														(comment: any, i: number) => (
 															<div
+																className="relative border-white/10 border-l-2 py-1 pl-4"
 																key={
 																	isCommentItem(comment)
 																		? comment.id
 																		: i
 																}
-																className="relative pl-4 border-l-2 border-white/10 py-1"
 															>
-																<div className="flex items-center gap-2 mb-1">
-																	<span className="text-[10px] font-bold text-white/30 uppercase">
+																<div className="mb-1 flex items-center gap-2">
+																	<span className="font-bold text-[10px] text-white/30 uppercase">
 																		Comment #{i + 1}
 																	</span>
 																	{isCommentItem(comment) && (
 																		<a
+																			className="text-white/20 transition-colors hover:text-white/60"
 																			href={`https://www.reddit.com${comment.permalink}`}
-																			target="_blank"
 																			rel="noopener noreferrer"
+																			target="_blank"
 																			title="View comment on Reddit"
-																			className="text-white/20 hover:text-white/60 transition-colors"
 																		>
 																			<ExternalLink
 																				size={12}
@@ -454,10 +586,10 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 
 													{/* Proposed Stegotext */}
 													<div className="space-y-2 pt-2">
-														<label className="text-[10px] font-bold uppercase tracking-wider text-white/30">
+														<label className="font-bold text-[10px] text-white/30 uppercase tracking-wider">
 															Proposed Stegotext
 														</label>
-														<div className="rounded-lg bg-black/30 p-4 text-sm leading-relaxed text-white/90">
+														<div className="rounded-lg bg-black/30 p-4 text-sm text-white/90 leading-relaxed">
 															{item.stegoText}
 														</div>
 													</div>
@@ -468,11 +600,11 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 										{item.post?.comments &&
 											item.post.comments.length > 0 && (
 												<AccordionItem
-													value="all-comments"
 													className="border-white/10"
+													value="all-comments"
 												>
-													<AccordionTrigger className="hover:no-underline py-3">
-														<span className="text-sm font-medium flex items-center gap-2">
+													<AccordionTrigger className="py-3 hover:no-underline">
+														<span className="flex items-center gap-2 font-medium text-sm">
 															<MessageCircle size={16} />
 															Full Comment Tree (
 															{item.post.num_comments})
@@ -491,11 +623,11 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 										{item.embedding?.angleEmbedding
 											?.selectedAngle && (
 											<AccordionItem
-												value="selected-angle"
 												className="border-white/10"
+												value="selected-angle"
 											>
-												<AccordionTrigger className="hover:no-underline py-3">
-													<span className="text-sm font-medium">
+												<AccordionTrigger className="py-3 hover:no-underline">
+													<span className="font-medium text-sm">
 														Selected Angle
 													</span>
 												</AccordionTrigger>
@@ -511,11 +643,11 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 										)}
 
 										<AccordionItem
-											value="angles"
 											className="border-white/10"
+											value="angles"
 										>
-											<AccordionTrigger className="hover:no-underline py-3">
-												<span className="text-sm font-medium">
+											<AccordionTrigger className="py-3 hover:no-underline">
+												<span className="font-medium text-sm">
 													Angle Selection (
 													{item.embedding?.angleEmbedding
 														?.totalAnglesSelectedFirst?.length ??
@@ -534,11 +666,11 @@ export function StegoResultRenderer({ data }: StegoResultRendererProps) {
 										</AccordionItem>
 
 										<AccordionItem
-											value="search"
 											className="border-none"
+											value="search"
 										>
-											<AccordionTrigger className="hover:no-underline py-3">
-												<span className="text-sm font-medium">
+											<AccordionTrigger className="py-3 hover:no-underline">
+												<span className="font-medium text-sm">
 													Search Context (
 													{searchResults?.length ?? 0})
 												</span>

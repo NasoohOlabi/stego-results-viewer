@@ -2,9 +2,14 @@ import type {
 	ApiResponseView,
 	ApiWorkspaceTab,
 	HttpMethod,
+	TriggerAnglesMode,
 	WorkflowCommand,
 } from "./types";
-import { parsePostIdsFromMultiline, parseStegoPayloadInput } from "./utils";
+import {
+	buildTriggerAnglesRequest,
+	parsePostIdsFromMultiline,
+	parseStegoPayloadInput,
+} from "./utils";
 
 export type CallApiFn = (
 	method: HttpMethod,
@@ -147,6 +152,21 @@ export type RunTabActionContext = {
 	batchAnglesDeterminismPostIds: string;
 	batchAnglesDeterminismStep: string;
 	batchAnglesDeterminismStream: boolean;
+	triggerAnglesMode: TriggerAnglesMode;
+	genAnglesCount: string;
+	genAnglesOffset: string;
+	genAnglesStream: boolean;
+	stegoReceiverLiveSenderUserId: string;
+	stegoReceiverLivePostId: string;
+	stegoReceiverLivePayload: string;
+	stegoReceiverLiveTag: string;
+	stegoReceiverLiveListOffset: string;
+	stegoReceiverLiveSimulationRoot: string;
+	stegoReceiverLiveCompressedBitstring: string;
+	stegoReceiverLiveAllowFallback: boolean;
+	stegoReceiverLiveMaxPaddingBits: string;
+	stegoReceiverLiveMaxPostAttempts: string;
+	stegoReceiverLiveStream: boolean;
 	receiverPostJson: string;
 	receiverSenderUserId: string;
 	receiverCompressedBitstring: string;
@@ -208,6 +228,21 @@ export async function runTabAction(ctx: RunTabActionContext): Promise<void> {
 		batchAnglesDeterminismPostIds,
 		batchAnglesDeterminismStep,
 		batchAnglesDeterminismStream,
+		triggerAnglesMode,
+		genAnglesCount,
+		genAnglesOffset,
+		genAnglesStream,
+		stegoReceiverLiveSenderUserId,
+		stegoReceiverLivePostId,
+		stegoReceiverLivePayload,
+		stegoReceiverLiveTag,
+		stegoReceiverLiveListOffset,
+		stegoReceiverLiveSimulationRoot,
+		stegoReceiverLiveCompressedBitstring,
+		stegoReceiverLiveAllowFallback,
+		stegoReceiverLiveMaxPaddingBits,
+		stegoReceiverLiveMaxPostAttempts,
+		stegoReceiverLiveStream,
 		receiverPostJson,
 		receiverSenderUserId,
 		receiverCompressedBitstring,
@@ -642,6 +677,31 @@ export async function runTabAction(ctx: RunTabActionContext): Promise<void> {
 				},
 				tab.id,
 			);
+			return;
+		}
+		case "workflows-trigger-angles": {
+			const built = buildTriggerAnglesRequest({
+				mode: triggerAnglesMode,
+				genAnglesCount,
+				genAnglesOffset,
+				genAnglesStream,
+				stegoReceiverLiveSenderUserId,
+				stegoReceiverLivePostId,
+				stegoReceiverLivePayload,
+				stegoReceiverLiveTag,
+				stegoReceiverLiveListOffset,
+				stegoReceiverLiveSimulationRoot,
+				stegoReceiverLiveCompressedBitstring,
+				stegoReceiverLiveAllowFallback,
+				stegoReceiverLiveMaxPaddingBits,
+				stegoReceiverLiveMaxPostAttempts,
+				stegoReceiverLiveStream,
+			});
+			if ("error" in built) {
+				setTabError(tab.id, `${base}(trigger angles)`, "POST", built.error);
+				return;
+			}
+			await callApi("POST", built.path, undefined, built.body, tab.id);
 			return;
 		}
 		case "workflows-run":

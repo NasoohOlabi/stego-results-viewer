@@ -1,7 +1,8 @@
 import type {
 	ApiResponseView,
 	StreamEventDisplayItem,
-	StreamEventView
+	StreamEventView,
+	TriggerAnglesMode,
 } from "./types";
 
 export function escapeBashSingleQuoted(s: string): string {
@@ -15,7 +16,13 @@ export function buildCurlBash(response: ApiResponseView): string {
 	if (!url) return "";
 
 	const body = request?.body;
-	const parts: string[] = ["curl", "-sS", "-X", method, escapeBashSingleQuoted(url)];
+	const parts: string[] = [
+		"curl",
+		"-sS",
+		"-X",
+		method,
+		escapeBashSingleQuoted(url),
+	];
 
 	if (method !== "GET" && body !== undefined) {
 		parts.push("-H", escapeBashSingleQuoted("Content-Type: application/json"));
@@ -29,7 +36,9 @@ export function formatResponseForClipboard(response: ApiResponseView): string {
 	return toPrettyJson(response.data);
 }
 
-export function buildCopyRequestAndResponseText(response: ApiResponseView): string {
+export function buildCopyRequestAndResponseText(
+	response: ApiResponseView,
+): string {
 	const curl = buildCurlBash(response);
 	const resp = formatResponseForClipboard(response);
 	const blocks: string[] = [];
@@ -91,9 +100,7 @@ export function normalizeForInspector(value: unknown, depth = 0): unknown {
 
 	if (typeof value === "string") {
 		const parsed = parseStructuredJsonString(value);
-		return parsed === value
-			? value
-			: normalizeForInspector(parsed, depth + 1);
+		return parsed === value ? value : normalizeForInspector(parsed, depth + 1);
 	}
 
 	if (Array.isArray(value)) {
@@ -101,19 +108,19 @@ export function normalizeForInspector(value: unknown, depth = 0): unknown {
 	}
 
 	if (isRecord(value)) {
-		const normalizedEntries = Object.entries(value).map(
-			([key, entryValue]) => [
-				key,
-				normalizeForInspector(entryValue, depth + 1)
-			]
-		);
+		const normalizedEntries = Object.entries(value).map(([key, entryValue]) => [
+			key,
+			normalizeForInspector(entryValue, depth + 1),
+		]);
 		return Object.fromEntries(normalizedEntries);
 	}
 
 	return value;
 }
 
-export function isSsePayload(value: unknown): value is { events: StreamEventView[] } {
+export function isSsePayload(
+	value: unknown,
+): value is { events: StreamEventView[] } {
 	return isRecord(value) && Array.isArray(value.events);
 }
 
@@ -133,7 +140,7 @@ export function getHeartbeatElapsedMs(event: StreamEventView): number | null {
 
 export function buildStreamEventItems(
 	events: StreamEventView[],
-	options: { includeHeartbeats: boolean; searchText: string }
+	options: { includeHeartbeats: boolean; searchText: string },
 ): StreamEventDisplayItem[] {
 	const normalizedSearch = options.searchText.trim().toLowerCase();
 	const toSearchBlob = (event: StreamEventView) =>
@@ -212,7 +219,7 @@ export function parseSseEvent(rawBlock: string): StreamEventView | null {
 		retry,
 		rawData,
 		data: parseJsonOrText(rawData),
-		receivedAt: new Date().toISOString()
+		receivedAt: new Date().toISOString(),
 	};
 }
 
@@ -233,6 +240,8 @@ export function getWorkflowTemplate(command: string): string {
 			return '{\n  "post_id": "example-post-id",\n  "stream": false\n}';
 		case "receiver":
 			return '{\n  "post": {},\n  "sender_user_id": "sender-id",\n  "stream": false,\n  "use_cache": false\n}';
+		case "stego-receiver-live":
+			return '{\n  "sender_user_id": "sender-id",\n  "post_id": "",\n  "stream": true,\n  "list_offset": 1\n}';
 		case "double-process-new-post":
 			return '{\n  "stream": true,\n  "allow_angles_fallback": false\n}';
 		case "batch-angles-determinism":
@@ -253,6 +262,101 @@ export function parseStegoPayloadInput(raw: string): unknown | undefined {
 	} catch {
 		return t;
 	}
+}
+
+/** Builds POST bodies for `/workflows/gen-angles` or `/workflows/stego-receiver-live` (both run gen_angles on the receiver path). */
+export function buildTriggerAnglesRequest(input: {
+	mode: TriggerAnglesMode;
+	genAnglesCount: string;
+	genAnglesOffset: string;
+	genAnglesStream: boolean;
+	stegoReceiverLiveSenderUserId: string;
+	stegoReceiverLivePostId: string;
+	stegoReceiverLivePayload: string;
+	stegoReceiverLiveTag: string;
+	stegoReceiverLiveListOffset: string;
+	stegoReceiverLiveSimulationRoot: string;
+	stegoReceiverLiveCompressedBitstring: string;
+	stegoReceiverLiveAllowFallback: boolean;
+	stegoReceiverLiveMaxPaddingBits: string;
+	stegoReceiverLiveMaxPostAttempts: string;
+	stegoReceiverLiveStream: boolean;
+}): { path: string; body: Record<string, unknown> } | { error: string } {
+	if (input.mode === "gen-angles") {
+		const countRaw = input.genAnglesCount.trim();
+		const offsetRaw = input.genAnglesOffset.trim();
+		const count = countRaw === "" ? 1 : Number.parseInt(countRaw, 10);
+		const offset = offsetRaw === "" ? 0 : Number.parseInt(offsetRaw, 10);
+		if (!Number.isInteger(count) || count < 0) {
+			return { error: "count must be a non-negative integer" };
+		}
+		if (!Number.isInteger(offset) || offset < 0) {
+			return { error: "offset must be a non-negative integer" };
+		}
+		return {
+			path: "/workflows/gen-angles",
+			body: {
+				count,
+				offset,
+				stream: input.genAnglesStream,
+			},
+		};
+	}
+
+	const sender = input.stegoReceiverLiveSenderUserId.trim();
+	if (!sender) {
+		return { error: "sender_user_id is required" };
+	}
+
+	const body: Record<string, unknown> = {
+		sender_user_id: sender,
+		stream: input.stegoReceiverLiveStream,
+		allow_fallback: input.stegoReceiverLiveAllowFallback,
+	};
+
+	const pid = input.stegoReceiverLivePostId.trim();
+	if (pid) body.post_id = pid;
+
+	const payload = parseStegoPayloadInput(input.stegoReceiverLivePayload);
+	if (payload !== undefined) body.payload = payload;
+
+	const tag = input.stegoReceiverLiveTag.trim();
+	if (tag) body.tag = tag;
+
+	const lo = input.stegoReceiverLiveListOffset.trim();
+	if (lo.length > 0) {
+		const n = Number(lo);
+		if (!Number.isInteger(n)) {
+			return { error: "list_offset must be an integer" };
+		}
+		body.list_offset = n;
+	}
+
+	const sim = input.stegoReceiverLiveSimulationRoot.trim();
+	if (sim) body.simulation_root = sim;
+
+	const cbs = input.stegoReceiverLiveCompressedBitstring.trim();
+	if (cbs) body.compressed_bitstring = cbs;
+
+	const mpb = input.stegoReceiverLiveMaxPaddingBits.trim();
+	if (mpb.length > 0) {
+		const n = Number(mpb);
+		if (!Number.isInteger(n) || n < 0) {
+			return { error: "max_padding_bits must be a non-negative integer" };
+		}
+		body.max_padding_bits = n;
+	}
+
+	const mpa = input.stegoReceiverLiveMaxPostAttempts.trim();
+	if (mpa.length > 0) {
+		const n = Number(mpa);
+		if (!Number.isInteger(n) || n < 1) {
+			return { error: "max_post_attempts must be an integer ≥ 1" };
+		}
+		body.max_post_attempts = n;
+	}
+
+	return { path: "/workflows/stego-receiver-live", body };
 }
 
 /** Split newline- or comma-separated post ids; trims and drops empties. */
@@ -281,7 +385,7 @@ export interface WorkflowRunRow {
 
 /** Parses Admin Console JSON response body (`data.payload` = API envelope). */
 export function extractWorkflowRunsFromAdminResponse(
-	data: unknown
+	data: unknown,
 ): { runs: WorkflowRunRow[]; count: number } | null {
 	if (!isRecord(data)) return null;
 	const payload = data.payload;
@@ -356,7 +460,7 @@ export function isValidatePostEndpoint(active: {
 
 /** Parses validate-post result from non-SSE admin response (`data.payload` = API envelope). */
 export function extractValidatePostFromAdminResponse(
-	data: unknown
+	data: unknown,
 ): ValidatePostResultView | null {
 	if (!isRecord(data)) return null;
 	const payload = data.payload;
@@ -373,8 +477,7 @@ export function extractValidatePostFromAdminResponse(
 		const step = entry.step;
 		const matches = entry.matches;
 		const changed = entry.changed_keys;
-		const matchesOk =
-			matches === null || typeof matches === "boolean";
+		const matchesOk = matches === null || typeof matches === "boolean";
 		if (
 			typeof step !== "string" ||
 			!matchesOk ||
@@ -390,15 +493,14 @@ export function extractValidatePostFromAdminResponse(
 				? entry.comparison_note
 				: undefined;
 		const err = entry.error;
-		const error =
-			err === null || typeof err === "string" ? err : undefined;
+		const error = err === null || typeof err === "string" ? err : undefined;
 		steps[key] = {
 			step,
 			matches,
 			changed_keys: changed,
 			...(comparison !== undefined ? { comparison } : {}),
 			...(comparison_note !== undefined ? { comparison_note } : {}),
-			...(error !== undefined ? { error } : {})
+			...(error !== undefined ? { error } : {}),
 		};
 	}
 	const mode = typeof inner.mode === "string" ? inner.mode : undefined;
@@ -416,7 +518,7 @@ export function extractValidatePostFromAdminResponse(
 		mode,
 		validation_outcome,
 		validation_explanation,
-		steps
+		steps,
 	};
 }
 
@@ -444,7 +546,7 @@ export interface StateLogsView {
 }
 
 export function extractStateLogsFromAdminResponse(
-	data: unknown
+	data: unknown,
 ): StateLogsView | null {
 	if (!isRecord(data)) return null;
 	const payload = data.payload;
@@ -480,7 +582,7 @@ export interface LoggingTagsView {
 }
 
 export function extractLoggingTagsFromAdminResponse(
-	data: unknown
+	data: unknown,
 ): LoggingTagsView | null {
 	if (!isRecord(data)) return null;
 	const payload = data.payload;

@@ -4,8 +4,13 @@ import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { AdminApiToolPanelsProps } from "./admin-api-tool-panels-props";
 import type { CallApiFn, SetTabErrorFn } from "./tab-actions";
-import { WORKFLOW_COMMAND_OPTIONS, type WorkflowCommand } from "./types";
 import {
+	type TriggerAnglesMode,
+	WORKFLOW_COMMAND_OPTIONS,
+	type WorkflowCommand,
+} from "./types";
+import {
+	buildTriggerAnglesRequest,
 	getWorkflowRunAllTemplate,
 	getWorkflowTemplate,
 	parsePostIdsFromMultiline,
@@ -582,6 +587,278 @@ function BatchAnglesDeterminismPanel(props: {
 	);
 }
 
+function TriggerAnglesPanel(props: {
+	tabId: string;
+	base: string;
+	triggerAnglesMode: TriggerAnglesMode;
+	setTriggerAnglesMode: (value: TriggerAnglesMode) => void;
+	genAnglesCount: string;
+	setGenAnglesCount: (value: string) => void;
+	genAnglesOffset: string;
+	setGenAnglesOffset: (value: string) => void;
+	genAnglesStream: boolean;
+	setGenAnglesStream: (value: boolean) => void;
+	stegoReceiverLiveSenderUserId: string;
+	setStegoReceiverLiveSenderUserId: (value: string) => void;
+	stegoReceiverLivePostId: string;
+	setStegoReceiverLivePostId: (value: string) => void;
+	stegoReceiverLivePayload: string;
+	setStegoReceiverLivePayload: (value: string) => void;
+	stegoReceiverLiveTag: string;
+	setStegoReceiverLiveTag: (value: string) => void;
+	stegoReceiverLiveListOffset: string;
+	setStegoReceiverLiveListOffset: (value: string) => void;
+	stegoReceiverLiveSimulationRoot: string;
+	setStegoReceiverLiveSimulationRoot: (value: string) => void;
+	stegoReceiverLiveCompressedBitstring: string;
+	setStegoReceiverLiveCompressedBitstring: (value: string) => void;
+	stegoReceiverLiveAllowFallback: boolean;
+	setStegoReceiverLiveAllowFallback: (value: boolean) => void;
+	stegoReceiverLiveMaxPaddingBits: string;
+	setStegoReceiverLiveMaxPaddingBits: (value: string) => void;
+	stegoReceiverLiveMaxPostAttempts: string;
+	setStegoReceiverLiveMaxPostAttempts: (value: string) => void;
+	stegoReceiverLiveStream: boolean;
+	setStegoReceiverLiveStream: (value: boolean) => void;
+	callApi: CallApiFn;
+	setTabError: SetTabErrorFn;
+}) {
+	const {
+		tabId,
+		base,
+		triggerAnglesMode,
+		setTriggerAnglesMode,
+		genAnglesCount,
+		setGenAnglesCount,
+		genAnglesOffset,
+		setGenAnglesOffset,
+		genAnglesStream,
+		setGenAnglesStream,
+		stegoReceiverLiveSenderUserId,
+		setStegoReceiverLiveSenderUserId,
+		stegoReceiverLivePostId,
+		setStegoReceiverLivePostId,
+		stegoReceiverLivePayload,
+		setStegoReceiverLivePayload,
+		stegoReceiverLiveTag,
+		setStegoReceiverLiveTag,
+		stegoReceiverLiveListOffset,
+		setStegoReceiverLiveListOffset,
+		stegoReceiverLiveSimulationRoot,
+		setStegoReceiverLiveSimulationRoot,
+		stegoReceiverLiveCompressedBitstring,
+		setStegoReceiverLiveCompressedBitstring,
+		stegoReceiverLiveAllowFallback,
+		setStegoReceiverLiveAllowFallback,
+		stegoReceiverLiveMaxPaddingBits,
+		setStegoReceiverLiveMaxPaddingBits,
+		stegoReceiverLiveMaxPostAttempts,
+		setStegoReceiverLiveMaxPostAttempts,
+		stegoReceiverLiveStream,
+		setStegoReceiverLiveStream,
+		callApi,
+		setTabError,
+	} = props;
+
+	const send = () => {
+		const built = buildTriggerAnglesRequest({
+			mode: triggerAnglesMode,
+			genAnglesCount,
+			genAnglesOffset,
+			genAnglesStream,
+			stegoReceiverLiveSenderUserId,
+			stegoReceiverLivePostId,
+			stegoReceiverLivePayload,
+			stegoReceiverLiveTag,
+			stegoReceiverLiveListOffset,
+			stegoReceiverLiveSimulationRoot,
+			stegoReceiverLiveCompressedBitstring,
+			stegoReceiverLiveAllowFallback,
+			stegoReceiverLiveMaxPaddingBits,
+			stegoReceiverLiveMaxPostAttempts,
+			stegoReceiverLiveStream,
+		});
+		if ("error" in built) {
+			setTabError(tabId, `${base}(trigger angles)`, "POST", built.error);
+			return;
+		}
+		void callApi("POST", built.path, undefined, built.body, tabId);
+	};
+
+	return (
+		<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+			<h2 className="font-semibold text-lg">Trigger angles</h2>
+			<p className="text-white/60 text-xs">
+				Endpoints that run <code className="text-white/80">gen_angles</code>{" "}
+				include batch{" "}
+				<code className="text-white/80">POST /workflows/gen-angles</code>, live
+				stego+receiver{" "}
+				<code className="text-white/80">
+					POST /workflows/stego-receiver-live
+				</code>{" "}
+				(receiver rebuild), plus validate-post, angles-preview, receiver,
+				double-process-new-post, and batch-angles-determinism elsewhere in this
+				console.
+			</p>
+			<div className="flex flex-wrap items-center gap-2">
+				<label className="text-white/70 text-xs">
+					Mode
+					<select
+						className="ml-2 rounded-md border border-white/10 bg-black/30 px-2 py-1 text-sm"
+						onChange={(e) =>
+							setTriggerAnglesMode(e.target.value as TriggerAnglesMode)
+						}
+						title="Which workflow to call"
+						value={triggerAnglesMode}
+					>
+						<option value="gen-angles">Batch queue (gen-angles)</option>
+						<option value="stego-receiver-live">Stego + receiver live</option>
+					</select>
+				</label>
+				<button
+					className="rounded-md bg-teal-500/25 px-3 py-2 text-sm hover:bg-teal-500/35"
+					onClick={send}
+					type="button"
+				>
+					Run
+				</button>
+			</div>
+			{triggerAnglesMode === "gen-angles" ? (
+				<div className="space-y-2">
+					<p className="text-white/60 text-xs">
+						<code className="text-white/80">POST /workflows/gen-angles</code> —
+						angles-step queue window; SSE by default when{" "}
+						<code className="text-white/80">stream</code> is checked.
+					</p>
+					<div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+						<input
+							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+							onChange={(e) => setGenAnglesCount(e.target.value)}
+							placeholder="count (default 1)"
+							value={genAnglesCount}
+						/>
+						<input
+							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+							onChange={(e) => setGenAnglesOffset(e.target.value)}
+							placeholder="offset (default 0)"
+							value={genAnglesOffset}
+						/>
+						<label className="flex cursor-pointer items-center gap-2 text-white/70 text-xs">
+							<input
+								checked={genAnglesStream}
+								onChange={(e) => setGenAnglesStream(e.target.checked)}
+								type="checkbox"
+							/>
+							stream (SSE)
+						</label>
+					</div>
+				</div>
+			) : (
+				<div className="space-y-2">
+					<p className="text-white/60 text-xs">
+						<code className="text-white/80">
+							POST /workflows/stego-receiver-live
+						</code>{" "}
+						— cold-receiver simulation; receiver context rebuild runs
+						gen-angles. Typical:{" "}
+						<code className="text-white/80">stream: true</code>.
+					</p>
+					<div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+						<input
+							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+							onChange={(e) => setStegoReceiverLiveSenderUserId(e.target.value)}
+							placeholder="sender_user_id (required)"
+							value={stegoReceiverLiveSenderUserId}
+						/>
+						<label className="flex cursor-pointer items-center gap-2 text-white/70 text-xs sm:justify-end">
+							<input
+								checked={stegoReceiverLiveStream}
+								onChange={(e) => setStegoReceiverLiveStream(e.target.checked)}
+								type="checkbox"
+							/>
+							stream
+						</label>
+					</div>
+					<input
+						className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+						onChange={(e) => setStegoReceiverLivePostId(e.target.value)}
+						placeholder="post_id (optional)"
+						value={stegoReceiverLivePostId}
+					/>
+					<p className="text-[11px] text-white/50">payload (optional)</p>
+					<textarea
+						className="min-h-14 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
+						onChange={(e) => setStegoReceiverLivePayload(e.target.value)}
+						placeholder="string or JSON; empty omits (API default)"
+						value={stegoReceiverLivePayload}
+					/>
+					<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+						<input
+							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+							onChange={(e) => setStegoReceiverLiveTag(e.target.value)}
+							placeholder="tag (optional)"
+							value={stegoReceiverLiveTag}
+						/>
+						<input
+							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+							onChange={(e) => setStegoReceiverLiveListOffset(e.target.value)}
+							placeholder="list_offset (optional, default 1)"
+							value={stegoReceiverLiveListOffset}
+						/>
+						<input
+							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+							onChange={(e) =>
+								setStegoReceiverLiveSimulationRoot(e.target.value)
+							}
+							placeholder="simulation_root (optional)"
+							value={stegoReceiverLiveSimulationRoot}
+						/>
+					</div>
+					<p className="text-[11px] text-white/50">
+						compressed_bitstring (optional)
+					</p>
+					<textarea
+						className="min-h-12 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
+						onChange={(e) =>
+							setStegoReceiverLiveCompressedBitstring(e.target.value)
+						}
+						placeholder="override for decode"
+						value={stegoReceiverLiveCompressedBitstring}
+					/>
+					<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+						<input
+							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+							onChange={(e) =>
+								setStegoReceiverLiveMaxPaddingBits(e.target.value)
+							}
+							placeholder="max_padding_bits (optional)"
+							value={stegoReceiverLiveMaxPaddingBits}
+						/>
+						<input
+							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+							onChange={(e) =>
+								setStegoReceiverLiveMaxPostAttempts(e.target.value)
+							}
+							placeholder="max_post_attempts (optional, ≥1)"
+							value={stegoReceiverLiveMaxPostAttempts}
+						/>
+					</div>
+					<label className="flex cursor-pointer items-center gap-2 text-white/70 text-xs">
+						<input
+							checked={stegoReceiverLiveAllowFallback}
+							onChange={(e) =>
+								setStegoReceiverLiveAllowFallback(e.target.checked)
+							}
+							type="checkbox"
+						/>
+						allow_fallback
+					</label>
+				</div>
+			)}
+		</section>
+	);
+}
+
 function WorkflowRunsToolPanel(props: { tabId: string; callApi: CallApiFn }) {
 	const { tabId, callApi } = props;
 	const [autoMs, setAutoMs] = useState(0);
@@ -680,6 +957,36 @@ export function AdminApiToolPanelsExtended(
 		setBatchAnglesDeterminismStep,
 		batchAnglesDeterminismStream,
 		setBatchAnglesDeterminismStream,
+		triggerAnglesMode,
+		setTriggerAnglesMode,
+		genAnglesCount,
+		setGenAnglesCount,
+		genAnglesOffset,
+		setGenAnglesOffset,
+		genAnglesStream,
+		setGenAnglesStream,
+		stegoReceiverLiveSenderUserId,
+		setStegoReceiverLiveSenderUserId,
+		stegoReceiverLivePostId,
+		setStegoReceiverLivePostId,
+		stegoReceiverLivePayload,
+		setStegoReceiverLivePayload,
+		stegoReceiverLiveTag,
+		setStegoReceiverLiveTag,
+		stegoReceiverLiveListOffset,
+		setStegoReceiverLiveListOffset,
+		stegoReceiverLiveSimulationRoot,
+		setStegoReceiverLiveSimulationRoot,
+		stegoReceiverLiveCompressedBitstring,
+		setStegoReceiverLiveCompressedBitstring,
+		stegoReceiverLiveAllowFallback,
+		setStegoReceiverLiveAllowFallback,
+		stegoReceiverLiveMaxPaddingBits,
+		setStegoReceiverLiveMaxPaddingBits,
+		stegoReceiverLiveMaxPostAttempts,
+		setStegoReceiverLiveMaxPostAttempts,
+		stegoReceiverLiveStream,
+		setStegoReceiverLiveStream,
 		receiverPostJson,
 		setReceiverPostJson,
 		receiverSenderUserId,
@@ -934,6 +1241,58 @@ export function AdminApiToolPanelsExtended(
 						setBatchAnglesDeterminismStream={setBatchAnglesDeterminismStream}
 						setTabError={setTabError}
 						tabId={tab.id}
+					/>
+				);
+			}
+			if (tab.apiActionId === "workflows-trigger-angles") {
+				return (
+					<TriggerAnglesPanel
+						base={base}
+						callApi={callApi}
+						genAnglesCount={genAnglesCount}
+						genAnglesOffset={genAnglesOffset}
+						genAnglesStream={genAnglesStream}
+						setGenAnglesCount={setGenAnglesCount}
+						setGenAnglesOffset={setGenAnglesOffset}
+						setGenAnglesStream={setGenAnglesStream}
+						setStegoReceiverLiveAllowFallback={
+							setStegoReceiverLiveAllowFallback
+						}
+						setStegoReceiverLiveCompressedBitstring={
+							setStegoReceiverLiveCompressedBitstring
+						}
+						setStegoReceiverLiveListOffset={setStegoReceiverLiveListOffset}
+						setStegoReceiverLiveMaxPaddingBits={
+							setStegoReceiverLiveMaxPaddingBits
+						}
+						setStegoReceiverLiveMaxPostAttempts={
+							setStegoReceiverLiveMaxPostAttempts
+						}
+						setStegoReceiverLivePayload={setStegoReceiverLivePayload}
+						setStegoReceiverLivePostId={setStegoReceiverLivePostId}
+						setStegoReceiverLiveSenderUserId={setStegoReceiverLiveSenderUserId}
+						setStegoReceiverLiveSimulationRoot={
+							setStegoReceiverLiveSimulationRoot
+						}
+						setStegoReceiverLiveStream={setStegoReceiverLiveStream}
+						setStegoReceiverLiveTag={setStegoReceiverLiveTag}
+						setTabError={setTabError}
+						setTriggerAnglesMode={setTriggerAnglesMode}
+						stegoReceiverLiveAllowFallback={stegoReceiverLiveAllowFallback}
+						stegoReceiverLiveCompressedBitstring={
+							stegoReceiverLiveCompressedBitstring
+						}
+						stegoReceiverLiveListOffset={stegoReceiverLiveListOffset}
+						stegoReceiverLiveMaxPaddingBits={stegoReceiverLiveMaxPaddingBits}
+						stegoReceiverLiveMaxPostAttempts={stegoReceiverLiveMaxPostAttempts}
+						stegoReceiverLivePayload={stegoReceiverLivePayload}
+						stegoReceiverLivePostId={stegoReceiverLivePostId}
+						stegoReceiverLiveSenderUserId={stegoReceiverLiveSenderUserId}
+						stegoReceiverLiveSimulationRoot={stegoReceiverLiveSimulationRoot}
+						stegoReceiverLiveStream={stegoReceiverLiveStream}
+						stegoReceiverLiveTag={stegoReceiverLiveTag}
+						tabId={tab.id}
+						triggerAnglesMode={triggerAnglesMode}
 					/>
 				);
 			}

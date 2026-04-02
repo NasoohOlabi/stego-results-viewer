@@ -14,9 +14,13 @@ import { PostValidationActions } from "../post-validation-actions";
 
 interface StegoTextOnlyRendererProps {
 	data: StegoComplexResult;
+	filename?: string | null;
 }
 
-export function StegoTextOnlyRenderer({ data }: StegoTextOnlyRendererProps) {
+export function StegoTextOnlyRenderer({
+	data,
+	filename: _filename
+}: StegoTextOnlyRendererProps) {
 	return (
 		<div className="space-y-4">
 			<div className="text-sm text-white/50">Parsed</div>

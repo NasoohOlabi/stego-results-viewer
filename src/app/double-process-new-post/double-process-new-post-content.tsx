@@ -5,9 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { FileExplorer } from "~/app/_components/file-explorer";
 import {
 	ADMIN_API_STORAGE_KEY,
-	type StreamEventView
+	type StreamEventView,
 } from "~/app/admin-api/types";
 import { parseJsonOrText, parseSseEvent } from "~/app/admin-api/utils";
+import { DoubleProcessSsePanel } from "~/app/double-process-new-post/double-process-sse-panel";
 import { usePathConfig } from "~/hooks/use-path-config";
 import { api } from "~/trpc/react";
 
@@ -29,17 +30,17 @@ function extractDataPayload(payload: unknown): unknown {
 async function readSsePost(
 	url: string,
 	body: Record<string, unknown>,
-	onEvent: (event: StreamEventView) => void
+	onEvent: (event: StreamEventView) => void,
 ): Promise<{ ok: boolean; sawError: boolean }> {
 	const res = await fetch(url, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(body)
+		body: JSON.stringify(body),
 	});
 	const contentType = res.headers.get("content-type") ?? "";
 	if (!contentType.includes("text/event-stream")) {
 		throw new Error(
-			`Expected SSE (text/event-stream), got ${contentType || "unknown"}`
+			`Expected SSE (text/event-stream), got ${contentType || "unknown"}`,
 		);
 	}
 	const stream = res.body;
@@ -89,7 +90,7 @@ function buildCurl(url: string, body: Record<string, unknown>): string {
 
 function CopyButton({
 	text,
-	label = "Copy"
+	label = "Copy",
 }: {
 	text: string;
 	label?: string;
@@ -107,15 +108,15 @@ function CopyButton({
 	};
 	return (
 		<button
-			type="button"
-			onClick={() => void copy()}
-			className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+			className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 font-medium text-xs transition-colors ${
 				state === "copied"
 					? "border-emerald-500/30 bg-emerald-500/20 text-emerald-300"
 					: state === "error"
 						? "border-red-500/30 bg-red-500/20 text-red-300"
 						: "border-white/15 bg-white/8 text-white/65 hover:bg-white/15 hover:text-white/90"
 			}`}
+			onClick={() => void copy()}
+			type="button"
 		>
 			{state === "copied" ? "✓ Copied" : state === "error" ? "✗ Failed" : label}
 		</button>
@@ -123,7 +124,7 @@ function CopyButton({
 }
 
 function StatusPill({
-	status
+	status,
 }: {
 	status: "idle" | "loading" | "success" | "error";
 }) {
@@ -131,12 +132,12 @@ function StatusPill({
 	const styles = {
 		loading: "border-blue-500/30 bg-blue-500/15 text-blue-300",
 		success: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300",
-		error: "border-red-500/30 bg-red-500/15 text-red-300"
+		error: "border-red-500/30 bg-red-500/15 text-red-300",
 	};
 	const labels = { loading: "running", success: "success", error: "error" };
 	return (
 		<span
-			className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${styles[status]}`}
+			className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium text-xs ${styles[status]}`}
 		>
 			{status === "loading" ? (
 				<span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
@@ -170,7 +171,7 @@ export function DoubleProcessNewPostContent() {
 
 	const { data: files = [] } = api.files.listFiles.useQuery(
 		{ pathId: apiPathId },
-		{ enabled: isValidPath }
+		{ enabled: isValidPath },
 	);
 
 	const [baseUrl, setBaseUrl] = useState("http://localhost:5001/api/v1");
@@ -201,12 +202,12 @@ export function DoubleProcessNewPostContent() {
 
 	const requestBody = useMemo<Record<string, unknown>>(
 		() => ({ stream, allow_angles_fallback: allowAnglesFallback }),
-		[stream, allowAnglesFallback]
+		[stream, allowAnglesFallback],
 	);
 
 	const curlCommand = useMemo(
 		() => buildCurl(requestUrl, requestBody),
-		[requestUrl, requestBody]
+		[requestUrl, requestBody],
 	);
 
 	const summaryData = useMemo(() => {
@@ -235,9 +236,9 @@ export function DoubleProcessNewPostContent() {
 			sseEvents.map((ev) => ({
 				event: ev.event,
 				receivedAt: ev.receivedAt,
-				data: ev.data
+				data: ev.data,
 			})),
-		[sseEvents]
+		[sseEvents],
 	);
 
 	const handleFileSelect = (filename: string) => {
@@ -259,7 +260,7 @@ export function DoubleProcessNewPostContent() {
 		const url = requestUrl;
 		const body: Record<string, unknown> = {
 			stream,
-			allow_angles_fallback: allowAnglesFallback
+			allow_angles_fallback: allowAnglesFallback,
 		};
 
 		try {
@@ -273,14 +274,14 @@ export function DoubleProcessNewPostContent() {
 				setStatus(ok ? "success" : "error");
 				if (!ok) {
 					setErrorMessage(
-						"SSE stream reported an error event or non-OK HTTP status."
+						"SSE stream reported an error event or non-OK HTTP status.",
 					);
 				}
 			} else {
 				const res = await fetch(url, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(body)
+					body: JSON.stringify(body),
 				});
 				const text = await res.text();
 				const parsed = parseJsonOrText(text);
@@ -290,7 +291,7 @@ export function DoubleProcessNewPostContent() {
 					setErrorMessage(
 						isRecord(parsed) && typeof parsed.error === "string"
 							? parsed.error
-							: `HTTP ${res.status}`
+							: `HTTP ${res.status}`,
 					);
 					return;
 				}
@@ -300,7 +301,7 @@ export function DoubleProcessNewPostContent() {
 					setErrorMessage(
 						isRecord(parsed) && typeof parsed.error === "string"
 							? parsed.error
-							: "API returned ok: false"
+							: "API returned ok: false",
 					);
 					return;
 				}
@@ -317,26 +318,26 @@ export function DoubleProcessNewPostContent() {
 			<div className="shrink-0">
 				<FileExplorer
 					files={files}
-					selectedFile={null}
 					onFileSelect={handleFileSelect}
-					selectedPathId={selectedPathId}
 					onPathSelect={handlePathSelect}
+					selectedFile={null}
+					selectedPathId={selectedPathId}
 				/>
 			</div>
 
 			<div className="min-w-0 flex-1 overflow-y-auto">
 				{/* Hero header */}
-				<div className="relative border-b border-white/10 bg-linear-to-br from-violet-900/20 via-transparent to-purple-900/10 px-8 py-8">
+				<div className="relative border-white/10 border-b bg-linear-to-br from-violet-900/20 via-transparent to-purple-900/10 px-8 py-8">
 					<div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,var(--tw-gradient-stops))] from-violet-600/10 via-transparent to-transparent" />
 					<div className="relative mx-auto max-w-4xl">
-						<div className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-violet-400/80">
+						<div className="mb-1 flex items-center gap-2 font-semibold text-[11px] text-violet-400/80 uppercase tracking-widest">
 							<span className="inline-block h-1.5 w-1.5 rounded-full bg-violet-400" />
 							Workflow
 						</div>
-						<h1 className="text-3xl font-bold tracking-tight">
+						<h1 className="font-bold text-3xl tracking-tight">
 							Double-process new post
 						</h1>
-						<p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/55">
+						<p className="mt-2 max-w-2xl text-sm text-white/55 leading-relaxed">
 							Runs{" "}
 							<code className="rounded bg-white/10 px-1 py-0.5 text-white/85">
 								POST {ENDPOINT_PATH}
@@ -344,15 +345,14 @@ export function DoubleProcessNewPostContent() {
 							: picks one queued new post, then runs data-load → research →
 							gen-angles twice (cached vs cacheless) and compares stage hashes.
 							Writes artifacts to disk; the second pass overwrites step outputs
-							for that{" "}
-							<code className="text-white/80">post_id</code>.
+							for that <code className="text-white/80">post_id</code>.
 						</p>
 					</div>
 				</div>
 
 				<div className="mx-auto max-w-4xl space-y-5 px-8 py-8">
 					{/* Warning */}
-					<div className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/8 px-4 py-3 text-sm text-amber-100/85">
+					<div className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/8 px-4 py-3 text-amber-100/85 text-sm">
 						<span className="mt-px shrink-0 text-amber-400">⚠</span>
 						<span>
 							<strong className="text-amber-200">Not read-only.</strong> This
@@ -363,36 +363,36 @@ export function DoubleProcessNewPostContent() {
 
 					{/* Request config card */}
 					<section className="overflow-hidden rounded-xl border border-white/10 bg-white/3">
-						<div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
+						<div className="flex items-center justify-between border-white/8 border-b px-4 py-3">
 							<div className="flex items-center gap-2">
-								<span className="rounded bg-violet-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-300">
+								<span className="rounded bg-violet-500/20 px-1.5 py-0.5 font-bold text-[10px] text-violet-300 uppercase tracking-wider">
 									POST
 								</span>
 								<code className="text-sm text-white/65">{ENDPOINT_PATH}</code>
 							</div>
-							<CopyButton text={curlCommand} label="Copy as cURL" />
+							<CopyButton label="Copy as cURL" text={curlCommand} />
 						</div>
 						<div className="space-y-4 p-4">
 							<div>
-								<label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-white/45">
+								<label className="mb-1.5 block font-semibold text-[10px] text-white/45 uppercase tracking-wide">
 									Base URL
 								</label>
 								<input
-									value={baseUrl}
-									onChange={(e) => setBaseUrl(e.target.value)}
-									className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white/85 transition-colors focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-violet-500/30"
-									placeholder="http://localhost:5001/api/v1"
 									aria-label="API base URL"
+									className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white/85 transition-colors focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-violet-500/30"
+									onChange={(e) => setBaseUrl(e.target.value)}
+									placeholder="http://localhost:5001/api/v1"
+									value={baseUrl}
 								/>
 							</div>
 
 							<div className="flex flex-wrap gap-5">
 								<label className="flex cursor-pointer items-center gap-2.5 text-sm">
 									<input
-										type="checkbox"
 										checked={stream}
-										onChange={(e) => setStream(e.target.checked)}
 										className="h-4 w-4 accent-violet-500"
+										onChange={(e) => setStream(e.target.checked)}
+										type="checkbox"
 									/>
 									<span className="text-white/75">
 										<code className="rounded bg-white/10 px-1 text-violet-300">
@@ -405,10 +405,10 @@ export function DoubleProcessNewPostContent() {
 								</label>
 								<label className="flex cursor-pointer items-center gap-2.5 text-sm">
 									<input
-										type="checkbox"
 										checked={allowAnglesFallback}
-										onChange={(e) => setAllowAnglesFallback(e.target.checked)}
 										className="h-4 w-4 accent-violet-500"
+										onChange={(e) => setAllowAnglesFallback(e.target.checked)}
+										type="checkbox"
 									/>
 									<span className="text-white/75">
 										<code className="rounded bg-white/10 px-1 text-violet-300">
@@ -420,10 +420,10 @@ export function DoubleProcessNewPostContent() {
 
 							<div className="flex items-center gap-3">
 								<button
-									type="button"
-									onClick={() => void run()}
+									className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 font-semibold text-sm text-white shadow-lg shadow-violet-900/30 transition-all hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/50 disabled:cursor-not-allowed disabled:opacity-50"
 									disabled={status === "loading"}
-									className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-900/30 transition-all hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+									onClick={() => void run()}
+									type="button"
 								>
 									{status === "loading" ? (
 										<>
@@ -441,7 +441,7 @@ export function DoubleProcessNewPostContent() {
 
 					{/* Error */}
 					{errorMessage ? (
-						<div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+						<div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-200 text-sm">
 							<span className="mt-px shrink-0 text-red-400">✕</span>
 							{errorMessage}
 						</div>
@@ -450,23 +450,23 @@ export function DoubleProcessNewPostContent() {
 					{/* Result summary */}
 					{summaryData && isRecord(summaryData) ? (
 						<section className="overflow-hidden rounded-xl border border-white/10 bg-white/3">
-							<div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
-								<h2 className="text-sm font-semibold text-white/90">
+							<div className="flex items-center justify-between border-white/8 border-b px-4 py-3">
+								<h2 className="font-semibold text-sm text-white/90">
 									Result summary
 								</h2>
 								<CopyButton
-									text={JSON.stringify(summaryData, null, 2)}
 									label="Copy JSON"
+									text={JSON.stringify(summaryData, null, 2)}
 								/>
 							</div>
 							<div className="space-y-4 p-4">
 								<dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
 									{(["post_id", "source_file", "mode"] as const).map((key) => (
 										<div
-											key={key}
 											className="rounded-lg border border-white/8 bg-black/20 px-3 py-2"
+											key={key}
 										>
-											<dt className="text-[10px] font-semibold uppercase tracking-wide text-white/40">
+											<dt className="font-semibold text-[10px] text-white/40 uppercase tracking-wide">
 												{key}
 											</dt>
 											<dd className="mt-1 break-all font-mono text-sm text-white/85">
@@ -478,55 +478,54 @@ export function DoubleProcessNewPostContent() {
 
 								{stageMatch ? (
 									<div>
-										<h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-white/45">
+										<h3 className="mb-2 font-semibold text-[10px] text-white/45 uppercase tracking-wide">
 											Stage hash match
 										</h3>
 										<div className="grid grid-cols-3 gap-2">
-											{(
-												["data_load", "research", "gen_angles"] as const
-											).map((key) => {
-												const val = stageMatch[key];
-												return (
-													<div
-														key={key}
-														className={`rounded-lg border px-3 py-3 text-center transition-colors ${
-															val === true
-																? "border-emerald-500/30 bg-emerald-500/10"
-																: val === false
-																	? "border-amber-500/30 bg-amber-500/10"
-																	: "border-white/10 bg-black/20"
-														}`}
-													>
-														<div className="mb-1 text-[10px] uppercase tracking-wide text-white/45">
-															{key.replace(/_/g, " ")}
-														</div>
+											{(["data_load", "research", "gen_angles"] as const).map(
+												(key) => {
+													const val = stageMatch[key];
+													return (
 														<div
-															className={`text-xl font-bold ${
+															className={`rounded-lg border px-3 py-3 text-center transition-colors ${
 																val === true
-																	? "text-emerald-400"
+																	? "border-emerald-500/30 bg-emerald-500/10"
 																	: val === false
-																		? "text-amber-300"
-																		: "text-white/50"
+																		? "border-amber-500/30 bg-amber-500/10"
+																		: "border-white/10 bg-black/20"
 															}`}
+															key={key}
 														>
-															{val === true ? "✓" : val === false ? "✗" : "—"}
+															<div className="mb-1 text-[10px] text-white/45 uppercase tracking-wide">
+																{key.replace(/_/g, " ")}
+															</div>
+															<div
+																className={`font-bold text-xl ${
+																	val === true
+																		? "text-emerald-400"
+																		: val === false
+																			? "text-amber-300"
+																			: "text-white/50"
+																}`}
+															>
+																{val === true ? "✓" : val === false ? "✗" : "—"}
+															</div>
+															<div className="mt-0.5 text-[10px] text-white/40">
+																{String(val ?? "n/a")}
+															</div>
 														</div>
-														<div className="mt-0.5 text-[10px] text-white/40">
-															{String(val ?? "n/a")}
-														</div>
-													</div>
-												);
-											})}
+													);
+												},
+											)}
 										</div>
 									</div>
 								) : null}
 
 								<details className="rounded-lg border border-white/8 bg-black/20">
-									<summary className="cursor-pointer px-3 py-2 text-xs text-white/55 transition-colors hover:text-white/80">
-										Full{" "}
-										<code className="text-white/75">data</code> object
+									<summary className="cursor-pointer px-3 py-2 text-white/55 text-xs transition-colors hover:text-white/80">
+										Full <code className="text-white/75">data</code> object
 									</summary>
-									<pre className="max-h-96 overflow-auto whitespace-pre-wrap px-3 pb-3 pt-1 text-[11px] text-white/65">
+									<pre className="max-h-96 overflow-auto whitespace-pre-wrap px-3 pt-1 pb-3 text-[11px] text-white/65">
 										{JSON.stringify(summaryData, null, 2)}
 									</pre>
 								</details>
@@ -534,68 +533,24 @@ export function DoubleProcessNewPostContent() {
 						</section>
 					) : null}
 
-					{/* SSE events */}
+					{/* SSE: progress UI + raw JSON */}
 					{stream && sseEvents.length > 0 ? (
-						<section className="overflow-hidden rounded-xl border border-white/10 bg-white/3">
-							<div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
-								<div className="flex items-center gap-2">
-									<h2 className="text-sm font-semibold text-white/90">
-										SSE events
-									</h2>
-									<span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] text-white/55">
-										{sseEvents.length}
-									</span>
-								</div>
-								<CopyButton
-									text={JSON.stringify(sseEventsJson, null, 2)}
-									label="Copy events JSON"
-								/>
-							</div>
-							<div className="max-h-96 overflow-y-auto p-3 font-mono text-[11px]">
-								{sseEvents.map((ev, i) => (
-									<div
-										key={`${ev.receivedAt}-${i}`}
-										className="flex gap-3 border-b border-white/5 py-1.5 last:border-0"
-									>
-										<span
-											className={`w-16 shrink-0 font-semibold ${
-												ev.event === "error"
-													? "text-red-400"
-													: ev.event === "result"
-														? "text-emerald-400"
-														: ev.event === "progress"
-															? "text-blue-400"
-															: ev.event === "status"
-																? "text-violet-400"
-																: "text-white/55"
-											}`}
-										>
-											{ev.event}
-										</span>
-										<span className="shrink-0 text-white/30">
-											{ev.receivedAt}
-										</span>
-										<pre className="min-w-0 flex-1 whitespace-pre-wrap break-all text-white/60">
-											{typeof ev.data === "string"
-												? ev.data
-												: JSON.stringify(ev.data, null, 2)}
-										</pre>
-									</div>
-								))}
-							</div>
-						</section>
+						<DoubleProcessSsePanel
+							events={sseEvents}
+							sseEventsJson={sseEventsJson}
+						/>
 					) : null}
 
 					{/* JSON response (non-stream) */}
 					{!stream && jsonResult !== null ? (
 						<section className="overflow-hidden rounded-xl border border-white/10 bg-white/3">
-							<div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
-								<h2 className="text-sm font-semibold text-white/90">
+							<div className="flex items-center justify-between border-white/8 border-b px-4 py-3">
+								<h2 className="font-semibold text-sm text-white/90">
 									Response
 								</h2>
 								<CopyButton
-									text={JSON.stringify(jsonResult, null, 2)}
 									label="Copy JSON"
+									text={JSON.stringify(jsonResult, null, 2)}
 								/>
 							</div>
 							<pre className="max-h-96 overflow-auto whitespace-pre-wrap p-4 text-[11px] text-white/70">
