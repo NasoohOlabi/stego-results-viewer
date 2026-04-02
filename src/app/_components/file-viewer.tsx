@@ -80,6 +80,7 @@ export function FileViewer() {
 					<CodeViewer
 						content={fileContent ?? null}
 						filename={selectedFile}
+						pathId={apiPathId}
 					/>
 				)}
 			</div>

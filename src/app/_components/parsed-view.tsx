@@ -7,9 +7,10 @@ import { JsonTreeRenderer } from "./renderers/json-tree-renderer";
 interface ParsedViewProps {
 	data: unknown;
 	filename: string | null;
+	pathId?: string;
 }
 
-export function ParsedView({ data, filename }: ParsedViewProps) {
+export function ParsedView({ data, filename, pathId }: ParsedViewProps) {
 	const matchedRenderer = useMemo(() => findMatchingRenderer(data), [data]);
 	const [activeViewId, setActiveViewId] = useState("primary");
 
@@ -69,7 +70,7 @@ export function ParsedView({ data, filename }: ParsedViewProps) {
 				</div>
 			)}
 			<div className="min-h-0 flex-1 overflow-y-auto p-4">
-				<ViewComponent data={data} filename={filename} />
+				<ViewComponent data={data} filename={filename} pathId={pathId} />
 			</div>
 		</div>
 	);

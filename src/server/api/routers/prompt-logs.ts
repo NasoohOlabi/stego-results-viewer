@@ -15,7 +15,8 @@ const promptLogLineSchema = z.object({
 	temperature: z.number().nullable().optional(),
 	max_tokens: z.number().nullable().optional(),
 	system_message: z.string().optional(),
-	user_prompt: z.string().optional()
+	user_prompt: z.string().optional(),
+	assistant_response: z.string().optional()
 });
 
 function toPreview(text: string, max = 160): string {
@@ -66,8 +67,10 @@ type PromptLogEntry = {
 	maxTokens: number | null;
 	userPromptPreview: string;
 	systemMessagePreview: string;
+	assistantResponsePreview: string;
 	userPrompt: string;
 	systemMessage: string;
+	assistantResponse: string;
 	raw: Record<string, unknown>;
 };
 
@@ -145,6 +148,7 @@ export const promptLogsRouter = createTRPCRouter({
 					const parsed = validated.data;
 					const userPrompt = parsed.user_prompt ?? "";
 					const systemMessage = parsed.system_message ?? "";
+					const assistantResponse = parsed.assistant_response ?? "";
 
 					entries.push({
 						id: `${file.fileName}:${lineNumber}:${parsed.timestamp ?? "no-ts"}`,
@@ -159,8 +163,10 @@ export const promptLogsRouter = createTRPCRouter({
 						maxTokens: parsed.max_tokens ?? null,
 						userPromptPreview: toPreview(userPrompt),
 						systemMessagePreview: toPreview(systemMessage),
+						assistantResponsePreview: toPreview(assistantResponse),
 						userPrompt,
 						systemMessage,
+						assistantResponse,
 						raw: (parsedUnknown as Record<string, unknown>) ?? {}
 					});
 				}

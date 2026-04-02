@@ -3,10 +3,22 @@ import type {
 	StreamEventDisplayItem,
 	StreamEventView,
 	TriggerAnglesMode,
+	WorkflowRunBatchRow,
+	WorkflowRunStructuredModel,
+	WorkflowRunTimelineRow,
 } from "./types";
 
 export function escapeBashSingleQuoted(s: string): string {
 	return `'${s.replace(/'/g, "'\\''")}'`;
+}
+
+/** Human-readable duration for request/stream timers (ms → "12.3s" or "2m 05s"). */
+export function formatElapsedMs(ms: number): string {
+	if (!Number.isFinite(ms) || ms < 0) return "0.0s";
+	if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
+	const m = Math.floor(ms / 60_000);
+	const s = Math.floor((ms % 60_000) / 1000);
+	return `${m}m ${s.toString().padStart(2, "0")}s`;
 }
 
 /** Bash-friendly curl for the last captured request (matches fetch Content-Type / JSON body rules). */
@@ -614,4 +626,414 @@ export function isLoggingTagsEndpoint(active: {
 	if (active.method !== "GET") return false;
 	if (active.request?.path === "/logging/tags") return true;
 	return active.endpoint.includes("/logging/tags");
+}
+
+export function isWorkflowRunEndpoint(active: {
+	method: string;
+	endpoint: string;
+	request: { path: string } | null;
+}): boolean {
+	if (active.method !== "POST") return false;
+	if (active.request?.path === "/workflows/run") return true;
+	return active.endpoint.includes("/workflows/run");
+}
+
+const STOPPED_REASON_LABELS: Record<string, string> = {
+	max_posts_reached: "Max posts reached",
+	no_unprocessed_posts: "No unprocessed posts",
+	user_cancelled: "Cancelled",
+};
+
+export function labelStoppedReason(reason: string): string {
+	const t = reason.trim();
+	if (!t) return "";
+	return STOPPED_REASON_LABELS[t] ?? t.replace(/_/g, " ");
+}
+
+function unwrapWorkflowResultPayload(
+	data: unknown,
+): { command: string; result: unknown } | null {
+	if (!isRecord(data)) return null;
+	const cmd = data.command;
+	const res = data.result;
+	if (typeof cmd === "string" && "result" in data) {
+		return { command: cmd, result: res };
+	}
+	return null;
+}
+
+export function extractWorkflowRunSyncResult(data: unknown): {
+	command: string;
+	result: unknown;
+} | null {
+	if (!isRecord(data)) return null;
+	const payload = data.payload;
+	if (!isRecord(payload) || payload.ok !== true) return null;
+	const inner = payload.data;
+	if (!isRecord(inner)) return null;
+	const cmd = inner.command;
+	if (typeof cmd !== "string" || !("result" in inner)) return null;
+	return { command: cmd, result: inner.result };
+}
+
+function collectPostIdsFromResult(result: unknown): string[] {
+	if (!isRecord(result)) return [];
+	const ids = new Set<string>();
+	if (typeof result.post_id === "string" && result.post_id)
+		ids.add(result.post_id);
+	if (result.run_all === true && Array.isArray(result.results)) {
+		for (const item of result.results) {
+			if (!isRecord(item)) continue;
+			if (typeof item.post_id === "string" && item.post_id)
+				ids.add(item.post_id);
+			const post = item.post;
+			if (isRecord(post) && typeof post.id === "string" && post.id)
+				ids.add(post.id);
+		}
+	}
+	return [...ids];
+}
+
+function extractStegoTextFromResult(result: unknown): string | null {
+	if (!isRecord(result)) return null;
+	const t = result.stego_text;
+	if (typeof t === "string" && t.length > 0) return t;
+	if (result.run_all === true && Array.isArray(result.results)) {
+		const texts: string[] = [];
+		for (const item of result.results) {
+			if (!isRecord(item)) continue;
+			const st = item.stego_text;
+			if (typeof st === "string" && st.length > 0) texts.push(st);
+		}
+		if (texts.length === 0) return null;
+		return texts.join("\n\n---\n\n");
+	}
+	return null;
+}
+
+function summarizeResultIntoModel(
+	base: Pick<
+		WorkflowRunStructuredModel,
+		| "outcome"
+		| "command"
+		| "run_id"
+		| "resultPayload"
+		| "errorMessage"
+		| "errorDetails"
+		| "lastHeartbeatActivity"
+	>,
+	command: string | undefined,
+	result: unknown,
+	sseMeta: {
+		timeline: WorkflowRunTimelineRow[];
+		batchRows: WorkflowRunBatchRow[];
+		logMessages: string[];
+	},
+): WorkflowRunStructuredModel {
+	const cmd = command ?? base.command;
+	const postIds = collectPostIdsFromResult(result);
+	const stegoText = cmd === "stego" ? extractStegoTextFromResult(result) : null;
+	let summaryLine = "";
+	let runAll = false;
+	let stoppedReason: string | undefined;
+	let stoppedReasonLabel: string | undefined;
+	let processedCount: number | undefined;
+	let succeededCount: number | undefined;
+	let failedCount: number | undefined;
+
+	if (isRecord(result)) {
+		if (result.run_all === true) runAll = true;
+		if (typeof result.stopped_reason === "string") {
+			stoppedReason = result.stopped_reason;
+			stoppedReasonLabel = labelStoppedReason(result.stopped_reason);
+		}
+		const pc = result.processed_count;
+		const sc = result.succeeded_count;
+		const fc = result.failed_count;
+		if (typeof pc === "number" && Number.isFinite(pc)) processedCount = pc;
+		if (typeof sc === "number" && Number.isFinite(sc)) succeededCount = sc;
+		if (typeof fc === "number" && Number.isFinite(fc)) failedCount = fc;
+
+		const succ = result.succeeded;
+		if (typeof succ === "boolean") {
+			summaryLine = succ ? "Succeeded" : "Failed";
+		} else if (runAll && typeof processedCount === "number") {
+			summaryLine = `Batch: ${processedCount} processed`;
+			if (
+				typeof succeededCount === "number" &&
+				typeof failedCount === "number"
+			) {
+				summaryLine += ` (${succeededCount} ok, ${failedCount} failed)`;
+			}
+		} else {
+			summaryLine = cmd ? `Command: ${cmd}` : "Completed";
+		}
+		const err = result.error;
+		if (typeof err === "string" && err.trim()) {
+			summaryLine = succ === false ? `Failed: ${err}` : summaryLine;
+		}
+	} else {
+		summaryLine = cmd ? `Command: ${cmd}` : "Completed";
+	}
+
+	let finalOutcome = base.outcome;
+	if (isRecord(result)) {
+		if (result.succeeded === false && result.run_all !== true) {
+			finalOutcome = "error";
+		}
+		const pc = result.processed_count;
+		const fc = result.failed_count;
+		if (
+			result.run_all === true &&
+			typeof pc === "number" &&
+			typeof fc === "number" &&
+			pc > 0 &&
+			fc === pc
+		) {
+			finalOutcome = "error";
+		}
+	}
+
+	return {
+		...base,
+		outcome: finalOutcome,
+		command: cmd,
+		resultPayload: result,
+		postIds,
+		stegoText,
+		summaryLine,
+		runAll,
+		stoppedReason,
+		stoppedReasonLabel,
+		processedCount,
+		succeededCount,
+		failedCount,
+		timeline: sseMeta.timeline,
+		batchRows: sseMeta.batchRows,
+		logMessages: sseMeta.logMessages,
+	};
+}
+
+export function buildWorkflowRunStructuredModel(
+	events: StreamEventView[],
+): WorkflowRunStructuredModel {
+	const timeline: WorkflowRunTimelineRow[] = [];
+	const batchRows = new Map<string, WorkflowRunBatchRow>();
+	const logMessages: string[] = [];
+	let lastHeartbeatActivity: string | null = null;
+	let runId: string | undefined;
+	let commandFromResult: string | undefined;
+	let unwrappedResult: unknown | null = null;
+	let errorMessage: string | undefined;
+	let errorDetails: unknown;
+	let sawError = false;
+	let sawDone = false;
+
+	for (const ev of events) {
+		if (ev.event === "heartbeat") {
+			if (isRecord(ev.data)) {
+				const act = ev.data.activity;
+				if (typeof act === "string" && act.trim())
+					lastHeartbeatActivity = act.trim();
+			}
+			continue;
+		}
+		if (ev.event === "status") {
+			if (isRecord(ev.data)) {
+				const rid = ev.data.run_id;
+				if (typeof rid === "string") runId = rid;
+			}
+			continue;
+		}
+		if (ev.event === "log") {
+			if (typeof ev.data === "string") logMessages.push(ev.data);
+			else if (isRecord(ev.data) && typeof ev.data.message === "string")
+				logMessages.push(ev.data.message);
+			else logMessages.push(toPrettyJson(ev.data));
+			continue;
+		}
+		if (ev.event === "progress" && isRecord(ev.data)) {
+			const inner = ev.data.event;
+			const at = ev.receivedAt;
+			if (inner === "stage_start") {
+				const stage = ev.data.stage;
+				const postId =
+					typeof ev.data.post_id === "string" ? ev.data.post_id : undefined;
+				const label =
+					typeof stage === "string" ? `Running ${stage}…` : "Running stego…";
+				timeline.push({
+					kind: "stage_start",
+					at,
+					label,
+					detail: postId ? `post ${postId}` : undefined,
+					post_id: postId,
+				});
+			} else if (inner === "stage_progress") {
+				const postId =
+					typeof ev.data.post_id === "string" ? ev.data.post_id : "";
+				const pc = ev.data.processed_count;
+				const processed =
+					typeof pc === "number" && Number.isFinite(pc) ? pc : 0;
+				const succeeded = ev.data.succeeded === true;
+				const rc = ev.data.retry_count;
+				const retry =
+					typeof rc === "number" && Number.isFinite(rc) ? rc : undefined;
+				if (postId) {
+					batchRows.set(postId, {
+						post_id: postId,
+						processed_count: processed,
+						succeeded,
+						retry_count: retry,
+					});
+				}
+				timeline.push({
+					kind: "stage_progress",
+					at,
+					label: postId
+						? `${postId}: ${succeeded ? "ok" : "fail"}`
+						: "Progress",
+					post_id: postId || undefined,
+					succeeded,
+					retry_count: retry,
+					processed_count: processed,
+				});
+			} else if (inner === "stage_done") {
+				const sr = ev.data.stopped_reason;
+				const stoppedReason = typeof sr === "string" ? sr : undefined;
+				timeline.push({
+					kind: "stage_done",
+					at,
+					label: "Finished",
+					detail: stoppedReason ? labelStoppedReason(stoppedReason) : undefined,
+					stopped_reason: stoppedReason,
+					succeeded_count:
+						typeof ev.data.succeeded_count === "number"
+							? ev.data.succeeded_count
+							: undefined,
+					failed_count:
+						typeof ev.data.failed_count === "number"
+							? ev.data.failed_count
+							: undefined,
+					processed_count:
+						typeof ev.data.processed_count === "number"
+							? ev.data.processed_count
+							: undefined,
+				});
+			}
+			continue;
+		}
+		if (ev.event === "result") {
+			const unwrapped = unwrapWorkflowResultPayload(ev.data);
+			if (unwrapped) {
+				commandFromResult = unwrapped.command;
+				unwrappedResult = unwrapped.result;
+			} else {
+				unwrappedResult = ev.data;
+			}
+			continue;
+		}
+		if (ev.event === "error") {
+			sawError = true;
+			if (isRecord(ev.data)) {
+				const err = ev.data.error;
+				if (typeof err === "string") errorMessage = err;
+				else errorMessage = toPrettyJson(ev.data);
+				errorDetails = ev.data;
+			} else {
+				errorMessage = String(ev.data);
+				errorDetails = ev.data;
+			}
+			continue;
+		}
+		if (ev.event === "done") {
+			sawDone = true;
+		}
+	}
+
+	let outcome: "pending" | "success" | "error" = "pending";
+	if (sawError) outcome = "error";
+	else if (unwrappedResult !== null) outcome = "success";
+	else if (sawDone && !sawError) outcome = "success";
+
+	const base: Pick<
+		WorkflowRunStructuredModel,
+		| "outcome"
+		| "command"
+		| "run_id"
+		| "resultPayload"
+		| "errorMessage"
+		| "errorDetails"
+		| "lastHeartbeatActivity"
+	> = {
+		outcome,
+		command: commandFromResult,
+		run_id: runId,
+		resultPayload: unwrappedResult,
+		errorMessage,
+		errorDetails,
+		lastHeartbeatActivity,
+	};
+
+	if (unwrappedResult !== null && !sawError) {
+		return summarizeResultIntoModel(base, commandFromResult, unwrappedResult, {
+			timeline,
+			batchRows: [...batchRows.values()],
+			logMessages,
+		});
+	}
+
+	if (sawError) {
+		return {
+			...base,
+			outcome: "error",
+			summaryLine: errorMessage ?? "Error",
+			postIds: [],
+			stegoText: null,
+			runAll: false,
+			timeline,
+			batchRows: [...batchRows.values()],
+			logMessages,
+		};
+	}
+
+	return {
+		...base,
+		outcome: "pending",
+		summaryLine: "Waiting for result…",
+		postIds: [],
+		stegoText: null,
+		runAll: false,
+		timeline,
+		batchRows: [...batchRows.values()],
+		logMessages,
+	};
+}
+
+export function buildWorkflowRunStructuredModelFromSync(
+	command: string,
+	result: unknown,
+): WorkflowRunStructuredModel {
+	const base: Pick<
+		WorkflowRunStructuredModel,
+		| "outcome"
+		| "command"
+		| "run_id"
+		| "resultPayload"
+		| "errorMessage"
+		| "errorDetails"
+		| "lastHeartbeatActivity"
+	> = {
+		outcome: "success",
+		command,
+		run_id: undefined,
+		resultPayload: result,
+		errorMessage: undefined,
+		errorDetails: undefined,
+		lastHeartbeatActivity: null,
+	};
+	return summarizeResultIntoModel(base, command, result, {
+		timeline: [],
+		batchRows: [],
+		logMessages: [],
+	});
 }

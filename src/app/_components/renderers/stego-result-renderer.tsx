@@ -4,10 +4,11 @@ import {
 	ExternalLink,
 	Loader2,
 	MessageCircle,
-	MessageSquare
+	MessageSquare,
+	Trash2
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ADMIN_API_STORAGE_KEY } from "~/app/admin-api/types";
 import {
 	normalizeAdminApiBase,
@@ -20,6 +21,7 @@ import {
 	AccordionTrigger
 } from "~/components/ui/accordion";
 import type { RedditComment, StegoResult } from "~/schemas/stego-result";
+import { api } from "~/trpc/react";
 import { AngleTable } from "../angle-table";
 import { PaginatedTable } from "../paginated-table";
 import { PostValidationActions } from "../post-validation-actions";
@@ -28,6 +30,7 @@ import { JsonTreeRenderer } from "./json-tree-renderer";
 interface StegoResultRendererProps {
 	data: StegoResult;
 	filename?: string | null;
+	pathId?: string;
 }
 
 function readStoredBase(): string {
@@ -132,8 +135,12 @@ function CommentTree({
 
 export function StegoResultRenderer({
 	data,
-	filename
+	filename,
+	pathId
 }: StegoResultRendererProps) {
+	const [results, setResults] = useState<StegoResult>(data);
+	const [deletingIndex, setDeletingIndex] = useState<number | null>(null);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 	const apiFile = metricsApiFilename(filename);
 	const [metricsLoading, setMetricsLoading] = useState(false);
 	const [metricsError, setMetricsError] = useState<string | null>(null);
@@ -141,6 +148,13 @@ export function StegoResultRenderer({
 		string,
 		unknown
 	> | null>(null);
+	const utils = api.useUtils();
+	const updateFileMutation = api.files.updateFileContent.useMutation();
+
+	useEffect(() => {
+		setResults(data);
+		setDeleteError(null);
+	}, [data]);
 
 	const runMetricsPost = async () => {
 		if (!apiFile) return;
@@ -164,6 +178,38 @@ export function StegoResultRenderer({
 			return;
 		}
 		setMetricsResult(res.data);
+	};
+
+	const handleDeleteResult = async (index: number) => {
+		if (!filename) {
+			setDeleteError("Cannot delete: file name is missing.");
+			return;
+		}
+		const confirmed = window.confirm(
+			`Delete result #${index + 1} from ${filename}? This updates the JSON file.`,
+		);
+		if (!confirmed) return;
+		const nextResults = results.filter((_, i) => i !== index);
+		setDeletingIndex(index);
+		setDeleteError(null);
+		try {
+			await updateFileMutation.mutateAsync({
+				filename,
+				pathId: pathId ?? "side-wing",
+				content: JSON.stringify(nextResults, null, 2),
+			});
+			setResults(nextResults);
+			await utils.files.getFileContent.invalidate({
+				filename,
+				pathId: pathId ?? "side-wing",
+			});
+		} catch (error) {
+			setDeleteError(
+				error instanceof Error ? error.message : "Failed to delete result.",
+			);
+		} finally {
+			setDeletingIndex(null);
+		}
 	};
 
 	return (
@@ -229,10 +275,13 @@ export function StegoResultRenderer({
 						</AccordionItem>
 					</Accordion>
 				)}
+				{deleteError && (
+					<p className="text-red-400/90 text-sm">{deleteError}</p>
+				)}
 			</div>
 
 			<div className="space-y-8">
-				{data.map((item, index) => {
+				{results.map((item, index) => {
 					const searchResults = Array.isArray(item.post?.search_results)
 						? item.post.search_results
 						: Object.values(item.post?.search_results ?? {})
@@ -309,8 +358,26 @@ export function StegoResultRenderer({
 										</div>
 									)}
 								</div>
-								<div className="font-mono text-white/20">
-									#{index + 1}
+								<div className="flex items-center gap-2">
+									<button
+										className="inline-flex items-center gap-1 rounded-md border border-red-400/30 bg-red-500/10 px-2 py-1 text-red-300 text-xs transition-colors hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+										disabled={deletingIndex !== null}
+										onClick={() => void handleDeleteResult(index)}
+										type="button"
+									>
+										{deletingIndex === index ? (
+											<>
+												<Loader2 className="size-3 animate-spin" />
+												Deleting...
+											</>
+										) : (
+											<>
+												<Trash2 className="size-3" />
+												Delete
+											</>
+										)}
+									</button>
+									<div className="font-mono text-white/20">#{index + 1}</div>
 								</div>
 							</div>
 

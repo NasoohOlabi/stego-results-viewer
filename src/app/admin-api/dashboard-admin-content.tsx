@@ -18,6 +18,7 @@ import {
 	type ApiActionId,
 	type ApiResponseView,
 	type ApiWorkspaceTab,
+	bumpAdminApiActionUseCount,
 	createIdleResponse,
 	getApiToolForAction,
 	getDefaultApiActionForTool,
@@ -715,6 +716,7 @@ export function DashboardAdminContent() {
 	};
 
 	const runTabActionForTab = async (tab: ApiWorkspaceTab) => {
+		bumpAdminApiActionUseCount(tab.apiActionId);
 		await runTabAction({
 			tab,
 			base,

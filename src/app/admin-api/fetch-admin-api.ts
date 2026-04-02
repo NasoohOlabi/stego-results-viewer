@@ -10,8 +10,7 @@ export async function executeAdminApiRequest(options: {
 	tabId: string;
 	updateTabResponse: (tabId: string, response: ApiResponseView) => void;
 }): Promise<{ ok: boolean; payload: unknown } | null> {
-	const { method, path, base, query, body, tabId, updateTabResponse } =
-		options;
+	const { method, path, base, query, body, tabId, updateTabResponse } = options;
 
 	const qs = new URLSearchParams();
 	if (query) {
@@ -25,24 +24,26 @@ export async function executeAdminApiRequest(options: {
 		url,
 		path,
 		query: query ?? null,
-		body: body ?? null
+		body: body ?? null,
 	};
+	const requestStartedAtMs = Date.now();
 
 	updateTabResponse(tabId, {
 		status: "loading",
+		requestStartedAtMs,
 		endpoint: url,
 		method,
 		request: requestPayload,
-		data: null
+		data: null,
 	});
 
 	try {
 		const res = await fetch(url, {
 			method,
 			headers: {
-				"Content-Type": "application/json"
+				"Content-Type": "application/json",
 			},
-			body: body === undefined ? undefined : JSON.stringify(body)
+			body: body === undefined ? undefined : JSON.stringify(body),
 		});
 		const contentType = res.headers.get("content-type") ?? "";
 
@@ -51,14 +52,15 @@ export async function executeAdminApiRequest(options: {
 			if (!stream) {
 				updateTabResponse(tabId, {
 					status: "error",
+					requestStartedAtMs,
 					endpoint: url,
 					method,
 					request: requestPayload,
 					data: {
 						httpStatus: res.status,
 						httpStatusText: res.statusText,
-						message: "SSE response did not include a readable body."
-					}
+						message: "SSE response did not include a readable body.",
+					},
 				});
 				return { ok: false, payload: null };
 			}
@@ -76,6 +78,7 @@ export async function executeAdminApiRequest(options: {
 				if (event.event === "error") sawEventError = true;
 				updateTabResponse(tabId, {
 					status: sawEventError ? "error" : "loading",
+					requestStartedAtMs,
 					endpoint: url,
 					method,
 					request: requestPayload,
@@ -87,17 +90,15 @@ export async function executeAdminApiRequest(options: {
 						complete: false,
 						eventCount: events.length,
 						lastEvent: event,
-						events
-					}
+						events,
+					},
 				});
 			};
 
 			const flushBufferEvents = () => {
 				let separatorIndex = buffer.indexOf("\n\n");
 				while (separatorIndex >= 0) {
-					const rawBlock = buffer
-						.slice(0, separatorIndex)
-						.replace(/\r/g, "");
+					const rawBlock = buffer.slice(0, separatorIndex).replace(/\r/g, "");
 					buffer = buffer.slice(separatorIndex + 2);
 					const parsed = parseSseEvent(rawBlock);
 					if (parsed) pushEvent(parsed);
@@ -127,19 +128,20 @@ export async function executeAdminApiRequest(options: {
 				complete: true,
 				eventCount: events.length,
 				events,
-				finishedAt: new Date().toISOString()
+				finishedAt: new Date().toISOString(),
 			};
 			const success = res.ok && !sawEventError;
 			updateTabResponse(tabId, {
 				status: success ? "success" : "error",
+				requestStartedAtMs,
 				endpoint: url,
 				method,
 				request: requestPayload,
-				data: finalPayload
+				data: finalPayload,
 			});
 			return {
 				ok: success,
-				payload: finalPayload
+				payload: finalPayload,
 			};
 		}
 
@@ -148,29 +150,31 @@ export async function executeAdminApiRequest(options: {
 
 		updateTabResponse(tabId, {
 			status: res.ok ? "success" : "error",
+			requestStartedAtMs,
 			endpoint: url,
 			method,
 			request: requestPayload,
 			data: {
 				httpStatus: res.status,
 				httpStatusText: res.statusText,
-				payload: parsed
-			}
+				payload: parsed,
+			},
 		});
 		return {
 			ok: res.ok,
-			payload: parsed
+			payload: parsed,
 		};
 	} catch (error) {
 		updateTabResponse(tabId, {
 			status: "error",
+			requestStartedAtMs,
 			endpoint: url,
 			method,
 			request: requestPayload,
 			data: {
 				message: "Request failed",
-				error: error instanceof Error ? error.message : String(error)
-			}
+				error: error instanceof Error ? error.message : String(error),
+			},
 		});
 		return null;
 	}

@@ -1,4 +1,4 @@
-import { readdir, readFile } from "fs/promises";
+import { readdir, readFile, writeFile } from "fs/promises";
 import { join } from "path";
 import { z } from "zod";
 
@@ -38,6 +38,24 @@ export const filesRouter = createTRPCRouter({
 			} catch (error) {
 				console.error("Error reading file:", error);
 				throw new Error(`Failed to read file: ${input.filename} in ${input.pathId}`);
+			}
+		}),
+
+	updateFileContent: publicProcedure
+		.input(z.object({
+			filename: z.string(),
+			content: z.string(),
+			pathId: z.string().default("side-wing"),
+		}))
+		.mutation(async ({ input }) => {
+			try {
+				const path = getResolvedPath(input.pathId);
+				const filePath = join(path, input.filename);
+				await writeFile(filePath, input.content, "utf-8");
+				return { ok: true as const };
+			} catch (error) {
+				console.error("Error writing file:", error);
+				throw new Error(`Failed to write file: ${input.filename} in ${input.pathId}`);
 			}
 		}),
 });

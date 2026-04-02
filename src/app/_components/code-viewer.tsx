@@ -9,6 +9,7 @@ import { ParsedView } from "./parsed-view";
 interface CodeViewerProps {
 	content: string | null;
 	filename: string | null;
+	pathId?: string;
 }
 
 function formatJSON(content: string): string {
@@ -29,7 +30,7 @@ function parseJSON(content: string): unknown | null {
 	}
 }
 
-export function CodeViewer({ content, filename }: CodeViewerProps) {
+export function CodeViewer({ content, filename, pathId }: CodeViewerProps) {
 	const [viewMode, setViewMode] = useState<"raw" | "parsed">("parsed");
 
 	const formattedContent = useMemo(() => {
@@ -61,7 +62,6 @@ export function CodeViewer({ content, filename }: CodeViewerProps) {
 						<div className="flex items-center gap-2">
 							<span className="text-white/50 text-xs">Raw</span>
 							<button
-								aria-checked={viewMode === "parsed" ? "true" : "false"}
 								aria-label="Toggle view mode"
 								className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
 									viewMode === "parsed" ? "bg-white/40" : "bg-white/10"
@@ -69,7 +69,6 @@ export function CodeViewer({ content, filename }: CodeViewerProps) {
 								onClick={() =>
 									setViewMode(viewMode === "raw" ? "parsed" : "raw")
 								}
-								role="switch"
 								type="button"
 							>
 								<span
@@ -101,7 +100,12 @@ export function CodeViewer({ content, filename }: CodeViewerProps) {
 						value={formattedContent ?? content}
 					/>
 				) : (
-					<ParsedView data={parsedData!} filename={filename} key={filename} />
+					<ParsedView
+						data={parsedData!}
+						filename={filename}
+						key={filename}
+						pathId={pathId}
+					/>
 				)}
 			</div>
 		</div>

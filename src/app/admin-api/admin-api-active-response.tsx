@@ -1,16 +1,22 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { renderInspectorValue } from "./inspector-response";
 import type { ApiResponseView, StreamEventView } from "./types";
+import { useRequestElapsedMs } from "./use-request-elapsed";
 import {
 	buildCopyRequestAndResponseText,
 	buildCurlBash,
 	buildStreamEventItems,
+	buildWorkflowRunStructuredModel,
+	buildWorkflowRunStructuredModelFromSync,
 	extractLoggingTagsFromAdminResponse,
 	extractStateLogsFromAdminResponse,
 	extractValidatePostFromAdminResponse,
+	extractWorkflowRunSyncResult,
 	extractWorkflowRunsFromAdminResponse,
 	formatBytes,
+	formatElapsedMs,
 	formatResponseForClipboard,
 	getHeartbeatElapsedMs,
 	isHeartbeatEvent,
@@ -18,9 +24,10 @@ import {
 	isSsePayload,
 	isStateLogsEndpoint,
 	isValidatePostEndpoint,
-	isWorkflowRunsEndpoint
+	isWorkflowRunEndpoint,
+	isWorkflowRunsEndpoint,
 } from "./utils";
-import { renderInspectorValue } from "./inspector-response";
+import { WorkflowRunStructuredResponse } from "./workflow-run-structured-response";
 
 export interface AdminApiActiveResponseProps {
 	activeTabResponse: ApiResponseView;
@@ -44,12 +51,18 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 		streamSearchText,
 		onStreamSearchTextChange,
 		copiedStreamEventKey,
-		onCopyStreamEvent
+		onCopyStreamEvent,
 	} = props;
 
 	const ssePayload = isSsePayload(activeTabResponse.data)
 		? activeTabResponse.data
 		: null;
+
+	const loadingElapsed = useRequestElapsedMs(
+		activeTabResponse.requestStartedAtMs,
+		activeTabResponse.status === "loading",
+	);
+	const lastSseEventName = ssePayload?.events?.at(-1)?.event;
 
 	const workflowRuns =
 		!ssePayload &&
@@ -84,11 +97,35 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 			ssePayload
 				? buildStreamEventItems([...ssePayload.events].reverse(), {
 						includeHeartbeats: showHeartbeatEvents,
-						searchText: streamSearchText
+						searchText: streamSearchText,
 					})
 				: [],
-		[ssePayload, showHeartbeatEvents, streamSearchText]
+		[ssePayload, showHeartbeatEvents, streamSearchText],
 	);
+
+	const isWorkflowRun = isWorkflowRunEndpoint(activeTabResponse);
+	const workflowRunStructured = useMemo(
+		() =>
+			ssePayload && isWorkflowRun
+				? buildWorkflowRunStructuredModel(ssePayload.events)
+				: null,
+		[ssePayload, isWorkflowRun],
+	);
+
+	const workflowRunSyncParsed =
+		!ssePayload && activeTabResponse.status === "success" && isWorkflowRun
+			? extractWorkflowRunSyncResult(activeTabResponse.data)
+			: null;
+	const workflowRunSyncModel = workflowRunSyncParsed
+		? buildWorkflowRunStructuredModelFromSync(
+				workflowRunSyncParsed.command,
+				workflowRunSyncParsed.result,
+			)
+		: null;
+
+	const [workflowRunResponseView, setWorkflowRunResponseView] = useState<
+		"summary" | "events"
+	>("summary");
 
 	const [copiedAction, setCopiedAction] = useState<
 		"curl" | "response" | "both" | null
@@ -96,7 +133,7 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 
 	const curlText = useMemo(
 		() => buildCurlBash(activeTabResponse),
-		[activeTabResponse]
+		[activeTabResponse],
 	);
 	const canCopyCurl = curlText.length > 0;
 	const canCopyResponse = activeTabResponse.status !== "idle";
@@ -104,7 +141,7 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 
 	const copyWithFeedback = async (
 		kind: "curl" | "response" | "both",
-		text: string
+		text: string,
 	) => {
 		if (!text.trim()) return;
 		try {
@@ -131,50 +168,177 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 				.find((value) => value !== null) ?? null)
 		: null;
 
+	const sseInner =
+		ssePayload !== null ? (
+			<>
+				<div className="rounded-md border border-white/10 bg-black/30 p-2">
+					<div className="mb-2 font-semibold text-white/70 text-xs">
+						Stream metadata
+					</div>
+					{renderInspectorValue({
+						httpStatus: (activeTabResponse.data as Record<string, unknown>)
+							.httpStatus,
+						httpStatusText: (activeTabResponse.data as Record<string, unknown>)
+							.httpStatusText,
+						contentType: (activeTabResponse.data as Record<string, unknown>)
+							.contentType,
+						streaming: (activeTabResponse.data as Record<string, unknown>)
+							.streaming,
+						complete: (activeTabResponse.data as Record<string, unknown>)
+							.complete,
+						eventCount: ssePayload.events.length,
+						finishedAt: (activeTabResponse.data as Record<string, unknown>)
+							.finishedAt,
+					})}
+				</div>
+
+				<div className="space-y-2">
+					<div className="flex flex-wrap items-center gap-2 text-xs">
+						<span className="rounded bg-white/10 px-2 py-1 text-white/80">
+							events: {ssePayload.events.length}
+						</span>
+						<span className="rounded bg-blue-500/20 px-2 py-1 text-blue-200">
+							updates: {nonHeartbeatCount}
+						</span>
+						<span className="rounded bg-amber-500/20 px-2 py-1 text-amber-200">
+							heartbeats: {heartbeatCount}
+						</span>
+						{lastHeartbeatElapsed !== null ? (
+							<span className="rounded bg-white/10 px-2 py-1 text-white/70">
+								last heartbeat: {(lastHeartbeatElapsed / 1000).toFixed(1)}s
+							</span>
+						) : null}
+					</div>
+					<div className="flex flex-wrap items-center gap-2">
+						<label className="inline-flex items-center gap-2 rounded border border-white/10 bg-black/20 px-2 py-1 text-white/70 text-xs">
+							<input
+								checked={showHeartbeatEvents}
+								onChange={(e) => onShowHeartbeatEventsChange(e.target.checked)}
+								type="checkbox"
+							/>
+							Show heartbeat events
+						</label>
+						<input
+							className="min-w-[220px] flex-1 rounded border border-white/10 bg-black/20 px-2 py-1 text-white text-xs placeholder:text-white/40"
+							onChange={(e) => onStreamSearchTextChange(e.target.value)}
+							placeholder="Filter stream text"
+							value={streamSearchText}
+						/>
+					</div>
+					{streamItems.length === 0 ? (
+						<p className="text-white/60 text-xs">Waiting for events...</p>
+					) : (
+						streamItems.map((item, index) => {
+							if (item.type === "heartbeat-group") {
+								const firstHeartbeat = item.heartbeats?.[0];
+								const lastHeartbeat =
+									item.heartbeats?.[(item.heartbeats?.length ?? 1) - 1];
+								const firstElapsed = firstHeartbeat
+									? getHeartbeatElapsedMs(firstHeartbeat)
+									: null;
+								const lastElapsed = lastHeartbeat
+									? getHeartbeatElapsedMs(lastHeartbeat)
+									: null;
+								return (
+									<div
+										className="rounded-md border border-amber-500/20 bg-amber-500/10 p-2 text-amber-100 text-xs"
+										key={`hb-${index}-${firstHeartbeat?.receivedAt ?? "unknown"}`}
+									>
+										{item.heartbeats?.length} heartbeat
+										{item.heartbeats?.length === 1 ? "" : "s"}
+										{firstElapsed !== null && lastElapsed !== null
+											? ` (${(firstElapsed / 1000).toFixed(1)}s -> ${(lastElapsed / 1000).toFixed(1)}s)`
+											: ""}
+									</div>
+								);
+							}
+
+							const event = item.event;
+							if (!event) return null;
+							const eventKey = `${event.receivedAt}-${index}`;
+							return (
+								<div
+									className="rounded-md border border-white/10 bg-black/20 p-2"
+									key={eventKey}
+								>
+									<div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
+										<span className="rounded bg-blue-500/20 px-2 py-0.5 font-semibold text-blue-200">
+											{event.event}
+										</span>
+										<span className="text-white/50">
+											{new Date(event.receivedAt).toLocaleTimeString()}
+										</span>
+										{event.id ? (
+											<span className="rounded bg-white/10 px-2 py-0.5 text-white/70">
+												id: {event.id}
+											</span>
+										) : null}
+										{event.retry !== undefined ? (
+											<span className="rounded bg-white/10 px-2 py-0.5 text-white/70">
+												retry: {event.retry}
+											</span>
+										) : null}
+										<button
+											className="ml-auto rounded bg-blue-500/20 px-2 py-0.5 text-[11px] text-blue-100 hover:bg-blue-500/30"
+											onClick={() => onCopyStreamEvent(event, eventKey)}
+											type="button"
+										>
+											{copiedStreamEventKey === eventKey ? "Copied" : "Copy"}
+										</button>
+									</div>
+									{renderInspectorValue(event.data)}
+								</div>
+							);
+						})
+					)}
+				</div>
+			</>
+		) : null;
+
 	return (
 		<section className="rounded-xl border border-white/10 bg-black/30 p-4">
 			<div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-				<h2 className="text-lg font-semibold">Active Tab Response</h2>
+				<h2 className="font-semibold text-lg">Active Tab Response</h2>
 				<div className="flex flex-wrap items-center gap-2">
 					<button
-						type="button"
+						className="rounded-md bg-white/10 px-3 py-1 text-xs hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
 						disabled={!canCopyCurl}
 						onClick={() => void copyWithFeedback("curl", curlText)}
-						className="rounded-md bg-white/10 px-3 py-1 text-xs hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
+						type="button"
 					>
 						{copiedAction === "curl" ? "Copied" : "Copy curl"}
 					</button>
 					<button
-						type="button"
+						className="rounded-md bg-white/10 px-3 py-1 text-xs hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
 						disabled={!canCopyResponse}
 						onClick={() =>
 							void copyWithFeedback(
 								"response",
-								formatResponseForClipboard(activeTabResponse)
+								formatResponseForClipboard(activeTabResponse),
 							)
 						}
-						className="rounded-md bg-white/10 px-3 py-1 text-xs hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
+						type="button"
 					>
 						{copiedAction === "response" ? "Copied" : "Copy response"}
 					</button>
 					<button
-						type="button"
+						className="rounded-md bg-white/10 px-3 py-1 text-xs hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
 						disabled={!canCopyBoth}
 						onClick={() =>
 							void copyWithFeedback(
 								"both",
-								buildCopyRequestAndResponseText(activeTabResponse)
+								buildCopyRequestAndResponseText(activeTabResponse),
 							)
 						}
-						className="rounded-md bg-white/10 px-3 py-1 text-xs hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
+						type="button"
 					>
 						{copiedAction === "both" ? "Copied" : "Copy both"}
 					</button>
 					{activeTabResponse.status === "error" ? (
 						<button
-							type="button"
-							onClick={onCopyActiveErrorReport}
 							className="rounded-md bg-blue-500/20 px-3 py-1 text-xs hover:bg-blue-500/30"
+							onClick={onCopyActiveErrorReport}
+							type="button"
 						>
 							{copyErrorReportState === "copied"
 								? "Copied"
@@ -196,10 +360,23 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 					>
 						{activeTabResponse.status.toUpperCase()}
 					</span>
+					{activeTabResponse.status === "loading" && loadingElapsed !== null ? (
+						<span className="font-mono text-[11px] text-white/55 tabular-nums">
+							{formatElapsedMs(loadingElapsed)}
+						</span>
+					) : null}
+					{activeTabResponse.status === "loading" && lastSseEventName ? (
+						<span
+							className="max-w-[min(280px,40vw)] truncate text-white/45 text-xs"
+							title={lastSseEventName}
+						>
+							· {lastSseEventName}
+						</span>
+					) : null}
 				</div>
 			</div>
 			{activeTabResponse.endpoint ? (
-				<p className="mb-2 text-xs text-white/50">
+				<p className="mb-2 text-white/50 text-xs">
 					<span className="font-semibold text-white/70">
 						{activeTabResponse.method}
 					</span>{" "}
@@ -208,158 +385,69 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 			) : null}
 			<div className="space-y-3 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3">
 				{ssePayload ? (
-					<>
-						<div className="rounded-md border border-white/10 bg-black/30 p-2">
-							<div className="mb-2 text-xs font-semibold text-white/70">
-								Stream metadata
+					isWorkflowRun && workflowRunStructured ? (
+						<>
+							<div className="flex flex-wrap gap-2">
+								<button
+									className={`rounded-md px-3 py-1 text-xs ${
+										workflowRunResponseView === "summary"
+											? "bg-violet-500/30 text-violet-100"
+											: "bg-white/10 text-white/70 hover:bg-white/15"
+									}`}
+									onClick={() => setWorkflowRunResponseView("summary")}
+									type="button"
+								>
+									Summary
+								</button>
+								<button
+									className={`rounded-md px-3 py-1 text-xs ${
+										workflowRunResponseView === "events"
+											? "bg-violet-500/30 text-violet-100"
+											: "bg-white/10 text-white/70 hover:bg-white/15"
+									}`}
+									onClick={() => setWorkflowRunResponseView("events")}
+									type="button"
+								>
+									Events
+								</button>
 							</div>
-							{renderInspectorValue({
-								httpStatus: (
-									activeTabResponse.data as Record<string, unknown>
-								).httpStatus,
-								httpStatusText: (
-									activeTabResponse.data as Record<string, unknown>
-								).httpStatusText,
-								contentType: (
-									activeTabResponse.data as Record<string, unknown>
-								).contentType,
-								streaming: (
-									activeTabResponse.data as Record<string, unknown>
-								).streaming,
-								complete: (
-									activeTabResponse.data as Record<string, unknown>
-								).complete,
-								eventCount: ssePayload.events.length,
-								finishedAt: (
-									activeTabResponse.data as Record<string, unknown>
-								).finishedAt
-							})}
-						</div>
-
-						<div className="space-y-2">
-							<div className="flex flex-wrap items-center gap-2 text-xs">
-								<span className="rounded bg-white/10 px-2 py-1 text-white/80">
-									events: {ssePayload.events.length}
-								</span>
-								<span className="rounded bg-blue-500/20 px-2 py-1 text-blue-200">
-									updates: {nonHeartbeatCount}
-								</span>
-								<span className="rounded bg-amber-500/20 px-2 py-1 text-amber-200">
-									heartbeats: {heartbeatCount}
-								</span>
-								{lastHeartbeatElapsed !== null ? (
-									<span className="rounded bg-white/10 px-2 py-1 text-white/70">
-										last heartbeat:{" "}
-										{(lastHeartbeatElapsed / 1000).toFixed(1)}s
-									</span>
-								) : null}
-							</div>
-							<div className="flex flex-wrap items-center gap-2">
-								<label className="inline-flex items-center gap-2 rounded border border-white/10 bg-black/20 px-2 py-1 text-xs text-white/70">
-									<input
-										type="checkbox"
-										checked={showHeartbeatEvents}
-										onChange={(e) =>
-											onShowHeartbeatEventsChange(e.target.checked)
-										}
+							{workflowRunResponseView === "summary" ? (
+								<>
+									<WorkflowRunStructuredResponse
+										lastStreamEventName={lastSseEventName}
+										loading={activeTabResponse.status === "loading"}
+										model={workflowRunStructured}
+										requestStartedAtMs={activeTabResponse.requestStartedAtMs}
 									/>
-									Show heartbeat events
-								</label>
-								<input
-									value={streamSearchText}
-									onChange={(e) =>
-										onStreamSearchTextChange(e.target.value)
-									}
-									placeholder="Filter stream text"
-									className="min-w-[220px] flex-1 rounded border border-white/10 bg-black/20 px-2 py-1 text-xs text-white placeholder:text-white/40"
-								/>
-							</div>
-							{streamItems.length === 0 ? (
-								<p className="text-xs text-white/60">
-									Waiting for events...
-								</p>
+									{workflowRunStructured.logMessages.length > 0 ? (
+										<details className="rounded-lg border border-white/10 bg-black/20 p-2">
+											<summary className="cursor-pointer text-white/70 text-xs">
+												Log lines ({workflowRunStructured.logMessages.length})
+											</summary>
+											<pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap font-mono text-[10px] text-white/65">
+												{workflowRunStructured.logMessages.join("\n")}
+											</pre>
+										</details>
+									) : null}
+									<details className="rounded-lg border border-white/10 bg-black/25 p-2">
+										<summary className="cursor-pointer text-white/75 text-xs">
+											Raw stream
+										</summary>
+										<div className="mt-2 space-y-3">{sseInner}</div>
+									</details>
+								</>
 							) : (
-								streamItems.map((item, index) => {
-									if (item.type === "heartbeat-group") {
-										const firstHeartbeat = item.heartbeats?.[0];
-										const lastHeartbeat =
-											item.heartbeats?.[
-												(item.heartbeats?.length ?? 1) - 1
-											];
-										const firstElapsed = firstHeartbeat
-											? getHeartbeatElapsedMs(firstHeartbeat)
-											: null;
-										const lastElapsed = lastHeartbeat
-											? getHeartbeatElapsedMs(lastHeartbeat)
-											: null;
-										return (
-											<div
-												key={`hb-${index}-${firstHeartbeat?.receivedAt ?? "unknown"}`}
-												className="rounded-md border border-amber-500/20 bg-amber-500/10 p-2 text-xs text-amber-100"
-											>
-												{item.heartbeats?.length} heartbeat
-												{item.heartbeats?.length === 1
-													? ""
-													: "s"}
-												{firstElapsed !== null &&
-												lastElapsed !== null
-													? ` (${(firstElapsed / 1000).toFixed(1)}s -> ${(lastElapsed / 1000).toFixed(1)}s)`
-													: ""}
-											</div>
-										);
-									}
-
-									const event = item.event;
-									if (!event) return null;
-									const eventKey = `${event.receivedAt}-${index}`;
-									return (
-										<div
-											key={eventKey}
-											className="rounded-md border border-white/10 bg-black/20 p-2"
-										>
-											<div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
-												<span className="rounded bg-blue-500/20 px-2 py-0.5 font-semibold text-blue-200">
-													{event.event}
-												</span>
-												<span className="text-white/50">
-													{new Date(
-														event.receivedAt
-													).toLocaleTimeString()}
-												</span>
-												{event.id ? (
-													<span className="rounded bg-white/10 px-2 py-0.5 text-white/70">
-														id: {event.id}
-													</span>
-												) : null}
-												{event.retry !== undefined ? (
-													<span className="rounded bg-white/10 px-2 py-0.5 text-white/70">
-														retry: {event.retry}
-													</span>
-												) : null}
-												<button
-													type="button"
-													onClick={() =>
-														onCopyStreamEvent(event, eventKey)
-													}
-													className="ml-auto rounded bg-blue-500/20 px-2 py-0.5 text-[11px] text-blue-100 hover:bg-blue-500/30"
-												>
-													{copiedStreamEventKey === eventKey
-														? "Copied"
-														: "Copy"}
-												</button>
-											</div>
-											{renderInspectorValue(event.data)}
-										</div>
-									);
-								})
+								sseInner
 							)}
-						</div>
-					</>
+						</>
+					) : (
+						sseInner
+					)
 				) : (
 					<>
 						{workflowRuns ? (
 							<div className="mb-4 space-y-2">
-								<div className="text-xs font-semibold text-white/70">
+								<div className="font-semibold text-white/70 text-xs">
 									Workflow runs ({workflowRuns.count} reported
 									{workflowRuns.runs.length !== workflowRuns.count
 										? `, ${workflowRuns.runs.length} parsed`
@@ -367,19 +455,19 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 									)
 								</div>
 								{workflowRuns.runs.length === 0 ? (
-									<p className="text-xs text-white/55">
+									<p className="text-white/55 text-xs">
 										No runs in this response.
 									</p>
 								) : (
 									<div className="overflow-x-auto rounded-md border border-white/10">
 										<table className="w-full min-w-[640px] text-left text-xs">
-											<thead className="border-b border-white/10 bg-white/5 text-white/60">
+											<thead className="border-white/10 border-b bg-white/5 text-white/60">
 												<tr>
 													<th className="px-2 py-2 font-medium">ID</th>
 													<th className="px-2 py-2 font-medium">Command</th>
 													<th className="px-2 py-2 font-medium">Mode</th>
 													<th className="px-2 py-2 font-medium">Started</th>
-													<th className="px-2 py-2 font-medium text-right">
+													<th className="px-2 py-2 text-right font-medium">
 														Elapsed
 													</th>
 												</tr>
@@ -387,8 +475,8 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 											<tbody className="divide-y divide-white/10">
 												{workflowRuns.runs.map((run) => (
 													<tr
-														key={run.id}
 														className="text-white/85 hover:bg-white/5"
+														key={run.id}
 													>
 														<td className="max-w-[200px] truncate px-2 py-2 font-mono text-[11px]">
 															{run.id}
@@ -402,7 +490,7 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 														<td className="px-2 py-2 text-white/60">
 															{new Date(run.started_at * 1000).toLocaleString()}
 														</td>
-														<td className="px-2 py-2 text-right tabular-nums text-white/70">
+														<td className="px-2 py-2 text-right text-white/70 tabular-nums">
 															{(run.elapsed_ms / 1000).toFixed(1)}s
 														</td>
 													</tr>
@@ -429,7 +517,7 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 											validatePostView.valid
 												? "bg-emerald-500/25 text-emerald-200"
 												: validatePostView.validation_outcome ===
-													  "rerun_incomplete"
+														"rerun_incomplete"
 													? "bg-sky-500/20 text-sky-200"
 													: "bg-amber-500/25 text-amber-200"
 										}`}
@@ -437,29 +525,24 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 										{validatePostView.valid
 											? "valid"
 											: validatePostView.validation_outcome
-												? validatePostView.validation_outcome.replace(
-														/_/g,
-														" "
-													)
+												? validatePostView.validation_outcome.replace(/_/g, " ")
 												: "not valid"}
 									</span>
 								</div>
 								{validatePostView.validation_explanation ? (
-									<p className="text-[11px] leading-snug text-white/55">
+									<p className="text-[11px] text-white/55 leading-snug">
 										{validatePostView.validation_explanation}
 									</p>
 								) : null}
 								<div className="overflow-x-auto rounded border border-white/10">
 									<table className="w-full min-w-[640px] text-left text-xs">
-										<thead className="border-b border-white/10 bg-white/5 text-white/55">
+										<thead className="border-white/10 border-b bg-white/5 text-white/55">
 											<tr>
 												<th className="px-2 py-2 font-medium">Stage</th>
 												<th className="px-2 py-2 font-medium">Step</th>
 												<th className="px-2 py-2 font-medium">Match</th>
 												<th className="px-2 py-2 font-medium">Comparison</th>
-												<th className="px-2 py-2 font-medium">
-													Changed keys
-												</th>
+												<th className="px-2 py-2 font-medium">Changed keys</th>
 												<th className="px-2 py-2 font-medium">Error</th>
 											</tr>
 										</thead>
@@ -467,8 +550,8 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 											{Object.entries(validatePostView.steps).map(
 												([key, row]) => (
 													<tr
-														key={key}
 														className="text-white/85"
+														key={key}
 														title={
 															[row.comparison_note, row.error]
 																.filter(Boolean)
@@ -483,9 +566,7 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 														</td>
 														<td className="px-2 py-2">
 															{row.matches === true ? (
-																<span className="text-emerald-300/90">
-																	yes
-																</span>
+																<span className="text-emerald-300/90">yes</span>
 															) : row.matches === false ? (
 																<span className="text-rose-300/90">no</span>
 															) : (
@@ -504,7 +585,7 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 															{row.error ?? "—"}
 														</td>
 													</tr>
-												)
+												),
 											)}
 										</tbody>
 									</table>
@@ -513,7 +594,7 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 						) : null}
 						{stateLogsView ? (
 							<div className="mb-4 space-y-2 rounded-md border border-cyan-500/20 bg-cyan-500/5 p-3">
-								<div className="text-xs font-semibold text-white/70">
+								<div className="font-semibold text-white/70 text-xs">
 									API JSONL log file
 								</div>
 								<div className="flex flex-wrap gap-2 text-xs">
@@ -527,7 +608,7 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 										file_logging_enabled:{" "}
 										{stateLogsView.file_logging_enabled ? "true" : "false"}
 									</span>
-									<span className="rounded bg-white/10 px-2 py-1 tabular-nums text-white/80">
+									<span className="rounded bg-white/10 px-2 py-1 text-white/80 tabular-nums">
 										on disk: {formatBytes(stateLogsView.bytes)}
 									</span>
 								</div>
@@ -544,12 +625,12 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 						) : null}
 						{loggingTagsView ? (
 							<div className="mb-4 space-y-2">
-								<div className="text-xs font-semibold text-white/70">
+								<div className="font-semibold text-white/70 text-xs">
 									Structured log tags ({loggingTagsView.tags.length})
 								</div>
 								<div className="overflow-x-auto rounded-md border border-white/10">
 									<table className="w-full min-w-[480px] text-left text-xs">
-										<thead className="border-b border-white/10 bg-white/5 text-white/60">
+										<thead className="border-white/10 border-b bg-white/5 text-white/60">
 											<tr>
 												<th className="px-2 py-2 font-medium">id</th>
 												<th className="px-2 py-2 font-medium">description</th>
@@ -558,8 +639,8 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 										<tbody className="divide-y divide-white/10">
 											{loggingTagsView.tags.map((row) => (
 												<tr
-													key={row.id}
 													className="text-white/85 hover:bg-white/5"
+													key={row.id}
 												>
 													<td className="px-2 py-2 font-mono text-[11px] text-violet-200/90">
 														{row.id}
@@ -582,6 +663,17 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 										</pre>
 									</details>
 								) : null}
+							</div>
+						) : null}
+						{workflowRunSyncModel ? (
+							<div className="mb-4 space-y-3 rounded-lg border border-violet-500/20 bg-violet-500/5 p-3">
+								<div className="font-semibold text-white/70 text-xs">
+									POST /workflows/run (sync)
+								</div>
+								<WorkflowRunStructuredResponse
+									loading={false}
+									model={workflowRunSyncModel}
+								/>
 							</div>
 						) : null}
 						{renderInspectorValue(activeTabResponse.data)}

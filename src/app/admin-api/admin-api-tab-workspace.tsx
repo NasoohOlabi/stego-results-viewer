@@ -1,8 +1,7 @@
 import { AdminApiToolPanels } from "./admin-api-tool-panels";
+import { ApiActionSelector } from "./api-action-selector";
 import type { CallApiFn, SetTabErrorFn } from "./tab-actions";
 import {
-	API_ACTION_OPTIONS,
-	API_TOOL_OPTIONS,
 	type ApiActionId,
 	type ApiWorkspaceTab,
 	getApiActionLabel,
@@ -363,31 +362,12 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 			{activeTab ? (
 				<div className="space-y-4">
 					<div className="rounded-lg border border-white/10 bg-black/20 p-3">
-						<label className="text-white/60 text-xs">API in this tab</label>
-						<div className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
-							<select
-								className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
-								onChange={(e) =>
-									onUpdateTabApiAction(
-										activeTab.id,
-										e.target.value as ApiActionId,
-									)
-								}
-								title="API in active tab"
+						<p className="text-white/60 text-xs">API in this tab</p>
+						<div className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+							<ApiActionSelector
+								onChange={(id) => onUpdateTabApiAction(activeTab.id, id)}
 								value={activeTab.apiActionId}
-							>
-								{API_TOOL_OPTIONS.map((tool) => (
-									<optgroup key={tool.id} label={tool.label}>
-										{API_ACTION_OPTIONS.filter(
-											(option) => option.apiToolId === tool.id,
-										).map((option) => (
-											<option key={option.id} value={option.id}>
-												{option.label}
-											</option>
-										))}
-									</optgroup>
-								))}
-							</select>
+							/>
 							<button
 								className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
 								onClick={() => void onRunTabAction(activeTab)}

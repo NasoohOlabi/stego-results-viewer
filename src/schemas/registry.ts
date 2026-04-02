@@ -13,12 +13,20 @@ import { stegoTextOnlySchema } from "./stego-text-only";
 export type RendererExtraView<T = unknown> = {
 	id: string;
 	label: string;
-	component: ComponentType<{ data: T; filename?: string | null }>;
+	component: ComponentType<{
+		data: T;
+		filename?: string | null;
+		pathId?: string;
+	}>;
 };
 
 export interface SchemaRenderer<T extends z.ZodType = z.ZodType> {
 	schema: T;
-	component: ComponentType<{ data: z.infer<T>; filename?: string | null }>;
+	component: ComponentType<{
+		data: z.infer<T>;
+		filename?: string | null;
+		pathId?: string;
+	}>;
 	name: string;
 	/** Shown as the first tab when `extraViews` is non-empty (default: "Result"). */
 	primaryViewLabel?: string;

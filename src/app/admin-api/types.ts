@@ -24,6 +24,8 @@ export type TriggerAnglesMode = "gen-angles" | "stego-receiver-live";
 
 export interface ApiResponseView {
 	status: "idle" | "loading" | "success" | "error";
+	/** Set when a request starts; used for elapsed-time UI while loading. */
+	requestStartedAtMs?: number;
 	endpoint: string;
 	method: HttpMethod;
 	request: {
@@ -48,6 +50,52 @@ export interface StreamEventDisplayItem {
 	type: "event" | "heartbeat-group";
 	event?: StreamEventView;
 	heartbeats?: StreamEventView[];
+}
+
+/** Parsed row for stego batch `stage_progress` (latest per post_id wins). */
+export interface WorkflowRunBatchRow {
+	post_id: string;
+	processed_count: number;
+	succeeded: boolean;
+	retry_count?: number;
+}
+
+/** Timeline entry derived from SSE `progress` inner `event` (stego). */
+export interface WorkflowRunTimelineRow {
+	kind: "stage_start" | "stage_done" | "stage_progress";
+	at: string;
+	label: string;
+	detail?: string;
+	post_id?: string;
+	succeeded?: boolean;
+	retry_count?: number;
+	processed_count?: number;
+	succeeded_count?: number;
+	failed_count?: number;
+	stopped_reason?: string;
+}
+
+/** View model for structured `POST /workflows/run` SSE (and sync) display. */
+export interface WorkflowRunStructuredModel {
+	outcome: "pending" | "success" | "error";
+	command?: string;
+	run_id?: string;
+	summaryLine?: string;
+	resultPayload: unknown | null;
+	errorMessage?: string;
+	errorDetails?: unknown;
+	postIds: string[];
+	stegoText: string | null;
+	stoppedReason?: string;
+	stoppedReasonLabel?: string;
+	runAll: boolean;
+	processedCount?: number;
+	succeededCount?: number;
+	failedCount?: number;
+	timeline: WorkflowRunTimelineRow[];
+	batchRows: WorkflowRunBatchRow[];
+	logMessages: string[];
+	lastHeartbeatActivity: string | null;
 }
 
 export type ApiToolId =
@@ -286,6 +334,45 @@ export const API_ACTION_OPTIONS: Array<{
 ];
 
 export const ADMIN_API_STORAGE_KEY = "admin-api-console:v1";
+
+/** Per-action run counts for ordering the admin API picker (localStorage). */
+export const ADMIN_API_ACTION_USE_COUNTS_KEY =
+	"admin-api-console:action-use-counts:v1";
+
+export const ADMIN_API_ACTION_USE_BUMP_EVENT = "admin-api-action-use-bump";
+
+export function parseAdminApiActionUseCounts(
+	raw: string | null,
+): Partial<Record<ApiActionId, number>> {
+	if (!raw) return {};
+	try {
+		const parsed = JSON.parse(raw) as Record<string, unknown>;
+		const out: Partial<Record<ApiActionId, number>> = {};
+		for (const opt of API_ACTION_OPTIONS) {
+			const n = parsed[opt.id];
+			if (typeof n === "number" && Number.isFinite(n) && n >= 1) {
+				out[opt.id] = Math.min(1_000_000_000, Math.floor(n));
+			}
+		}
+		return out;
+	} catch {
+		return {};
+	}
+}
+
+export function bumpAdminApiActionUseCount(actionId: ApiActionId): void {
+	if (typeof window === "undefined") return;
+	try {
+		const prev = parseAdminApiActionUseCounts(
+			localStorage.getItem(ADMIN_API_ACTION_USE_COUNTS_KEY),
+		);
+		const next = { ...prev, [actionId]: (prev[actionId] ?? 0) + 1 };
+		localStorage.setItem(ADMIN_API_ACTION_USE_COUNTS_KEY, JSON.stringify(next));
+		window.dispatchEvent(new Event(ADMIN_API_ACTION_USE_BUMP_EVENT));
+	} catch {
+		/* ignore */
+	}
+}
 
 export function getApiToolLabel(apiToolId: ApiToolId): string {
 	return (
