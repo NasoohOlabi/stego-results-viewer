@@ -100,9 +100,11 @@ function PromptLogsContent() {
 				entry.sourceFileName ?? "",
 				entry.userPrompt ?? "",
 				entry.systemMessage ?? "",
+				entry.thinking ?? "",
 				entry.assistantResponse ?? "",
 				entry.userPromptPreview ?? "",
 				entry.systemMessagePreview ?? "",
+				entry.thinkingPreview ?? "",
 				entry.assistantResponsePreview ?? ""
 			]
 				.join(" ")
@@ -303,6 +305,15 @@ function PromptLogsContent() {
 								</h3>
 								<pre className="max-h-[360px] overflow-auto whitespace-pre-wrap wrap-break-word text-sm leading-relaxed text-white/90">
 									{selectedEntry.systemMessage || "(empty)"}
+								</pre>
+							</section>
+
+							<section className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+								<h3 className="mb-2 font-medium text-sm text-amber-200/90 uppercase tracking-wide">
+									Thinking
+								</h3>
+								<pre className="max-h-[360px] overflow-auto whitespace-pre-wrap wrap-break-word text-sm leading-relaxed text-white/90">
+									{selectedEntry.thinking || "(none)"}
 								</pre>
 							</section>
 

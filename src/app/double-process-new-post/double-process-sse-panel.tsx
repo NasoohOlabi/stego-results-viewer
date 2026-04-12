@@ -84,8 +84,8 @@ export interface DerivedDoubleProcessState {
 const STEP_DEF = [
 	{ id: "accept", label: "Accepted" },
 	{ id: "post", label: "Post selected" },
-	{ id: "p1", label: "Pass 1 (cached)" },
-	{ id: "p2", label: "Pass 2 (cacheless)" },
+	{ id: "p1", label: "Pass 1 (main caches)" },
+	{ id: "p2", label: "Pass 2 (validation isolation)" },
 	{ id: "fin", label: "Finished" },
 ] as const;
 
@@ -185,6 +185,7 @@ function deriveState(events: StreamEventView[]): DerivedDoubleProcessState {
 				currentPass = 1;
 				bump(28);
 				break;
+			case "pass_2_validation_start":
 			case "pass_2_cacheless_start":
 				currentPass = 2;
 				bump(55);

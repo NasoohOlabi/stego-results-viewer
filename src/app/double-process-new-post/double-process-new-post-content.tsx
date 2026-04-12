@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FileExplorer } from "~/app/_components/file-explorer";
 import {
 	ADMIN_API_STORAGE_KEY,
@@ -88,6 +88,50 @@ function buildCurl(url: string, body: Record<string, unknown>): string {
 	return `curl -X POST "${url}" \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify(body)}'`;
 }
 
+/** Short chime (success) or low buzz (failure); uses an already-unlocked `AudioContext`. */
+function playDoubleProcessOutcomeSound(
+	ctx: AudioContext,
+	outcome: "success" | "error",
+): void {
+	const t0 = ctx.currentTime;
+	const master = ctx.createGain();
+	master.gain.value = 0.22;
+	master.connect(ctx.destination);
+
+	if (outcome === "success") {
+		const freqs: readonly number[] = [784, 1047];
+		for (let i = 0; i < freqs.length; i++) {
+			const t = t0 + i * 0.09;
+			const f = freqs[i];
+			if (f === undefined) continue;
+			const osc = ctx.createOscillator();
+			const g = ctx.createGain();
+			osc.type = "sine";
+			osc.frequency.setValueAtTime(f, t);
+			g.gain.setValueAtTime(0.0001, t);
+			g.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
+			g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+			osc.connect(g);
+			g.connect(master);
+			osc.start(t);
+			osc.stop(t + 0.32);
+		}
+	} else {
+		const osc = ctx.createOscillator();
+		const g = ctx.createGain();
+		osc.type = "triangle";
+		osc.frequency.setValueAtTime(200, t0);
+		osc.frequency.exponentialRampToValueAtTime(95, t0 + 0.22);
+		g.gain.setValueAtTime(0.0001, t0);
+		g.gain.exponentialRampToValueAtTime(0.16, t0 + 0.015);
+		g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.38);
+		osc.connect(g);
+		g.connect(master);
+		osc.start(t0);
+		osc.stop(t0 + 0.42);
+	}
+}
+
 function CopyButton({
 	text,
 	label = "Copy",
@@ -163,8 +207,10 @@ export function DoubleProcessNewPostContent() {
 
 	useEffect(() => {
 		if (!isValidPath && enabledPaths.length > 0) {
+			const first = enabledPaths[0];
+			if (!first) return;
 			const params = new URLSearchParams(searchParams.toString());
-			params.set("folder", enabledPaths[0]!.id);
+			params.set("folder", first.id);
 			router.replace(`${pathname}?${params.toString()}`);
 		}
 	}, [enabledPaths, isValidPath, pathname, router, searchParams]);
@@ -183,6 +229,27 @@ export function DoubleProcessNewPostContent() {
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [jsonResult, setJsonResult] = useState<unknown>(null);
 	const [sseEvents, setSseEvents] = useState<StreamEventView[]>([]);
+	const workflowAudioCtxRef = useRef<AudioContext | null>(null);
+
+	const primeWorkflowAudioForRun = () => {
+		if (typeof window === "undefined") return;
+		if (!workflowAudioCtxRef.current) {
+			workflowAudioCtxRef.current = new AudioContext();
+		}
+		void workflowAudioCtxRef.current.resume();
+	};
+
+	const playRunFinishedSound = (outcome: "success" | "error") => {
+		const ctx = workflowAudioCtxRef.current;
+		if (!ctx) return;
+		try {
+			void ctx.resume().then(() => {
+				playDoubleProcessOutcomeSound(ctx, outcome);
+			});
+		} catch {
+			// ignore
+		}
+	};
 
 	useEffect(() => {
 		try {
@@ -252,6 +319,7 @@ export function DoubleProcessNewPostContent() {
 	};
 
 	const run = async () => {
+		primeWorkflowAudioForRun();
 		setStatus("loading");
 		setErrorMessage(null);
 		setJsonResult(null);
@@ -271,6 +339,7 @@ export function DoubleProcessNewPostContent() {
 					setSseEvents([...events]);
 				});
 				setSseEvents(events);
+				playRunFinishedSound(ok ? "success" : "error");
 				setStatus(ok ? "success" : "error");
 				if (!ok) {
 					setErrorMessage(
@@ -287,6 +356,7 @@ export function DoubleProcessNewPostContent() {
 				const parsed = parseJsonOrText(text);
 				setJsonResult(parsed);
 				if (!res.ok) {
+					playRunFinishedSound("error");
 					setStatus("error");
 					setErrorMessage(
 						isRecord(parsed) && typeof parsed.error === "string"
@@ -297,6 +367,7 @@ export function DoubleProcessNewPostContent() {
 				}
 				const env = parsed as { ok?: boolean };
 				if (env && env.ok === false) {
+					playRunFinishedSound("error");
 					setStatus("error");
 					setErrorMessage(
 						isRecord(parsed) && typeof parsed.error === "string"
@@ -305,9 +376,11 @@ export function DoubleProcessNewPostContent() {
 					);
 					return;
 				}
+				playRunFinishedSound("success");
 				setStatus("success");
 			}
 		} catch (e) {
+			playRunFinishedSound("error");
 			setStatus("error");
 			setErrorMessage(e instanceof Error ? e.message : String(e));
 		}
@@ -343,9 +416,23 @@ export function DoubleProcessNewPostContent() {
 								POST {ENDPOINT_PATH}
 							</code>
 							: picks one queued new post, then runs data-load → research →
-							gen-angles twice (cached vs cacheless) and compares stage hashes.
-							Writes artifacts to disk; the second pass overwrites step outputs
-							for that <code className="text-white/80">post_id</code>.
+							gen-angles twice—pass 1 on{" "}
+							<strong className="text-white/70">main</strong> URL/terms/angles
+							caches, pass 2 on an{" "}
+							<strong className="text-white/70">isolated validation</strong>{" "}
+							tree (default{" "}
+							<code className="rounded bg-white/10 px-1 text-white/80">
+								datasets/double_process_validation/
+							</code>
+							, or override with{" "}
+							<code className="rounded bg-white/10 px-1 text-white/80">
+								DOUBLE_PROCESS_VALIDATION_ROOT
+							</code>
+							). Both passes keep the same cache{" "}
+							<em className="text-white/60">flags</em> enabled; pass 2 does not
+							read pass 1’s files. Compares per-stage hashes between passes.
+							Writes artifacts each time; pass 2 overwrites step outputs for
+							that <code className="text-white/80">post_id</code>.
 						</p>
 					</div>
 				</div>
@@ -374,12 +461,15 @@ export function DoubleProcessNewPostContent() {
 						</div>
 						<div className="space-y-4 p-4">
 							<div>
-								<label className="mb-1.5 block font-semibold text-[10px] text-white/45 uppercase tracking-wide">
+								<label
+									className="mb-1.5 block font-semibold text-[10px] text-white/45 uppercase tracking-wide"
+									htmlFor="double-process-api-base-url"
+								>
 									Base URL
 								</label>
 								<input
-									aria-label="API base URL"
 									className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white/85 transition-colors focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-violet-500/30"
+									id="double-process-api-base-url"
 									onChange={(e) => setBaseUrl(e.target.value)}
 									placeholder="http://localhost:5001/api/v1"
 									value={baseUrl}

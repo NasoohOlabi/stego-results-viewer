@@ -1704,6 +1704,13 @@ export function AdminApiToolPanelsExtended(
 							<code className="text-white/80">POST /tools/angles/analyze</code>
 						</p>
 						<p className="text-white/50 text-xs">texts (JSON string array)</p>
+						<p className="text-white/45 text-xs">
+							Empty strings are skipped; each result’s{" "}
+							<code className="text-white/70">source_document</code> is the
+							0-based index among{" "}
+							<strong className="text-white/60">non-empty</strong> inputs in
+							order.
+						</p>
 						<textarea
 							className="min-h-28 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
 							onChange={(e) => setToolsAnglesTextsJson(e.target.value)}

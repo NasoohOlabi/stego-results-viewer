@@ -27,6 +27,7 @@ export async function executeAdminApiRequest(options: {
 		body: body ?? null,
 	};
 	const requestStartedAtMs = Date.now();
+	const markFinished = () => Date.now();
 
 	updateTabResponse(tabId, {
 		status: "loading",
@@ -53,6 +54,7 @@ export async function executeAdminApiRequest(options: {
 				updateTabResponse(tabId, {
 					status: "error",
 					requestStartedAtMs,
+					requestFinishedAtMs: markFinished(),
 					endpoint: url,
 					method,
 					request: requestPayload,
@@ -134,6 +136,7 @@ export async function executeAdminApiRequest(options: {
 			updateTabResponse(tabId, {
 				status: success ? "success" : "error",
 				requestStartedAtMs,
+				requestFinishedAtMs: markFinished(),
 				endpoint: url,
 				method,
 				request: requestPayload,
@@ -151,6 +154,7 @@ export async function executeAdminApiRequest(options: {
 		updateTabResponse(tabId, {
 			status: res.ok ? "success" : "error",
 			requestStartedAtMs,
+			requestFinishedAtMs: markFinished(),
 			endpoint: url,
 			method,
 			request: requestPayload,
@@ -168,6 +172,7 @@ export async function executeAdminApiRequest(options: {
 		updateTabResponse(tabId, {
 			status: "error",
 			requestStartedAtMs,
+			requestFinishedAtMs: markFinished(),
 			endpoint: url,
 			method,
 			request: requestPayload,

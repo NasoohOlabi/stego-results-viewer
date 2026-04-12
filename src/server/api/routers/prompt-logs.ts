@@ -16,6 +16,7 @@ const promptLogLineSchema = z.object({
 	max_tokens: z.number().nullable().optional(),
 	system_message: z.string().optional(),
 	user_prompt: z.string().optional(),
+	thinking: z.string().optional(),
 	assistant_response: z.string().optional()
 });
 
@@ -67,9 +68,11 @@ type PromptLogEntry = {
 	maxTokens: number | null;
 	userPromptPreview: string;
 	systemMessagePreview: string;
+	thinkingPreview: string;
 	assistantResponsePreview: string;
 	userPrompt: string;
 	systemMessage: string;
+	thinking: string;
 	assistantResponse: string;
 	raw: Record<string, unknown>;
 };
@@ -148,6 +151,7 @@ export const promptLogsRouter = createTRPCRouter({
 					const parsed = validated.data;
 					const userPrompt = parsed.user_prompt ?? "";
 					const systemMessage = parsed.system_message ?? "";
+					const thinking = parsed.thinking ?? "";
 					const assistantResponse = parsed.assistant_response ?? "";
 
 					entries.push({
@@ -163,9 +167,11 @@ export const promptLogsRouter = createTRPCRouter({
 						maxTokens: parsed.max_tokens ?? null,
 						userPromptPreview: toPreview(userPrompt),
 						systemMessagePreview: toPreview(systemMessage),
+						thinkingPreview: toPreview(thinking),
 						assistantResponsePreview: toPreview(assistantResponse),
 						userPrompt,
 						systemMessage,
+						thinking,
 						assistantResponse,
 						raw: (parsedUnknown as Record<string, unknown>) ?? {}
 					});

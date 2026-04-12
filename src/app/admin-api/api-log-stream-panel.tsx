@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "~/server/api/root";
 import { api } from "~/trpc/react";
@@ -151,7 +151,11 @@ export function ApiLogStreamPanel() {
 	const [tagCatalogLoading, setTagCatalogLoading] = useState(false);
 	const [tagCatalogError, setTagCatalogError] = useState<string | null>(null);
 	const [tagFilterSelected, setTagFilterSelected] = useState<string[]>([]);
+	const [tagExcludeSelected, setTagExcludeSelected] = useState<string[]>([]);
 	const [onlyUntagged, setOnlyUntagged] = useState(false);
+
+	const tagCatalogFetchedOnceRef = useRef(false);
+	const stateLogsFetchedOnceRef = useRef(false);
 
 	const numericLimit = Math.max(1, Math.min(Number(limit || "1200"), 5000));
 
@@ -167,7 +171,9 @@ export function ApiLogStreamPanel() {
 
 	const refreshTagCatalog = useCallback(async () => {
 		const base = readPersistedAdminApiBase();
-		setTagCatalogLoading(true);
+		if (!tagCatalogFetchedOnceRef.current) {
+			setTagCatalogLoading(true);
+		}
 		setTagCatalogError(null);
 		try {
 			const res = await fetch(`${base}/logging/tags`);
@@ -212,13 +218,16 @@ export function ApiLogStreamPanel() {
 			setTagCatalogError(e instanceof Error ? e.message : String(e));
 		} finally {
 			setTagCatalogLoading(false);
+			tagCatalogFetchedOnceRef.current = true;
 		}
 	}, []);
 
 	const refreshStateLogs = useCallback(async () => {
 		const base = readPersistedAdminApiBase();
 		setStateLogsBase(base);
-		setStateLogsLoading(true);
+		if (!stateLogsFetchedOnceRef.current) {
+			setStateLogsLoading(true);
+		}
 		setStateLogsError(null);
 		try {
 			const res = await fetch(`${base}/state/logs`);
@@ -238,6 +247,7 @@ export function ApiLogStreamPanel() {
 			setStateLogsError(e instanceof Error ? e.message : String(e));
 		} finally {
 			setStateLogsLoading(false);
+			stateLogsFetchedOnceRef.current = true;
 		}
 	}, []);
 
@@ -455,6 +465,11 @@ export function ApiLogStreamPanel() {
 				if (!hit) return false;
 			}
 
+			if (tagExcludeSelected.length > 0) {
+				const excluded = new Set(tagExcludeSelected);
+				if (entryTags.some((t) => excluded.has(t))) return false;
+			}
+
 			if (!q) return true;
 			const blob = [
 				entry.ts ?? "",
@@ -482,19 +497,30 @@ export function ApiLogStreamPanel() {
 		onlyUntagged,
 		search,
 		statusFilter,
+		tagExcludeSelected,
 		tagFilterSelected,
 		tagsByEntryId
 	]);
 
 	const toggleTagFilter = useCallback((id: string) => {
 		setOnlyUntagged(false);
+		setTagExcludeSelected((ex) => ex.filter((x) => x !== id));
 		setTagFilterSelected((prev) =>
+			prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+		);
+	}, []);
+
+	const toggleTagExclude = useCallback((id: string) => {
+		setOnlyUntagged(false);
+		setTagFilterSelected((inc) => inc.filter((x) => x !== id));
+		setTagExcludeSelected((prev) =>
 			prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
 		);
 	}, []);
 
 	const clearTagFilter = useCallback(() => {
 		setTagFilterSelected([]);
+		setTagExcludeSelected([]);
 		setOnlyUntagged(false);
 	}, []);
 
@@ -695,7 +721,9 @@ export function ApiLogStreamPanel() {
 								<button
 									type="button"
 									disabled={
-										tagFilterSelected.length === 0 && !onlyUntagged
+										tagFilterSelected.length === 0 &&
+										tagExcludeSelected.length === 0 &&
+										!onlyUntagged
 									}
 									onClick={clearTagFilter}
 									className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] hover:bg-white/15 disabled:opacity-40"
@@ -707,9 +735,10 @@ export function ApiLogStreamPanel() {
 						<p className="text-[11px] leading-snug text-white/45">
 							Uses{" "}
 							<code className="text-white/60">GET /logging/tags</code>{" "}
-							for order and descriptions (hover a chip). Click chips to
-							show lines that match{" "}
-							<span className="text-white/55">any</span> selected tag.
+							for order and descriptions (hover a chip). Include chips:
+							lines with <span className="text-white/55">any</span>{" "}
+							selected tag. Exclude chips: hide lines with{" "}
+							<span className="text-white/55">any</span> of those tags.
 						</p>
 						{tagCatalogError ? (
 							<p className="text-[11px] text-amber-200/90">
@@ -723,40 +752,81 @@ export function ApiLogStreamPanel() {
 								checked={onlyUntagged}
 								onChange={(e) => {
 									setOnlyUntagged(e.target.checked);
-									if (e.target.checked) setTagFilterSelected([]);
+									if (e.target.checked) {
+										setTagFilterSelected([]);
+										setTagExcludeSelected([]);
+									}
 								}}
 							/>
 							Only untagged lines
 						</label>
-						<div className="max-h-36 overflow-y-auto rounded-md border border-white/10 bg-black/25 p-2">
-							{tagChipOptions.length === 0 ? (
-								<p className="text-[11px] text-white/45">
-									No tag ids yet — load logs or fix catalog fetch.
-								</p>
-							) : (
-								<div className="flex flex-wrap gap-1.5">
-									{tagChipOptions.map((id) => {
-										const on = tagFilterSelected.includes(id);
-										const desc = tagDescriptionById.get(id);
-										return (
-											<button
-												key={id}
-												type="button"
-												disabled={onlyUntagged}
-												title={desc || id}
-												onClick={() => toggleTagFilter(id)}
-												className={`rounded-md border px-2 py-1 font-mono text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-													on
-														? "border-violet-400/60 bg-violet-500/30 text-violet-100"
-														: "border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:bg-white/10"
-												}`}
-											>
-												{id}
-											</button>
-										);
-									})}
-								</div>
-							)}
+						<div className="space-y-2">
+							<p className="text-[10px] font-medium uppercase tracking-wide text-white/40">
+								Include (any)
+							</p>
+							<div className="max-h-28 overflow-y-auto rounded-md border border-white/10 bg-black/25 p-2">
+								{tagChipOptions.length === 0 ? (
+									<p className="text-[11px] text-white/45">
+										No tag ids yet — load logs or fix catalog fetch.
+									</p>
+								) : (
+									<div className="flex flex-wrap gap-1.5">
+										{tagChipOptions.map((id) => {
+											const on = tagFilterSelected.includes(id);
+											const desc = tagDescriptionById.get(id);
+											return (
+												<button
+													key={id}
+													type="button"
+													disabled={onlyUntagged}
+													title={desc || id}
+													onClick={() => toggleTagFilter(id)}
+													className={`rounded-md border px-2 py-1 font-mono text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+														on
+															? "border-violet-400/60 bg-violet-500/30 text-violet-100"
+															: "border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:bg-white/10"
+													}`}
+												>
+													{id}
+												</button>
+											);
+										})}
+									</div>
+								)}
+							</div>
+							<p className="text-[10px] font-medium uppercase tracking-wide text-white/40">
+								Exclude (any)
+							</p>
+							<div className="max-h-28 overflow-y-auto rounded-md border border-white/10 bg-black/25 p-2">
+								{tagChipOptions.length === 0 ? (
+									<p className="text-[11px] text-white/45">
+										No tag ids yet — load logs or fix catalog fetch.
+									</p>
+								) : (
+									<div className="flex flex-wrap gap-1.5">
+										{tagChipOptions.map((id) => {
+											const on = tagExcludeSelected.includes(id);
+											const desc = tagDescriptionById.get(id);
+											return (
+												<button
+													key={`ex-${id}`}
+													type="button"
+													disabled={onlyUntagged}
+													title={desc || id}
+													onClick={() => toggleTagExclude(id)}
+													className={`rounded-md border px-2 py-1 font-mono text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+														on
+															? "border-rose-400/60 bg-rose-500/25 text-rose-100"
+															: "border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:bg-white/10"
+													}`}
+												>
+													{id}
+												</button>
+											);
+										})}
+									</div>
+								)}
+							</div>
 						</div>
 					</div>
 
@@ -766,7 +836,10 @@ export function ApiLogStreamPanel() {
 							: `${filteredEntries.length} of ${data?.totalEntries ?? entries.length} entries`}
 						{onlyUntagged ? " · untagged only" : null}
 						{!onlyUntagged && tagFilterSelected.length > 0
-							? ` · tags: ${tagFilterSelected.join(", ")}`
+							? ` · include: ${tagFilterSelected.join(", ")}`
+							: null}
+						{!onlyUntagged && tagExcludeSelected.length > 0
+							? ` · exclude: ${tagExcludeSelected.join(", ")}`
 							: null}
 						{streamState === "connected" ? " · stream connected" : ""}
 						{streamState === "error" ? " · stream error" : ""}
@@ -885,7 +958,7 @@ export function ApiLogStreamPanel() {
 								<div className="mb-1 text-xs text-white/60 uppercase">
 									Message
 								</div>
-								<pre className="max-h-[180px] overflow-auto whitespace-pre-wrap text-sm text-white/90">
+								<pre className="max-h-[360px] overflow-auto whitespace-pre-wrap text-sm text-white/90">
 									{selected.msg || "(empty)"}
 								</pre>
 							</div>

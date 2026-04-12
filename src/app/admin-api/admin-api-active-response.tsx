@@ -62,6 +62,17 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 		activeTabResponse.requestStartedAtMs,
 		activeTabResponse.status === "loading",
 	);
+	const completedElapsedMs =
+		(activeTabResponse.status === "success" ||
+			activeTabResponse.status === "error") &&
+		activeTabResponse.requestStartedAtMs !== undefined &&
+		activeTabResponse.requestFinishedAtMs !== undefined
+			? Math.max(
+					0,
+					activeTabResponse.requestFinishedAtMs -
+						activeTabResponse.requestStartedAtMs,
+				)
+			: null;
 	const lastSseEventName = ssePayload?.events?.at(-1)?.event;
 
 	const workflowRuns =
@@ -189,6 +200,9 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 						eventCount: ssePayload.events.length,
 						finishedAt: (activeTabResponse.data as Record<string, unknown>)
 							.finishedAt,
+						...(completedElapsedMs !== null
+							? { elapsed: formatElapsedMs(completedElapsedMs) }
+							: {}),
 					})}
 				</div>
 
@@ -361,8 +375,19 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 						{activeTabResponse.status.toUpperCase()}
 					</span>
 					{activeTabResponse.status === "loading" && loadingElapsed !== null ? (
-						<span className="font-mono text-[11px] text-white/55 tabular-nums">
+						<span
+							className="font-mono text-[11px] text-white/55 tabular-nums"
+							title="Elapsed since request started"
+						>
 							{formatElapsedMs(loadingElapsed)}
+						</span>
+					) : null}
+					{completedElapsedMs !== null ? (
+						<span
+							className="font-mono text-[11px] text-white/55 tabular-nums"
+							title="Total request duration"
+						>
+							{formatElapsedMs(completedElapsedMs)}
 						</span>
 					) : null}
 					{activeTabResponse.status === "loading" && lastSseEventName ? (

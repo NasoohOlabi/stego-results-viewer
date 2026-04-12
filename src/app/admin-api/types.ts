@@ -26,6 +26,8 @@ export interface ApiResponseView {
 	status: "idle" | "loading" | "success" | "error";
 	/** Set when a request starts; used for elapsed-time UI while loading. */
 	requestStartedAtMs?: number;
+	/** Set when a request finishes (success or error); used for total duration. */
+	requestFinishedAtMs?: number;
 	endpoint: string;
 	method: HttpMethod;
 	request: {

@@ -1,6 +1,7 @@
 import { readFile } from "fs/promises";
 
-export const API_LOG_FILE_PATH = "D:/Master/code/stego-side-wing/logs/api.jsonl";
+export const API_LOG_FILE_PATH =
+	"D:/Master/code/stego-side-wing/logs/api.jsonl";
 
 export type ApiLogEntry = {
 	id: string;
@@ -38,7 +39,10 @@ function toNumberOrNull(value: unknown): number | null {
 	return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-export function parseApiLogLine(rawLine: string, lineNumber: number): ApiLogEntry | null {
+export function parseApiLogLine(
+	rawLine: string,
+	lineNumber: number,
+): ApiLogEntry | null {
 	const trimmed = rawLine.trim();
 	if (!trimmed) return null;
 
@@ -52,10 +56,12 @@ export function parseApiLogLine(rawLine: string, lineNumber: number): ApiLogEntr
 	const parsed = toObject(parsedUnknown);
 	if (!parsed) return null;
 
-	const ts = toStringOrNull(parsed.ts);
+	const ts = toStringOrNull(parsed.ts) ?? toStringOrNull(parsed.timestamp);
 	const level = toStringOrNull(parsed.level);
-	const logger = toStringOrNull(parsed.logger);
-	const msg = toStringOrNull(parsed.msg) ?? "";
+	const logger =
+		toStringOrNull(parsed.logger) ?? toStringOrNull(parsed.component);
+	const msg =
+		toStringOrNull(parsed.msg) || toStringOrNull(parsed.message) || "";
 	const event = toStringOrNull(parsed.event);
 	const method = toStringOrNull(parsed.method);
 	const path = toStringOrNull(parsed.path);
@@ -86,11 +92,14 @@ export function parseApiLogLine(rawLine: string, lineNumber: number): ApiLogEntr
 		mode,
 		action,
 		component,
-		raw: parsed
+		raw: parsed,
 	};
 }
 
-export function compareApiLogEntriesDesc(a: ApiLogEntry, b: ApiLogEntry): number {
+export function compareApiLogEntriesDesc(
+	a: ApiLogEntry,
+	b: ApiLogEntry,
+): number {
 	const at = Date.parse(a.ts ?? "");
 	const bt = Date.parse(b.ts ?? "");
 	const safeAt = Number.isFinite(at) ? at : 0;
@@ -138,6 +147,6 @@ export async function readApiLogSnapshot(limit = 1000): Promise<{
 		entries: parsed.entries.slice(0, safeLimit),
 		warnings: parsed.warnings,
 		totalLines: parsed.totalLines,
-		totalEntries: parsed.entries.length
+		totalEntries: parsed.entries.length,
 	};
 }

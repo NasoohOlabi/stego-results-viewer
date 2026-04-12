@@ -240,6 +240,7 @@ export function getWorkflowTemplate(command: string): string {
 		case "data-load":
 			return '{\n  "count": 3,\n  "offset": 0,\n  "batch_size": 10\n}';
 		case "research":
+			return '{\n  "count": 3,\n  "offset": 0,\n  "include_breakdown": false\n}';
 		case "gen-angles":
 			return '{\n  "count": 3,\n  "offset": 0\n}';
 		case "stego":
@@ -251,7 +252,7 @@ export function getWorkflowTemplate(command: string): string {
 		case "validate-post":
 			return '{\n  "post_id": "example-post-id",\n  "stream": false\n}';
 		case "receiver":
-			return '{\n  "post": {},\n  "sender_user_id": "sender-id",\n  "stream": false,\n  "use_cache": false\n}';
+			return '{\n  "post": {},\n  "sender_user_id": "sender-id",\n  "stream": false,\n  "allow_fallback": false,\n  "use_fetch_cache": true,\n  "use_terms_cache": true,\n  "persist_terms_cache": true,\n  "use_fetch_cache_research": true,\n  "max_padding_bits": 256\n}';
 		case "stego-receiver-live":
 			return '{\n  "sender_user_id": "sender-id",\n  "post_id": "",\n  "stream": true,\n  "list_offset": 1\n}';
 		case "double-process-new-post":
