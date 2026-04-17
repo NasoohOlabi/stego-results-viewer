@@ -223,6 +223,7 @@ export function DoubleProcessNewPostContent() {
 	const [baseUrl, setBaseUrl] = useState("http://localhost:5001/api/v1");
 	const [stream, setStream] = useState(true);
 	const [allowAnglesFallback, setAllowAnglesFallback] = useState(false);
+	const [postId, setPostId] = useState("");
 	const [status, setStatus] = useState<
 		"idle" | "loading" | "success" | "error"
 	>("idle");
@@ -267,10 +268,15 @@ export function DoubleProcessNewPostContent() {
 	const base = useMemo(() => baseUrl.replace(/\/+$/, ""), [baseUrl]);
 	const requestUrl = `${base}${ENDPOINT_PATH}`;
 
-	const requestBody = useMemo<Record<string, unknown>>(
-		() => ({ stream, allow_angles_fallback: allowAnglesFallback }),
-		[stream, allowAnglesFallback],
-	);
+	const requestBody = useMemo<Record<string, unknown>>(() => {
+		const body: Record<string, unknown> = {
+			stream,
+			allow_angles_fallback: allowAnglesFallback,
+		};
+		const trimmedPostId = postId.trim();
+		if (trimmedPostId) body.post_id = trimmedPostId;
+		return body;
+	}, [stream, allowAnglesFallback, postId]);
 
 	const curlCommand = useMemo(
 		() => buildCurl(requestUrl, requestBody),
@@ -326,10 +332,7 @@ export function DoubleProcessNewPostContent() {
 		setSseEvents([]);
 
 		const url = requestUrl;
-		const body: Record<string, unknown> = {
-			stream,
-			allow_angles_fallback: allowAnglesFallback,
-		};
+		const body: Record<string, unknown> = { ...requestBody };
 
 		try {
 			if (stream) {
@@ -474,6 +477,26 @@ export function DoubleProcessNewPostContent() {
 									placeholder="http://localhost:5001/api/v1"
 									value={baseUrl}
 								/>
+							</div>
+
+							<div>
+								<label
+									className="mb-1.5 block font-semibold text-[10px] text-white/45 uppercase tracking-wide"
+									htmlFor="double-process-post-id"
+								>
+									<code className="text-white/55">post_id</code> (optional)
+								</label>
+								<input
+									className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white/85 transition-colors focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-violet-500/30"
+									id="double-process-post-id"
+									onChange={(e) => setPostId(e.target.value)}
+									placeholder="Leave empty to dequeue the next new post"
+									value={postId}
+								/>
+								<p className="mt-1.5 text-[11px] text-white/40 leading-relaxed">
+									Set to a specific post id to run double-process on that post
+									instead of the queue.
+								</p>
 							</div>
 
 							<div className="flex flex-wrap gap-5">

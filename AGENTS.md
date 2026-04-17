@@ -124,3 +124,4 @@ Keep `better-sqlite3` and filesystem access in server-only code paths (tRPC rout
 ## Related repositories
 
 - **stego-side-wing**: sibling directory expected for default `side-wing` results and for the HTTP API + JSONL logs this viewer integrates with.
+- **Backend docs (API spec):** `D:\Master\code\stego-side-wing\docs\api-spec.md` — authoritative REST/SSE contract for the side-wing HTTP API.
