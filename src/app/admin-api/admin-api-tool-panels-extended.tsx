@@ -1047,6 +1047,18 @@ export function AdminApiToolPanelsExtended(
 		setToolsHaystackJson,
 		toolsAnglesTextsJson,
 		setToolsAnglesTextsJson,
+		metricsHistoryType,
+		setMetricsHistoryType,
+		metricsHistoryLimit,
+		setMetricsHistoryLimit,
+		metricsHistoryDir,
+		setMetricsHistoryDir,
+		metricsPostBodyJson,
+		setMetricsPostBodyJson,
+		metricsPerplexityBodyJson,
+		setMetricsPerplexityBodyJson,
+		metricsDivergenceBodyJson,
+		setMetricsDivergenceBodyJson,
 		callApi,
 		setTabError,
 		submitWorkflowRequest,
@@ -1717,6 +1729,103 @@ export function AdminApiToolPanelsExtended(
 							placeholder='["paragraph one","paragraph two"]'
 							title="texts JSON"
 							value={toolsAnglesTextsJson}
+						/>
+					</section>
+				);
+			}
+			return null;
+		case "metrics":
+			if (tab.apiActionId === "tools-metrics-history") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Metrics history</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">GET /tools/metrics/history</code>{" "}
+							— list saved report files (newest first). Load full JSON via{" "}
+							<code className="text-white/80">GET /state/fs/read-json</code>.
+						</p>
+						<div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+							<select
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+								onChange={(e) => setMetricsHistoryType(e.target.value)}
+								title="type"
+								value={metricsHistoryType}
+							>
+								<option value="all">all</option>
+								<option value="perplexity">perplexity</option>
+								<option value="divergence">divergence</option>
+							</select>
+							<input
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+								onChange={(e) => setMetricsHistoryLimit(e.target.value)}
+								placeholder="limit (default 50, max 200)"
+								value={metricsHistoryLimit}
+							/>
+							<input
+								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+								onChange={(e) => setMetricsHistoryDir(e.target.value)}
+								placeholder="metrics_dir (optional, repo-relative)"
+								value={metricsHistoryDir}
+							/>
+						</div>
+					</section>
+				);
+			}
+			if (tab.apiActionId === "tools-metrics-post") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Metrics for one file</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">POST /tools/metrics/post</code> —
+							perplexity + divergence for a single pipeline output JSON
+							(response-only; no report file).
+						</p>
+						<textarea
+							className="min-h-40 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
+							onChange={(e) => setMetricsPostBodyJson(e.target.value)}
+							spellCheck={false}
+							title="Request JSON"
+							value={metricsPostBodyJson}
+						/>
+					</section>
+				);
+			}
+			if (tab.apiActionId === "tools-metrics-perplexity") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Batch perplexity</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">
+								POST /tools/metrics/perplexity
+							</code>{" "}
+							— may require torch/transformers; can be slow.
+						</p>
+						<textarea
+							className="min-h-40 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
+							onChange={(e) => setMetricsPerplexityBodyJson(e.target.value)}
+							spellCheck={false}
+							title="Request JSON"
+							value={metricsPerplexityBodyJson}
+						/>
+					</section>
+				);
+			}
+			if (tab.apiActionId === "tools-metrics-divergence") {
+				return (
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+						<h2 className="font-semibold text-lg">Batch divergence</h2>
+						<p className="text-white/60 text-xs">
+							<code className="text-white/80">
+								POST /tools/metrics/divergence
+							</code>{" "}
+							— KL/JSD vs post + global comment baselines.
+						</p>
+						<textarea
+							className="min-h-40 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
+							onChange={(e) => setMetricsDivergenceBodyJson(e.target.value)}
+							spellCheck={false}
+							title="Request JSON"
+							value={metricsDivergenceBodyJson}
 						/>
 					</section>
 				);

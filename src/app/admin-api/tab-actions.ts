@@ -140,6 +140,12 @@ export type RunTabActionContext = {
 	toolsNeedle: string;
 	toolsHaystackJson: string;
 	toolsAnglesTextsJson: string;
+	metricsHistoryType: string;
+	metricsHistoryLimit: string;
+	metricsHistoryDir: string;
+	metricsPostBodyJson: string;
+	metricsPerplexityBodyJson: string;
+	metricsDivergenceBodyJson: string;
 	validatePostId: string;
 	validatePostStream: boolean;
 	validateUseTermsCache: boolean;
@@ -216,6 +222,12 @@ export async function runTabAction(ctx: RunTabActionContext): Promise<void> {
 		toolsNeedle,
 		toolsHaystackJson,
 		toolsAnglesTextsJson,
+		metricsHistoryType,
+		metricsHistoryLimit,
+		metricsHistoryDir,
+		metricsPostBodyJson,
+		metricsPerplexityBodyJson,
+		metricsDivergenceBodyJson,
 		validatePostId,
 		validatePostStream,
 		validateUseTermsCache,
@@ -907,6 +919,113 @@ export async function runTabAction(ctx: RunTabActionContext): Promise<void> {
 				"/tools/angles/analyze",
 				undefined,
 				{ texts },
+				tab.id,
+			);
+			return;
+		}
+		case "tools-metrics-history": {
+			const query: Record<string, string | number | boolean | undefined> = {
+				type: metricsHistoryType.trim() || "all",
+				limit: metricsHistoryLimit.trim() || "50",
+			};
+			const dir = metricsHistoryDir.trim();
+			if (dir) query.metrics_dir = dir;
+			await callApi("GET", "/tools/metrics/history", query, undefined, tab.id);
+			return;
+		}
+		case "tools-metrics-post": {
+			let body: unknown;
+			try {
+				body = JSON.parse(metricsPostBodyJson) as unknown;
+			} catch {
+				setTabError(
+					tab.id,
+					`${base}/tools/metrics/post`,
+					"POST",
+					"Request body must be valid JSON",
+				);
+				return;
+			}
+			if (!body || typeof body !== "object" || Array.isArray(body)) {
+				setTabError(
+					tab.id,
+					`${base}/tools/metrics/post`,
+					"POST",
+					"Body must be a JSON object with filename",
+				);
+				return;
+			}
+			const fn = (body as { filename?: unknown }).filename;
+			if (typeof fn !== "string" || !fn.trim()) {
+				setTabError(
+					tab.id,
+					`${base}/tools/metrics/post`,
+					"POST",
+					"filename is required (basename, .json)",
+				);
+				return;
+			}
+			await callApi("POST", "/tools/metrics/post", undefined, body, tab.id);
+			return;
+		}
+		case "tools-metrics-perplexity": {
+			let body: unknown;
+			try {
+				body = JSON.parse(metricsPerplexityBodyJson) as unknown;
+			} catch {
+				setTabError(
+					tab.id,
+					`${base}/tools/metrics/perplexity`,
+					"POST",
+					"Request body must be valid JSON",
+				);
+				return;
+			}
+			if (!body || typeof body !== "object" || Array.isArray(body)) {
+				setTabError(
+					tab.id,
+					`${base}/tools/metrics/perplexity`,
+					"POST",
+					"Body must be a JSON object",
+				);
+				return;
+			}
+			await callApi(
+				"POST",
+				"/tools/metrics/perplexity",
+				undefined,
+				body,
+				tab.id,
+			);
+			return;
+		}
+		case "tools-metrics-divergence": {
+			let body: unknown;
+			try {
+				body = JSON.parse(metricsDivergenceBodyJson) as unknown;
+			} catch {
+				setTabError(
+					tab.id,
+					`${base}/tools/metrics/divergence`,
+					"POST",
+					"Request body must be valid JSON",
+				);
+				return;
+			}
+			if (!body || typeof body !== "object" || Array.isArray(body)) {
+				setTabError(
+					tab.id,
+					`${base}/tools/metrics/divergence`,
+					"POST",
+					"Body must be a JSON object",
+				);
+				return;
+			}
+			await callApi(
+				"POST",
+				"/tools/metrics/divergence",
+				undefined,
+				body,
 				tab.id,
 			);
 			return;

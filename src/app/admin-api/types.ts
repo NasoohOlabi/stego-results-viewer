@@ -106,7 +106,8 @@ export type ApiToolId =
 	| "state-filesystem"
 	| "artifacts-workflows"
 	| "kv-store"
-	| "search-tools";
+	| "search-tools"
+	| "metrics";
 export type ApiActionId =
 	| "service-health"
 	| "service-state-steps"
@@ -145,7 +146,11 @@ export type ApiActionId =
 	| "tools-fetch-url"
 	| "tools-semantic-search"
 	| "tools-semantic-needle"
-	| "tools-angles-analyze";
+	| "tools-angles-analyze"
+	| "tools-metrics-history"
+	| "tools-metrics-post"
+	| "tools-metrics-perplexity"
+	| "tools-metrics-divergence";
 
 export interface ApiWorkspaceTab {
 	id: string;
@@ -161,6 +166,7 @@ export const API_TOOL_OPTIONS: Array<{ id: ApiToolId; label: string }> = [
 	{ id: "artifacts-workflows", label: "Artifacts + Workflows" },
 	{ id: "kv-store", label: "KV Store" },
 	{ id: "search-tools", label: "Search & tools" },
+	{ id: "metrics", label: "Metrics" },
 ];
 export const API_ACTION_OPTIONS: Array<{
 	id: ApiActionId;
@@ -333,6 +339,26 @@ export const API_ACTION_OPTIONS: Array<{
 		apiToolId: "search-tools",
 		label: "POST /tools/angles/analyze",
 	},
+	{
+		id: "tools-metrics-history",
+		apiToolId: "metrics",
+		label: "GET /tools/metrics/history",
+	},
+	{
+		id: "tools-metrics-post",
+		apiToolId: "metrics",
+		label: "POST /tools/metrics/post",
+	},
+	{
+		id: "tools-metrics-perplexity",
+		apiToolId: "metrics",
+		label: "POST /tools/metrics/perplexity",
+	},
+	{
+		id: "tools-metrics-divergence",
+		apiToolId: "metrics",
+		label: "POST /tools/metrics/divergence",
+	},
 ];
 
 export const ADMIN_API_STORAGE_KEY = "admin-api-console:v1";
@@ -497,6 +523,12 @@ export interface PersistedAdminApiState {
 	toolsNeedle: string;
 	toolsHaystackJson: string;
 	toolsAnglesTextsJson: string;
+	metricsHistoryType: string;
+	metricsHistoryLimit: string;
+	metricsHistoryDir: string;
+	metricsPostBodyJson: string;
+	metricsPerplexityBodyJson: string;
+	metricsDivergenceBodyJson: string;
 	showHeartbeatEvents: boolean;
 	streamSearchText: string;
 	showAdvancedApiControls: boolean;

@@ -164,6 +164,18 @@ export function DashboardAdminContent() {
 	const [toolsHaystackJson, setToolsHaystackJson] = useState('["a","b"]');
 	const [toolsAnglesTextsJson, setToolsAnglesTextsJson] =
 		useState('["Sample text"]');
+	const [metricsHistoryType, setMetricsHistoryType] = useState("all");
+	const [metricsHistoryLimit, setMetricsHistoryLimit] = useState("50");
+	const [metricsHistoryDir, setMetricsHistoryDir] = useState("");
+	const [metricsPostBodyJson, setMetricsPostBodyJson] = useState(
+		'{\n  "filename": "example_version_1.json",\n  "output_dir": "output-results",\n  "dataset_dir": "datasets/news_cleaned",\n  "device": "cpu"\n}',
+	);
+	const [metricsPerplexityBodyJson, setMetricsPerplexityBodyJson] = useState(
+		'{\n  "output_dir": "output-results",\n  "metrics_dir": "metrics",\n  "model_name": "gpt2",\n  "stride": 512,\n  "device": "cpu"\n}',
+	);
+	const [metricsDivergenceBodyJson, setMetricsDivergenceBodyJson] = useState(
+		'{\n  "output_dir": "output-results",\n  "dataset_dir": "datasets/news_cleaned",\n  "metrics_dir": "metrics",\n  "alpha": 1e-6\n}',
+	);
 	const [copyErrorReportState, setCopyErrorReportState] = useState<
 		"idle" | "copied" | "failed"
 	>("idle");
@@ -345,6 +357,18 @@ export function DashboardAdminContent() {
 				setToolsHaystackJson(parsed.toolsHaystackJson);
 			if (typeof parsed.toolsAnglesTextsJson === "string")
 				setToolsAnglesTextsJson(parsed.toolsAnglesTextsJson);
+			if (typeof parsed.metricsHistoryType === "string")
+				setMetricsHistoryType(parsed.metricsHistoryType);
+			if (typeof parsed.metricsHistoryLimit === "string")
+				setMetricsHistoryLimit(parsed.metricsHistoryLimit);
+			if (typeof parsed.metricsHistoryDir === "string")
+				setMetricsHistoryDir(parsed.metricsHistoryDir);
+			if (typeof parsed.metricsPostBodyJson === "string")
+				setMetricsPostBodyJson(parsed.metricsPostBodyJson);
+			if (typeof parsed.metricsPerplexityBodyJson === "string")
+				setMetricsPerplexityBodyJson(parsed.metricsPerplexityBodyJson);
+			if (typeof parsed.metricsDivergenceBodyJson === "string")
+				setMetricsDivergenceBodyJson(parsed.metricsDivergenceBodyJson);
 			if (typeof parsed.showHeartbeatEvents === "boolean")
 				setShowHeartbeatEvents(parsed.showHeartbeatEvents);
 			if (typeof parsed.streamSearchText === "string")
@@ -469,6 +493,12 @@ export function DashboardAdminContent() {
 			toolsNeedle,
 			toolsHaystackJson,
 			toolsAnglesTextsJson,
+			metricsHistoryType,
+			metricsHistoryLimit,
+			metricsHistoryDir,
+			metricsPostBodyJson,
+			metricsPerplexityBodyJson,
+			metricsDivergenceBodyJson,
 			showHeartbeatEvents,
 			streamSearchText,
 			showAdvancedApiControls,
@@ -550,6 +580,12 @@ export function DashboardAdminContent() {
 		toolsNeedle,
 		toolsHaystackJson,
 		toolsAnglesTextsJson,
+		metricsHistoryType,
+		metricsHistoryLimit,
+		metricsHistoryDir,
+		metricsPostBodyJson,
+		metricsPerplexityBodyJson,
+		metricsDivergenceBodyJson,
 		showHeartbeatEvents,
 		streamSearchText,
 		showAdvancedApiControls,
@@ -754,6 +790,12 @@ export function DashboardAdminContent() {
 			toolsNeedle,
 			toolsHaystackJson,
 			toolsAnglesTextsJson,
+			metricsHistoryType,
+			metricsHistoryLimit,
+			metricsHistoryDir,
+			metricsPostBodyJson,
+			metricsPerplexityBodyJson,
+			metricsDivergenceBodyJson,
 			validatePostId,
 			validatePostStream,
 			validateUseTermsCache,
@@ -813,9 +855,15 @@ export function DashboardAdminContent() {
 							Open APIs in tabs, run calls, compare responses.
 						</p>
 						<div className="rounded-lg border border-white/10 bg-white/5 p-3">
-							<label className="text-white/60 text-xs">Backend Base URL</label>
+							<label
+								className="text-white/60 text-xs"
+								htmlFor="admin-api-base-url"
+							>
+								Backend Base URL
+							</label>
 							<input
 								className="mt-1 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+								id="admin-api-base-url"
 								onChange={(e) => setBaseUrl(e.target.value)}
 								placeholder="http://localhost:5001/api/v1"
 								value={baseUrl}
@@ -854,6 +902,12 @@ export function DashboardAdminContent() {
 						kvLimit={kvLimit}
 						kvOffset={kvOffset}
 						kvValue={kvValue}
+						metricsDivergenceBodyJson={metricsDivergenceBodyJson}
+						metricsHistoryDir={metricsHistoryDir}
+						metricsHistoryLimit={metricsHistoryLimit}
+						metricsHistoryType={metricsHistoryType}
+						metricsPerplexityBodyJson={metricsPerplexityBodyJson}
+						metricsPostBodyJson={metricsPostBodyJson}
 						onAddTab={addNewTab}
 						onCloseTab={closeTab}
 						onRunTabAction={runTabActionForTab}
@@ -897,6 +951,12 @@ export function DashboardAdminContent() {
 						setKvLimit={setKvLimit}
 						setKvOffset={setKvOffset}
 						setKvValue={setKvValue}
+						setMetricsDivergenceBodyJson={setMetricsDivergenceBodyJson}
+						setMetricsHistoryDir={setMetricsHistoryDir}
+						setMetricsHistoryLimit={setMetricsHistoryLimit}
+						setMetricsHistoryType={setMetricsHistoryType}
+						setMetricsPerplexityBodyJson={setMetricsPerplexityBodyJson}
+						setMetricsPostBodyJson={setMetricsPostBodyJson}
 						setProtocolIncludePost={setProtocolIncludePost}
 						setProtocolPersistCache={setProtocolPersistCache}
 						setProtocolUseCache={setProtocolUseCache}

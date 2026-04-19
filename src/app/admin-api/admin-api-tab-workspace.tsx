@@ -158,6 +158,18 @@ export interface AdminApiTabWorkspaceProps {
 	setToolsHaystackJson: (value: string) => void;
 	toolsAnglesTextsJson: string;
 	setToolsAnglesTextsJson: (value: string) => void;
+	metricsHistoryType: string;
+	setMetricsHistoryType: (value: string) => void;
+	metricsHistoryLimit: string;
+	setMetricsHistoryLimit: (value: string) => void;
+	metricsHistoryDir: string;
+	setMetricsHistoryDir: (value: string) => void;
+	metricsPostBodyJson: string;
+	setMetricsPostBodyJson: (value: string) => void;
+	metricsPerplexityBodyJson: string;
+	setMetricsPerplexityBodyJson: (value: string) => void;
+	metricsDivergenceBodyJson: string;
+	setMetricsDivergenceBodyJson: (value: string) => void;
 	callApi: CallApiFn;
 	setTabError: SetTabErrorFn;
 	submitWorkflowRequest: (
@@ -315,6 +327,18 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 		setToolsHaystackJson,
 		toolsAnglesTextsJson,
 		setToolsAnglesTextsJson,
+		metricsHistoryType,
+		setMetricsHistoryType,
+		metricsHistoryLimit,
+		setMetricsHistoryLimit,
+		metricsHistoryDir,
+		setMetricsHistoryDir,
+		metricsPostBodyJson,
+		setMetricsPostBodyJson,
+		metricsPerplexityBodyJson,
+		setMetricsPerplexityBodyJson,
+		metricsDivergenceBodyJson,
+		setMetricsDivergenceBodyJson,
 		callApi,
 		setTabError,
 		submitWorkflowRequest,
@@ -418,6 +442,12 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 							kvLimit={kvLimit}
 							kvOffset={kvOffset}
 							kvValue={kvValue}
+							metricsDivergenceBodyJson={metricsDivergenceBodyJson}
+							metricsHistoryDir={metricsHistoryDir}
+							metricsHistoryLimit={metricsHistoryLimit}
+							metricsHistoryType={metricsHistoryType}
+							metricsPerplexityBodyJson={metricsPerplexityBodyJson}
+							metricsPostBodyJson={metricsPostBodyJson}
 							protocolIncludePost={protocolIncludePost}
 							protocolPersistCache={protocolPersistCache}
 							protocolUseCache={protocolUseCache}
@@ -457,6 +487,12 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 							setKvLimit={setKvLimit}
 							setKvOffset={setKvOffset}
 							setKvValue={setKvValue}
+							setMetricsDivergenceBodyJson={setMetricsDivergenceBodyJson}
+							setMetricsHistoryDir={setMetricsHistoryDir}
+							setMetricsHistoryLimit={setMetricsHistoryLimit}
+							setMetricsHistoryType={setMetricsHistoryType}
+							setMetricsPerplexityBodyJson={setMetricsPerplexityBodyJson}
+							setMetricsPostBodyJson={setMetricsPostBodyJson}
 							setProtocolIncludePost={setProtocolIncludePost}
 							setProtocolPersistCache={setProtocolPersistCache}
 							setProtocolUseCache={setProtocolUseCache}

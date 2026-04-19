@@ -144,6 +144,18 @@ export interface AdminApiToolPanelsProps {
 	setToolsHaystackJson: (value: string) => void;
 	toolsAnglesTextsJson: string;
 	setToolsAnglesTextsJson: (value: string) => void;
+	metricsHistoryType: string;
+	setMetricsHistoryType: (value: string) => void;
+	metricsHistoryLimit: string;
+	setMetricsHistoryLimit: (value: string) => void;
+	metricsHistoryDir: string;
+	setMetricsHistoryDir: (value: string) => void;
+	metricsPostBodyJson: string;
+	setMetricsPostBodyJson: (value: string) => void;
+	metricsPerplexityBodyJson: string;
+	setMetricsPerplexityBodyJson: (value: string) => void;
+	metricsDivergenceBodyJson: string;
+	setMetricsDivergenceBodyJson: (value: string) => void;
 	callApi: CallApiFn;
 	setTabError: SetTabErrorFn;
 	submitWorkflowRequest: (
