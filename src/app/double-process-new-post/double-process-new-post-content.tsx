@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FileExplorer } from "~/app/_components/file-explorer";
 import {
 	ADMIN_API_STORAGE_KEY,
@@ -13,6 +13,13 @@ import { usePathConfig } from "~/hooks/use-path-config";
 import { api } from "~/trpc/react";
 
 const ENDPOINT_PATH = "/workflows/double-process-new-post";
+const RECENT_RUNS_ENDPOINT_PATH = "/workflows/double-process-posts";
+
+type DoubleProcessRunListItem = {
+	report_path?: unknown;
+	file_mtime?: unknown;
+	record?: unknown;
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return !!value && typeof value === "object" && !Array.isArray(value);
@@ -25,6 +32,27 @@ function extractDataPayload(payload: unknown): unknown {
 	const inner = payload.data;
 	if (isRecord(inner) && inner.mode === "double_process_new_post") return inner;
 	return null;
+}
+
+function extractRecentRunsPayload(payload: unknown): {
+	base_path?: string;
+	count?: number;
+	runs: DoubleProcessRunListItem[];
+} | null {
+	if (!isRecord(payload)) return null;
+	const candidate = isRecord(payload.data) ? payload.data : payload;
+	if (!isRecord(candidate) || !Array.isArray(candidate.runs)) return null;
+	return {
+		base_path:
+			typeof candidate.base_path === "string" ? candidate.base_path : undefined,
+		count: typeof candidate.count === "number" ? candidate.count : undefined,
+		runs: candidate.runs as DoubleProcessRunListItem[],
+	};
+}
+
+function formatFileMtime(value: unknown): string {
+	if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+	return new Date(value * 1000).toLocaleString();
 }
 
 async function readSsePost(
@@ -230,6 +258,13 @@ export function DoubleProcessNewPostContent() {
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [jsonResult, setJsonResult] = useState<unknown>(null);
 	const [sseEvents, setSseEvents] = useState<StreamEventView[]>([]);
+	const [recentRunsStatus, setRecentRunsStatus] = useState<
+		"idle" | "loading" | "success" | "error"
+	>("idle");
+	const [recentRunsError, setRecentRunsError] = useState<string | null>(null);
+	const [recentRunsResult, setRecentRunsResult] = useState<unknown>(null);
+	const [recentPostIdFilter, setRecentPostIdFilter] = useState("");
+	const [recentLimit, setRecentLimit] = useState("10");
 	const workflowAudioCtxRef = useRef<AudioContext | null>(null);
 
 	const primeWorkflowAudioForRun = () => {
@@ -267,6 +302,7 @@ export function DoubleProcessNewPostContent() {
 
 	const base = useMemo(() => baseUrl.replace(/\/+$/, ""), [baseUrl]);
 	const requestUrl = `${base}${ENDPOINT_PATH}`;
+	const recentRunsUrl = `${base}${RECENT_RUNS_ENDPOINT_PATH}`;
 
 	const requestBody = useMemo<Record<string, unknown>>(() => {
 		const body: Record<string, unknown> = {
@@ -314,6 +350,11 @@ export function DoubleProcessNewPostContent() {
 		[sseEvents],
 	);
 
+	const recentRunsData = useMemo(
+		() => extractRecentRunsPayload(recentRunsResult),
+		[recentRunsResult],
+	);
+
 	const handleFileSelect = (filename: string) => {
 		router.push(`/?filename=${filename}&folder=${selectedPathId}`);
 	};
@@ -323,6 +364,58 @@ export function DoubleProcessNewPostContent() {
 		params.set("folder", pathId);
 		router.push(`${pathname}?${params.toString()}`);
 	};
+
+	const loadRecentRuns = useCallback(async () => {
+		setRecentRunsStatus("loading");
+		setRecentRunsError(null);
+
+		const qs = new URLSearchParams();
+		const trimmedPostId = recentPostIdFilter.trim();
+		if (trimmedPostId) qs.set("post_id", trimmedPostId);
+
+		const parsedLimit = Number.parseInt(recentLimit.trim(), 10);
+		if (Number.isInteger(parsedLimit) && parsedLimit > 0) {
+			qs.set("limit", String(Math.min(parsedLimit, 100)));
+		}
+
+		const url =
+			qs.size > 0 ? `${recentRunsUrl}?${qs.toString()}` : recentRunsUrl;
+
+		try {
+			const res = await fetch(url, { method: "GET" });
+			const text = await res.text();
+			const parsed = parseJsonOrText(text);
+			setRecentRunsResult(parsed);
+
+			if (!res.ok) {
+				setRecentRunsStatus("error");
+				setRecentRunsError(
+					isRecord(parsed) && typeof parsed.error === "string"
+						? parsed.error
+						: `HTTP ${res.status}`,
+				);
+				return;
+			}
+
+			const extracted = extractRecentRunsPayload(parsed);
+			if (!extracted) {
+				setRecentRunsStatus("error");
+				setRecentRunsError(
+					"Response did not match GET /workflows/double-process-posts.",
+				);
+				return;
+			}
+
+			setRecentRunsStatus("success");
+		} catch (e) {
+			setRecentRunsStatus("error");
+			setRecentRunsError(e instanceof Error ? e.message : String(e));
+		}
+	}, [recentLimit, recentPostIdFilter, recentRunsUrl]);
+
+	useEffect(() => {
+		void loadRecentRuns();
+	}, [loadRecentRuns]);
 
 	const run = async () => {
 		primeWorkflowAudioForRun();
@@ -435,7 +528,12 @@ export function DoubleProcessNewPostContent() {
 							<em className="text-white/60">flags</em> enabled; pass 2 does not
 							read pass 1’s files. Compares per-stage hashes between passes.
 							Writes artifacts each time; pass 2 overwrites step outputs for
-							that <code className="text-white/80">post_id</code>.
+							that <code className="text-white/80">post_id</code>. Saved run
+							reports can be listed via{" "}
+							<code className="rounded bg-white/10 px-1 py-0.5 text-white/85">
+								GET {RECENT_RUNS_ENDPOINT_PATH}
+							</code>
+							.
 						</p>
 					</div>
 				</div>
@@ -559,6 +657,238 @@ export function DoubleProcessNewPostContent() {
 							{errorMessage}
 						</div>
 					) : null}
+
+					<section className="overflow-hidden rounded-xl border border-white/10 bg-white/3">
+						<div className="flex items-center justify-between gap-3 border-white/8 border-b px-4 py-3">
+							<div>
+								<h2 className="font-semibold text-sm text-white/90">
+									Recent saved runs
+								</h2>
+								<p className="mt-0.5 text-[11px] text-white/45">
+									Reads{" "}
+									<code className="text-white/70">
+										GET {RECENT_RUNS_ENDPOINT_PATH}
+									</code>{" "}
+									from the current base URL.
+								</p>
+							</div>
+							<div className="flex items-center gap-2">
+								<StatusPill status={recentRunsStatus} />
+								<button
+									className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/8 px-3 py-2 font-semibold text-sm text-white/85 transition-colors hover:bg-white/12"
+									onClick={() => void loadRecentRuns()}
+									type="button"
+								>
+									Refresh
+								</button>
+							</div>
+						</div>
+
+						<div className="space-y-4 p-4">
+							<div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_140px_auto]">
+								<div>
+									<label
+										className="mb-1.5 block font-semibold text-[10px] text-white/45 uppercase tracking-wide"
+										htmlFor="double-process-recent-post-id"
+									>
+										Filter by <code className="text-white/55">post_id</code>
+									</label>
+									<input
+										className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white/85 transition-colors focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-violet-500/30"
+										id="double-process-recent-post-id"
+										onChange={(e) => setRecentPostIdFilter(e.target.value)}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") void loadRecentRuns();
+										}}
+										placeholder="Optional exact post_id"
+										value={recentPostIdFilter}
+									/>
+								</div>
+								<div>
+									<label
+										className="mb-1.5 block font-semibold text-[10px] text-white/45 uppercase tracking-wide"
+										htmlFor="double-process-recent-limit"
+									>
+										limit
+									</label>
+									<input
+										className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white/85 transition-colors focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-violet-500/30"
+										id="double-process-recent-limit"
+										inputMode="numeric"
+										onChange={(e) => setRecentLimit(e.target.value)}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") void loadRecentRuns();
+										}}
+										placeholder="10"
+										value={recentLimit}
+									/>
+								</div>
+								<div className="flex items-end">
+									<button
+										className="inline-flex w-full items-center justify-center rounded-lg bg-violet-600 px-4 py-2.5 font-semibold text-sm text-white transition-colors hover:bg-violet-500"
+										onClick={() => void loadRecentRuns()}
+										type="button"
+									>
+										Load runs
+									</button>
+								</div>
+							</div>
+
+							{recentRunsError ? (
+								<div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-red-200 text-sm">
+									{recentRunsError}
+								</div>
+							) : null}
+
+							{recentRunsData?.base_path ? (
+								<div className="rounded-lg border border-white/8 bg-black/20 px-3 py-2">
+									<div className="font-semibold text-[10px] text-white/40 uppercase tracking-wide">
+										Reports root
+									</div>
+									<div className="mt-1 break-all font-mono text-[11px] text-white/70">
+										{recentRunsData.base_path}
+									</div>
+								</div>
+							) : null}
+
+							{recentRunsData ? (
+								recentRunsData.runs.length > 0 ? (
+									<div className="space-y-3">
+										<p className="text-[11px] text-white/45">
+											Showing {recentRunsData.runs.length}
+											{typeof recentRunsData.count === "number"
+												? ` saved run${recentRunsData.count === 1 ? "" : "s"}`
+												: " saved runs"}
+											, newest file first.
+										</p>
+										<div className="space-y-3">
+											{recentRunsData.runs.map((run, index) => {
+												const record = isRecord(run.record) ? run.record : null;
+												const stageHashMatch = isRecord(
+													record?.stage_hash_match,
+												)
+													? record.stage_hash_match
+													: null;
+												const postIdValue =
+													typeof record?.post_id === "string"
+														? record.post_id
+														: "—";
+												const sourceFileValue =
+													typeof record?.source_file === "string"
+														? record.source_file
+														: "—";
+												const succeededValue =
+													typeof record?.succeeded === "boolean"
+														? record.succeeded
+														: null;
+												return (
+													<details
+														className="rounded-xl border border-white/10 bg-black/20"
+														key={`${String(run.report_path ?? "run")}-${index}`}
+													>
+														<summary className="cursor-pointer list-none px-4 py-3">
+															<div className="flex flex-wrap items-start justify-between gap-3">
+																<div className="min-w-0 flex-1">
+																	<div className="flex flex-wrap items-center gap-2">
+																		<span className="font-semibold text-sm text-white/90">
+																			{postIdValue}
+																		</span>
+																		<span
+																			className={`rounded-full border px-2 py-0.5 font-medium text-[10px] uppercase tracking-wide ${
+																				succeededValue === true
+																					? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+																					: succeededValue === false
+																						? "border-red-500/30 bg-red-500/10 text-red-300"
+																						: "border-white/10 bg-white/5 text-white/45"
+																			}`}
+																		>
+																			{succeededValue === true
+																				? "success"
+																				: succeededValue === false
+																					? "failed"
+																					: "unknown"}
+																		</span>
+																	</div>
+																	<div className="mt-1 text-[11px] text-white/45">
+																		{sourceFileValue}
+																		<span className="mx-1.5 text-white/20">
+																			•
+																		</span>
+																		{formatFileMtime(run.file_mtime)}
+																	</div>
+																	{typeof run.report_path === "string" ? (
+																		<div className="mt-1 break-all font-mono text-[11px] text-white/35">
+																			{run.report_path}
+																		</div>
+																	) : null}
+																</div>
+																{stageHashMatch ? (
+																	<div className="grid grid-cols-3 gap-1 text-center text-[10px]">
+																		{(
+																			[
+																				"data_load",
+																				"research",
+																				"gen_angles",
+																			] as const
+																		).map((key) => {
+																			const value = stageHashMatch[key];
+																			return (
+																				<div
+																					className={`rounded-md border px-2 py-1 ${
+																						value === true
+																							? "border-emerald-500/25 bg-emerald-500/8 text-emerald-300"
+																							: value === false
+																								? "border-amber-500/25 bg-amber-500/8 text-amber-300"
+																								: "border-white/10 bg-white/5 text-white/40"
+																					}`}
+																					key={key}
+																				>
+																					<div>{key.replace(/_/g, " ")}</div>
+																					<div className="mt-0.5 font-semibold">
+																						{value === true
+																							? "match"
+																							: value === false
+																								? "diff"
+																								: "—"}
+																					</div>
+																				</div>
+																			);
+																		})}
+																	</div>
+																) : null}
+															</div>
+														</summary>
+														<div className="border-white/8 border-t px-4 py-3">
+															<pre className="max-h-96 overflow-auto whitespace-pre-wrap text-[11px] text-white/65">
+																{JSON.stringify(run.record ?? null, null, 2)}
+															</pre>
+														</div>
+													</details>
+												);
+											})}
+										</div>
+									</div>
+								) : (
+									<p className="text-sm text-white/45">
+										No saved double-process reports matched this query.
+									</p>
+								)
+							) : recentRunsStatus === "loading" ? (
+								<p className="text-sm text-white/45">Loading saved runs…</p>
+							) : null}
+
+							{recentRunsResult !== null ? (
+								<details className="rounded-lg border border-white/8 bg-black/20">
+									<summary className="cursor-pointer px-3 py-2 text-white/55 text-xs transition-colors hover:text-white/80">
+										Raw <code className="text-white/75">GET</code> response
+									</summary>
+									<pre className="max-h-96 overflow-auto whitespace-pre-wrap px-3 pt-1 pb-3 text-[11px] text-white/65">
+										{JSON.stringify(recentRunsResult, null, 2)}
+									</pre>
+								</details>
+							) : null}
+						</div>
+					</section>
 
 					{/* Result summary */}
 					{summaryData && isRecord(summaryData) ? (
