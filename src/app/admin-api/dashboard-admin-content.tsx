@@ -92,6 +92,11 @@ export function DashboardAdminContent() {
 		useState("angles-step");
 	const [batchAnglesDeterminismStream, setBatchAnglesDeterminismStream] =
 		useState(false);
+	const [prepQuotaTag, setPrepQuotaTag] = useState("version_42");
+	const [prepQuotaBatchCount, setPrepQuotaBatchCount] = useState("1");
+	const [prepQuotaBatchSize, setPrepQuotaBatchSize] = useState("5");
+	const [prepQuotaPayload, setPrepQuotaPayload] = useState("");
+	const [prepQuotaStream, setPrepQuotaStream] = useState(true);
 	const [triggerAnglesMode, setTriggerAnglesMode] = useState<TriggerAnglesMode>(
 		"stego-receiver-live",
 	);
@@ -257,6 +262,16 @@ export function DashboardAdminContent() {
 				setBatchAnglesDeterminismStep(parsed.batchAnglesDeterminismStep);
 			if (typeof parsed.batchAnglesDeterminismStream === "boolean")
 				setBatchAnglesDeterminismStream(parsed.batchAnglesDeterminismStream);
+			if (typeof parsed.prepQuotaTag === "string")
+				setPrepQuotaTag(parsed.prepQuotaTag);
+			if (typeof parsed.prepQuotaBatchCount === "string")
+				setPrepQuotaBatchCount(parsed.prepQuotaBatchCount);
+			if (typeof parsed.prepQuotaBatchSize === "string")
+				setPrepQuotaBatchSize(parsed.prepQuotaBatchSize);
+			if (typeof parsed.prepQuotaPayload === "string")
+				setPrepQuotaPayload(parsed.prepQuotaPayload);
+			if (typeof parsed.prepQuotaStream === "boolean")
+				setPrepQuotaStream(parsed.prepQuotaStream);
 			if (
 				parsed.triggerAnglesMode === "gen-angles" ||
 				parsed.triggerAnglesMode === "stego-receiver-live"
@@ -448,6 +463,11 @@ export function DashboardAdminContent() {
 			batchAnglesDeterminismPostIds,
 			batchAnglesDeterminismStep,
 			batchAnglesDeterminismStream,
+			prepQuotaTag,
+			prepQuotaBatchCount,
+			prepQuotaBatchSize,
+			prepQuotaPayload,
+			prepQuotaStream,
 			triggerAnglesMode,
 			genAnglesCount,
 			genAnglesOffset,
@@ -535,6 +555,11 @@ export function DashboardAdminContent() {
 		batchAnglesDeterminismPostIds,
 		batchAnglesDeterminismStep,
 		batchAnglesDeterminismStream,
+		prepQuotaTag,
+		prepQuotaBatchCount,
+		prepQuotaBatchSize,
+		prepQuotaPayload,
+		prepQuotaStream,
 		triggerAnglesMode,
 		genAnglesCount,
 		genAnglesOffset,
@@ -808,6 +833,11 @@ export function DashboardAdminContent() {
 			batchAnglesDeterminismPostIds,
 			batchAnglesDeterminismStep,
 			batchAnglesDeterminismStream,
+			prepQuotaTag,
+			prepQuotaBatchCount,
+			prepQuotaBatchSize,
+			prepQuotaPayload,
+			prepQuotaStream,
 			triggerAnglesMode,
 			genAnglesCount,
 			genAnglesOffset,
@@ -887,6 +917,11 @@ export function DashboardAdminContent() {
 						batchAnglesDeterminismPostIds={batchAnglesDeterminismPostIds}
 						batchAnglesDeterminismStep={batchAnglesDeterminismStep}
 						batchAnglesDeterminismStream={batchAnglesDeterminismStream}
+						prepQuotaBatchCount={prepQuotaBatchCount}
+						prepQuotaBatchSize={prepQuotaBatchSize}
+						prepQuotaPayload={prepQuotaPayload}
+						prepQuotaStream={prepQuotaStream}
+						prepQuotaTag={prepQuotaTag}
 						cacheTarget={cacheTarget}
 						callApi={callApi}
 						fsLimit={fsLimit}
@@ -937,6 +972,11 @@ export function DashboardAdminContent() {
 						setBatchAnglesDeterminismPostIds={setBatchAnglesDeterminismPostIds}
 						setBatchAnglesDeterminismStep={setBatchAnglesDeterminismStep}
 						setBatchAnglesDeterminismStream={setBatchAnglesDeterminismStream}
+						setPrepQuotaBatchCount={setPrepQuotaBatchCount}
+						setPrepQuotaBatchSize={setPrepQuotaBatchSize}
+						setPrepQuotaPayload={setPrepQuotaPayload}
+						setPrepQuotaStream={setPrepQuotaStream}
+						setPrepQuotaTag={setPrepQuotaTag}
 						setCacheTarget={setCacheTarget}
 						setFsLimit={setFsLimit}
 						setFsPath={setFsPath}

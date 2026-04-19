@@ -54,6 +54,16 @@ export interface AdminApiToolPanelsProps {
 	setBatchAnglesDeterminismStep: (value: string) => void;
 	batchAnglesDeterminismStream: boolean;
 	setBatchAnglesDeterminismStream: (value: boolean) => void;
+	prepQuotaTag: string;
+	setPrepQuotaTag: (value: string) => void;
+	prepQuotaBatchCount: string;
+	setPrepQuotaBatchCount: (value: string) => void;
+	prepQuotaBatchSize: string;
+	setPrepQuotaBatchSize: (value: string) => void;
+	prepQuotaPayload: string;
+	setPrepQuotaPayload: (value: string) => void;
+	prepQuotaStream: boolean;
+	setPrepQuotaStream: (value: boolean) => void;
 	triggerAnglesMode: TriggerAnglesMode;
 	setTriggerAnglesMode: (value: TriggerAnglesMode) => void;
 	genAnglesCount: string;

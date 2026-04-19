@@ -258,6 +258,17 @@ export function FileExplorer({
 						<GitCompare className="h-4 w-4" />
 						Double-process new post
 					</Link>
+					<Link
+						href={`/prep-until-google-quota-then-stego?folder=${selectedPathId}`}
+						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+							pathname === "/prep-until-google-quota-then-stego"
+								? "bg-white/10 text-white"
+								: "text-white/50 hover:bg-white/5 hover:text-white"
+						}`}
+					>
+						<Search className="h-4 w-4" />
+						Prep until quota then stego
+					</Link>
 				</div>
 
 				<div className="mb-4 flex items-center justify-between">

@@ -4,6 +4,7 @@ export const WORKFLOW_COMMAND_OPTIONS = [
 	"data-load",
 	"research",
 	"gen-angles",
+	"prep-until-google-quota-then-stego",
 	"validate-post",
 	"receiver",
 	"stego-receiver-live",
@@ -131,6 +132,7 @@ export type ApiActionId =
 	| "workflows-validate-post"
 	| "workflows-receiver"
 	| "workflows-batch-angles-determinism"
+	| "workflows-prep-until-google-quota-then-stego"
 	| "workflows-trigger-angles"
 	| "protocol-gen-terms"
 	| "protocol-data-load-preview"
@@ -249,6 +251,11 @@ export const API_ACTION_OPTIONS: Array<{
 		id: "workflows-batch-angles-determinism",
 		apiToolId: "artifacts-workflows",
 		label: "POST /workflows/batch-angles-determinism",
+	},
+	{
+		id: "workflows-prep-until-google-quota-then-stego",
+		apiToolId: "artifacts-workflows",
+		label: "POST /workflows/prep-until-google-quota-then-stego",
 	},
 	{
 		id: "workflows-trigger-angles",
@@ -477,6 +484,11 @@ export interface PersistedAdminApiState {
 	batchAnglesDeterminismPostIds: string;
 	batchAnglesDeterminismStep: string;
 	batchAnglesDeterminismStream: boolean;
+	prepQuotaTag: string;
+	prepQuotaBatchCount: string;
+	prepQuotaBatchSize: string;
+	prepQuotaPayload: string;
+	prepQuotaStream: boolean;
 	triggerAnglesMode: TriggerAnglesMode;
 	genAnglesCount: string;
 	genAnglesOffset: string;

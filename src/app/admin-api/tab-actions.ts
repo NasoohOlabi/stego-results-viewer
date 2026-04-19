@@ -158,6 +158,11 @@ export type RunTabActionContext = {
 	batchAnglesDeterminismPostIds: string;
 	batchAnglesDeterminismStep: string;
 	batchAnglesDeterminismStream: boolean;
+	prepQuotaTag: string;
+	prepQuotaBatchCount: string;
+	prepQuotaBatchSize: string;
+	prepQuotaPayload: string;
+	prepQuotaStream: boolean;
 	triggerAnglesMode: TriggerAnglesMode;
 	genAnglesCount: string;
 	genAnglesOffset: string;
@@ -240,6 +245,11 @@ export async function runTabAction(ctx: RunTabActionContext): Promise<void> {
 		batchAnglesDeterminismPostIds,
 		batchAnglesDeterminismStep,
 		batchAnglesDeterminismStream,
+		prepQuotaTag,
+		prepQuotaBatchCount,
+		prepQuotaBatchSize,
+		prepQuotaPayload,
+		prepQuotaStream,
 		triggerAnglesMode,
 		genAnglesCount,
 		genAnglesOffset,
@@ -689,6 +699,48 @@ export async function runTabAction(ctx: RunTabActionContext): Promise<void> {
 				},
 				tab.id,
 			);
+			return;
+		}
+		case "workflows-prep-until-google-quota-then-stego": {
+			const path = "/workflows/prep-until-google-quota-then-stego";
+			const tag = prepQuotaTag.trim();
+			if (!tag) {
+				setTabError(tab.id, `${base}${path}`, "POST", "tag is required");
+				return;
+			}
+			const batchCountRaw = prepQuotaBatchCount.trim();
+			const batchSizeRaw = prepQuotaBatchSize.trim();
+			const batchCount =
+				batchCountRaw === "" ? 1 : Number.parseInt(batchCountRaw, 10);
+			const batchSize =
+				batchSizeRaw === "" ? 5 : Number.parseInt(batchSizeRaw, 10);
+			if (!Number.isInteger(batchCount) || batchCount < 1) {
+				setTabError(
+					tab.id,
+					`${base}${path}`,
+					"POST",
+					"batch_count must be an integer >= 1",
+				);
+				return;
+			}
+			if (!Number.isInteger(batchSize) || batchSize < 1) {
+				setTabError(
+					tab.id,
+					`${base}${path}`,
+					"POST",
+					"batch_size must be an integer >= 1",
+				);
+				return;
+			}
+			const body: Record<string, unknown> = {
+				tag,
+				batch_count: batchCount,
+				batch_size: batchSize,
+				stream: prepQuotaStream,
+			};
+			const payload = parseStegoPayloadInput(prepQuotaPayload);
+			if (payload !== undefined) body.payload = payload;
+			await callApi("POST", path, undefined, body, tab.id);
 			return;
 		}
 		case "workflows-trigger-angles": {

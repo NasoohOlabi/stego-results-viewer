@@ -480,6 +480,7 @@ function ReceiverWorkflowPanel(props: {
 }
 
 const BATCH_ANGLES_DETERMINISM_PATH = "/workflows/batch-angles-determinism";
+const PREP_QUOTA_PATH = "/workflows/prep-until-google-quota-then-stego";
 
 function BatchAnglesDeterminismPanel(props: {
 	tabId: string;
@@ -582,6 +583,153 @@ function BatchAnglesDeterminismPanel(props: {
 					/>
 					stream (SSE)
 				</label>
+			</div>
+		</section>
+	);
+}
+
+function PrepUntilQuotaThenStegoPanel(props: {
+	tabId: string;
+	base: string;
+	prepQuotaTag: string;
+	setPrepQuotaTag: (value: string) => void;
+	prepQuotaBatchCount: string;
+	setPrepQuotaBatchCount: (value: string) => void;
+	prepQuotaBatchSize: string;
+	setPrepQuotaBatchSize: (value: string) => void;
+	prepQuotaPayload: string;
+	setPrepQuotaPayload: (value: string) => void;
+	prepQuotaStream: boolean;
+	setPrepQuotaStream: (value: boolean) => void;
+	callApi: CallApiFn;
+	setTabError: SetTabErrorFn;
+}) {
+	const {
+		tabId,
+		base,
+		prepQuotaTag,
+		setPrepQuotaTag,
+		prepQuotaBatchCount,
+		setPrepQuotaBatchCount,
+		prepQuotaBatchSize,
+		setPrepQuotaBatchSize,
+		prepQuotaPayload,
+		setPrepQuotaPayload,
+		prepQuotaStream,
+		setPrepQuotaStream,
+		callApi,
+		setTabError,
+	} = props;
+
+	const send = () => {
+		const tag = prepQuotaTag.trim();
+		if (!tag) {
+			setTabError(tabId, `${base}${PREP_QUOTA_PATH}`, "POST", "tag is required");
+			return;
+		}
+		const batchCountRaw = prepQuotaBatchCount.trim();
+		const batchSizeRaw = prepQuotaBatchSize.trim();
+		const batchCount =
+			batchCountRaw === "" ? 1 : Number.parseInt(batchCountRaw, 10);
+		const batchSize =
+			batchSizeRaw === "" ? 5 : Number.parseInt(batchSizeRaw, 10);
+		if (!Number.isInteger(batchCount) || batchCount < 1) {
+			setTabError(
+				tabId,
+				`${base}${PREP_QUOTA_PATH}`,
+				"POST",
+				"batch_count must be an integer >= 1",
+			);
+			return;
+		}
+		if (!Number.isInteger(batchSize) || batchSize < 1) {
+			setTabError(
+				tabId,
+				`${base}${PREP_QUOTA_PATH}`,
+				"POST",
+				"batch_size must be an integer >= 1",
+			);
+			return;
+		}
+		const body: Record<string, unknown> = {
+			tag,
+			batch_count: batchCount,
+			batch_size: batchSize,
+			stream: prepQuotaStream,
+		};
+		const payload = parseStegoPayloadInput(prepQuotaPayload);
+		if (payload !== undefined) body.payload = payload;
+		void callApi("POST", PREP_QUOTA_PATH, undefined, body, tabId);
+	};
+
+	return (
+		<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+			<h2 className="font-semibold text-lg">Prep Until Quota, Then Stego</h2>
+			<p className="text-white/60 text-xs">
+				<code className="text-white/80">POST {PREP_QUOTA_PATH}</code>
+				{" "}runs repeated prep batches (
+				<code className="text-white/80">data-load</code> â†’{" "}
+				<code className="text-white/80">research</code> â†’{" "}
+				<code className="text-white/80">gen-angles</code>) until Google quota is
+				detected, then flips into recursive stego processing for the required{" "}
+				<code className="text-white/80">tag</code>.
+			</p>
+			<div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1.4fr)_auto]">
+				<input
+					className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+					onChange={(e) => setPrepQuotaTag(e.target.value)}
+					placeholder="tag (required, e.g. version_42)"
+					value={prepQuotaTag}
+				/>
+				<button
+					className="rounded-md bg-teal-500/25 px-3 py-2 text-sm hover:bg-teal-500/35"
+					onClick={send}
+					type="button"
+				>
+					Run
+				</button>
+			</div>
+			<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+				<input
+					className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+					onChange={(e) => setPrepQuotaBatchCount(e.target.value)}
+					placeholder="batch_count (default 1)"
+					value={prepQuotaBatchCount}
+				/>
+				<input
+					className="rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-sm"
+					onChange={(e) => setPrepQuotaBatchSize(e.target.value)}
+					placeholder="batch_size (default 5)"
+					value={prepQuotaBatchSize}
+				/>
+				<label className="flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-black/20 px-3 py-2 text-white/70 text-xs">
+					<input
+						checked={prepQuotaStream}
+						onChange={(e) => setPrepQuotaStream(e.target.checked)}
+						type="checkbox"
+					/>
+					stream milestone SSE
+				</label>
+			</div>
+			<div className="space-y-1">
+				<p className="text-white/60 text-xs">
+					Optional payload (string or JSON; empty omits and lets the API use its
+					default stego payload).
+				</p>
+				<textarea
+					className="min-h-20 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
+					onChange={(e) => setPrepQuotaPayload(e.target.value)}
+					placeholder='hello world or {"campaign":"sample"}'
+					title="Optional payload"
+					value={prepQuotaPayload}
+				/>
+			</div>
+			<div className="rounded-lg border border-cyan-500/15 bg-cyan-500/5 p-3 text-[11px] text-white/60">
+				<p>
+					This workflow is quota-aware and intentionally emits compact milestone
+					events instead of the noisier per-callback SSE used by some other
+					workflows.
+				</p>
 			</div>
 		</section>
 	);
@@ -957,6 +1105,16 @@ export function AdminApiToolPanelsExtended(
 		setBatchAnglesDeterminismStep,
 		batchAnglesDeterminismStream,
 		setBatchAnglesDeterminismStream,
+		prepQuotaTag,
+		setPrepQuotaTag,
+		prepQuotaBatchCount,
+		setPrepQuotaBatchCount,
+		prepQuotaBatchSize,
+		setPrepQuotaBatchSize,
+		prepQuotaPayload,
+		setPrepQuotaPayload,
+		prepQuotaStream,
+		setPrepQuotaStream,
 		triggerAnglesMode,
 		setTriggerAnglesMode,
 		genAnglesCount,
@@ -1251,6 +1409,26 @@ export function AdminApiToolPanelsExtended(
 						setBatchAnglesDeterminismPostIds={setBatchAnglesDeterminismPostIds}
 						setBatchAnglesDeterminismStep={setBatchAnglesDeterminismStep}
 						setBatchAnglesDeterminismStream={setBatchAnglesDeterminismStream}
+						setTabError={setTabError}
+						tabId={tab.id}
+					/>
+				);
+			}
+			if (tab.apiActionId === "workflows-prep-until-google-quota-then-stego") {
+				return (
+					<PrepUntilQuotaThenStegoPanel
+						base={base}
+						callApi={callApi}
+						prepQuotaBatchCount={prepQuotaBatchCount}
+						prepQuotaBatchSize={prepQuotaBatchSize}
+						prepQuotaPayload={prepQuotaPayload}
+						prepQuotaStream={prepQuotaStream}
+						prepQuotaTag={prepQuotaTag}
+						setPrepQuotaBatchCount={setPrepQuotaBatchCount}
+						setPrepQuotaBatchSize={setPrepQuotaBatchSize}
+						setPrepQuotaPayload={setPrepQuotaPayload}
+						setPrepQuotaStream={setPrepQuotaStream}
+						setPrepQuotaTag={setPrepQuotaTag}
 						setTabError={setTabError}
 						tabId={tab.id}
 					/>

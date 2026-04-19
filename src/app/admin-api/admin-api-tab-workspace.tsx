@@ -68,6 +68,16 @@ export interface AdminApiTabWorkspaceProps {
 	setBatchAnglesDeterminismStep: (value: string) => void;
 	batchAnglesDeterminismStream: boolean;
 	setBatchAnglesDeterminismStream: (value: boolean) => void;
+	prepQuotaTag: string;
+	setPrepQuotaTag: (value: string) => void;
+	prepQuotaBatchCount: string;
+	setPrepQuotaBatchCount: (value: string) => void;
+	prepQuotaBatchSize: string;
+	setPrepQuotaBatchSize: (value: string) => void;
+	prepQuotaPayload: string;
+	setPrepQuotaPayload: (value: string) => void;
+	prepQuotaStream: boolean;
+	setPrepQuotaStream: (value: boolean) => void;
 	triggerAnglesMode: TriggerAnglesMode;
 	setTriggerAnglesMode: (value: TriggerAnglesMode) => void;
 	genAnglesCount: string;
@@ -237,6 +247,16 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 		setBatchAnglesDeterminismStep,
 		batchAnglesDeterminismStream,
 		setBatchAnglesDeterminismStream,
+		prepQuotaTag,
+		setPrepQuotaTag,
+		prepQuotaBatchCount,
+		setPrepQuotaBatchCount,
+		prepQuotaBatchSize,
+		setPrepQuotaBatchSize,
+		prepQuotaPayload,
+		setPrepQuotaPayload,
+		prepQuotaStream,
+		setPrepQuotaStream,
 		triggerAnglesMode,
 		setTriggerAnglesMode,
 		genAnglesCount,
@@ -427,6 +447,11 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 							batchAnglesDeterminismPostIds={batchAnglesDeterminismPostIds}
 							batchAnglesDeterminismStep={batchAnglesDeterminismStep}
 							batchAnglesDeterminismStream={batchAnglesDeterminismStream}
+							prepQuotaBatchCount={prepQuotaBatchCount}
+							prepQuotaBatchSize={prepQuotaBatchSize}
+							prepQuotaPayload={prepQuotaPayload}
+							prepQuotaStream={prepQuotaStream}
+							prepQuotaTag={prepQuotaTag}
 							cacheTarget={cacheTarget}
 							callApi={callApi}
 							fsLimit={fsLimit}
@@ -473,6 +498,11 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 							}
 							setBatchAnglesDeterminismStep={setBatchAnglesDeterminismStep}
 							setBatchAnglesDeterminismStream={setBatchAnglesDeterminismStream}
+							setPrepQuotaBatchCount={setPrepQuotaBatchCount}
+							setPrepQuotaBatchSize={setPrepQuotaBatchSize}
+							setPrepQuotaPayload={setPrepQuotaPayload}
+							setPrepQuotaStream={setPrepQuotaStream}
+							setPrepQuotaTag={setPrepQuotaTag}
 							setCacheTarget={setCacheTarget}
 							setFsLimit={setFsLimit}
 							setFsPath={setFsPath}

@@ -5,11 +5,14 @@ import { renderInspectorValue } from "./inspector-response";
 import type { ApiResponseView, StreamEventView } from "./types";
 import { useRequestElapsedMs } from "./use-request-elapsed";
 import {
+	buildPrepQuotaStructuredModel,
+	buildPrepQuotaStructuredModelFromSync,
 	buildCopyRequestAndResponseText,
 	buildCurlBash,
 	buildStreamEventItems,
 	buildWorkflowRunStructuredModel,
 	buildWorkflowRunStructuredModelFromSync,
+	extractPrepQuotaFromAdminResponse,
 	extractLoggingTagsFromAdminResponse,
 	extractStateLogsFromAdminResponse,
 	extractValidatePostFromAdminResponse,
@@ -21,12 +24,14 @@ import {
 	getHeartbeatElapsedMs,
 	isHeartbeatEvent,
 	isLoggingTagsEndpoint,
+	isPrepQuotaEndpoint,
 	isSsePayload,
 	isStateLogsEndpoint,
 	isValidatePostEndpoint,
 	isWorkflowRunEndpoint,
 	isWorkflowRunsEndpoint,
 } from "./utils";
+import { PrepQuotaStructuredResponse } from "./prep-quota-structured-response";
 import { WorkflowRunStructuredResponse } from "./workflow-run-structured-response";
 
 export interface AdminApiActiveResponseProps {
@@ -89,6 +94,13 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 			? extractValidatePostFromAdminResponse(activeTabResponse.data)
 			: null;
 
+	const prepQuotaDirectSyncModel =
+		!ssePayload &&
+		activeTabResponse.status === "success" &&
+		isPrepQuotaEndpoint(activeTabResponse)
+			? extractPrepQuotaFromAdminResponse(activeTabResponse.data)
+			: null;
+
 	const stateLogsView =
 		!ssePayload &&
 		activeTabResponse.status === "success" &&
@@ -122,6 +134,10 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 				: null,
 		[ssePayload, isWorkflowRun],
 	);
+	const prepQuotaSseModel = useMemo(
+		() => (ssePayload ? buildPrepQuotaStructuredModel(ssePayload.events) : null),
+		[ssePayload],
+	);
 
 	const workflowRunSyncParsed =
 		!ssePayload && activeTabResponse.status === "success" && isWorkflowRun
@@ -129,6 +145,12 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 			: null;
 	const workflowRunSyncModel = workflowRunSyncParsed
 		? buildWorkflowRunStructuredModelFromSync(
+				workflowRunSyncParsed.command,
+				workflowRunSyncParsed.result,
+			)
+		: null;
+	const prepQuotaWorkflowRunSyncModel = workflowRunSyncParsed
+		? buildPrepQuotaStructuredModelFromSync(
 				workflowRunSyncParsed.command,
 				workflowRunSyncParsed.result,
 			)
@@ -410,7 +432,50 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 			) : null}
 			<div className="space-y-3 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3">
 				{ssePayload ? (
-					isWorkflowRun && workflowRunStructured ? (
+					prepQuotaSseModel ? (
+						<>
+							<div className="flex flex-wrap gap-2">
+								<button
+									className={`rounded-md px-3 py-1 text-xs ${
+										workflowRunResponseView === "summary"
+											? "bg-violet-500/30 text-violet-100"
+											: "bg-white/10 text-white/70 hover:bg-white/15"
+									}`}
+									onClick={() => setWorkflowRunResponseView("summary")}
+									type="button"
+								>
+									Summary
+								</button>
+								<button
+									className={`rounded-md px-3 py-1 text-xs ${
+										workflowRunResponseView === "events"
+											? "bg-violet-500/30 text-violet-100"
+											: "bg-white/10 text-white/70 hover:bg-white/15"
+									}`}
+									onClick={() => setWorkflowRunResponseView("events")}
+									type="button"
+								>
+									Events
+								</button>
+							</div>
+							{workflowRunResponseView === "summary" ? (
+								<>
+									<PrepQuotaStructuredResponse
+										loading={activeTabResponse.status === "loading"}
+										model={prepQuotaSseModel}
+									/>
+									<details className="rounded-lg border border-white/10 bg-black/25 p-2">
+										<summary className="cursor-pointer text-white/75 text-xs">
+											Raw stream
+										</summary>
+										<div className="mt-2 space-y-3">{sseInner}</div>
+									</details>
+								</>
+							) : (
+								sseInner
+							)}
+						</>
+					) : isWorkflowRun && workflowRunStructured ? (
 						<>
 							<div className="flex flex-wrap gap-2">
 								<button
@@ -690,7 +755,29 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 								) : null}
 							</div>
 						) : null}
-						{workflowRunSyncModel ? (
+						{prepQuotaDirectSyncModel ? (
+							<div className="mb-4 space-y-3 rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3">
+								<div className="font-semibold text-white/70 text-xs">
+									POST /workflows/prep-until-google-quota-then-stego
+								</div>
+								<PrepQuotaStructuredResponse
+									loading={false}
+									model={prepQuotaDirectSyncModel}
+								/>
+							</div>
+						) : null}
+						{prepQuotaWorkflowRunSyncModel ? (
+							<div className="mb-4 space-y-3 rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3">
+								<div className="font-semibold text-white/70 text-xs">
+									POST /workflows/run (prep-until-google-quota-then-stego)
+								</div>
+								<PrepQuotaStructuredResponse
+									loading={false}
+									model={prepQuotaWorkflowRunSyncModel}
+								/>
+							</div>
+						) : null}
+						{workflowRunSyncModel && !prepQuotaWorkflowRunSyncModel ? (
 							<div className="mb-4 space-y-3 rounded-lg border border-violet-500/20 bg-violet-500/5 p-3">
 								<div className="font-semibold text-white/70 text-xs">
 									POST /workflows/run (sync)

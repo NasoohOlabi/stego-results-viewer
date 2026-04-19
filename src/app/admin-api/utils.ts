@@ -241,10 +241,12 @@ export function getWorkflowTemplate(command: string): string {
 			return '{\n  "count": 3,\n  "offset": 0,\n  "batch_size": 10\n}';
 		case "research":
 			return '{\n  "count": 3,\n  "offset": 0,\n  "include_breakdown": false\n}';
-		case "gen-angles":
-			return '{\n  "count": 3,\n  "offset": 0\n}';
-		case "stego":
-			return '{\n  "post_id": "",\n  "list_offset": 0,\n  "run_all": false\n}';
+	case "gen-angles":
+		return '{\n  "count": 3,\n  "offset": 0\n}';
+	case "prep-until-google-quota-then-stego":
+		return '{\n  "tag": "version_42",\n  "batch_count": 1,\n  "batch_size": 5,\n  "stream": true\n}';
+	case "stego":
+		return '{\n  "post_id": "",\n  "list_offset": 0,\n  "run_all": false\n}';
 		case "decode":
 			return '{\n  "stego_text": "sample stego text",\n  "angles": [1, 2, 3],\n  "few_shots": []\n}';
 		case "gen-terms":
@@ -1037,4 +1039,478 @@ export function buildWorkflowRunStructuredModelFromSync(
 		batchRows: [],
 		logMessages: [],
 	});
+}
+
+export const PREP_QUOTA_WORKFLOW_COMMAND =
+	"prep-until-google-quota-then-stego";
+
+export interface PrepQuotaPrepSummary {
+	iterations: number;
+	data_load_processed: number;
+	research_processed: number;
+	gen_angles_processed: number;
+	gen_angles_failed: number;
+	prepared_posts: number;
+	quota_detected: boolean;
+	stop_reason: string;
+}
+
+export interface PrepQuotaStegoSummary {
+	run_all: boolean;
+	tag: string;
+	list_offset: number;
+	processed_count: number;
+	succeeded_count: number;
+	failed_count: number;
+	stopped_reason: string;
+	results: unknown[];
+	elapsed_ms?: number;
+}
+
+export interface PrepQuotaPhaseTransition {
+	from_phase: string;
+	to_phase: string;
+	reason: string;
+}
+
+export interface PrepQuotaTimelineRow {
+	at: string;
+	event: string;
+	label: string;
+	detail?: string;
+	phase?: string;
+}
+
+export interface PrepQuotaStructuredModel {
+	command: string;
+	outcome: "pending" | "success" | "error";
+	tag?: string;
+	payloadProvided: boolean | null;
+	batchCount?: number;
+	batchSize?: number;
+	prep?: PrepQuotaPrepSummary;
+	stego?: PrepQuotaStegoSummary;
+	phaseTransition?: PrepQuotaPhaseTransition | null;
+	timeline: PrepQuotaTimelineRow[];
+	errorMessage?: string;
+	errorDetails?: unknown;
+	rawResult?: unknown;
+}
+
+function asFiniteNumber(value: unknown): number | undefined {
+	return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function asBoolean(value: unknown): boolean | undefined {
+	return typeof value === "boolean" ? value : undefined;
+}
+
+function asString(value: unknown): string | undefined {
+	return typeof value === "string" ? value : undefined;
+}
+
+function parsePrepQuotaPrepSummary(
+	value: unknown,
+): PrepQuotaPrepSummary | undefined {
+	if (!isRecord(value)) return undefined;
+	const iterations = asFiniteNumber(value.iterations);
+	const data_load_processed = asFiniteNumber(value.data_load_processed);
+	const research_processed = asFiniteNumber(value.research_processed);
+	const gen_angles_processed = asFiniteNumber(value.gen_angles_processed);
+	const gen_angles_failed = asFiniteNumber(value.gen_angles_failed);
+	const prepared_posts = asFiniteNumber(value.prepared_posts);
+	const quota_detected = asBoolean(value.quota_detected);
+	const stop_reason = asString(value.stop_reason);
+	if (
+		iterations === undefined ||
+		data_load_processed === undefined ||
+		research_processed === undefined ||
+		gen_angles_processed === undefined ||
+		gen_angles_failed === undefined ||
+		prepared_posts === undefined ||
+		quota_detected === undefined ||
+		stop_reason === undefined
+	) {
+		return undefined;
+	}
+	return {
+		iterations,
+		data_load_processed,
+		research_processed,
+		gen_angles_processed,
+		gen_angles_failed,
+		prepared_posts,
+		quota_detected,
+		stop_reason,
+	};
+}
+
+function parsePrepQuotaStegoSummary(
+	value: unknown,
+): PrepQuotaStegoSummary | undefined {
+	if (!isRecord(value)) return undefined;
+	const run_all = asBoolean(value.run_all);
+	const tag = asString(value.tag);
+	const list_offset = asFiniteNumber(value.list_offset);
+	const processed_count = asFiniteNumber(value.processed_count);
+	const succeeded_count = asFiniteNumber(value.succeeded_count);
+	const failed_count = asFiniteNumber(value.failed_count);
+	const stopped_reason = asString(value.stopped_reason);
+	const results = Array.isArray(value.results) ? value.results : [];
+	const elapsed_ms = asFiniteNumber(value.elapsed_ms);
+	if (
+		run_all === undefined ||
+		tag === undefined ||
+		list_offset === undefined ||
+		processed_count === undefined ||
+		succeeded_count === undefined ||
+		failed_count === undefined ||
+		stopped_reason === undefined
+	) {
+		return undefined;
+	}
+	return {
+		run_all,
+		tag,
+		list_offset,
+		processed_count,
+		succeeded_count,
+		failed_count,
+		stopped_reason,
+		results,
+		...(elapsed_ms !== undefined ? { elapsed_ms } : {}),
+	};
+}
+
+function parsePrepQuotaPhaseTransition(
+	value: unknown,
+): PrepQuotaPhaseTransition | null | undefined {
+	if (value === null) return null;
+	if (!isRecord(value)) return undefined;
+	const from_phase = asString(value.from_phase);
+	const to_phase = asString(value.to_phase);
+	const reason = asString(value.reason);
+	if (
+		from_phase === undefined ||
+		to_phase === undefined ||
+		reason === undefined
+	) {
+		return undefined;
+	}
+	return { from_phase, to_phase, reason };
+}
+
+function buildPrepQuotaTimelineRow(
+	event: string,
+	payload: Record<string, unknown>,
+	at: string,
+): PrepQuotaTimelineRow {
+	const phase = asString(payload.phase);
+	switch (event) {
+		case "workflow_start": {
+			const tag = asString(payload.tag);
+			const batchCount = asFiniteNumber(payload.batch_count);
+			const batchSize = asFiniteNumber(payload.batch_size);
+			const payloadProvided = asBoolean(payload.payload_provided);
+			const detailParts = [
+				tag ? `tag ${tag}` : null,
+				batchCount !== undefined ? `batch_count ${batchCount}` : null,
+				batchSize !== undefined ? `batch_size ${batchSize}` : null,
+				payloadProvided !== undefined
+					? payloadProvided
+						? "custom payload"
+						: "default payload"
+					: null,
+			].filter(Boolean);
+			return {
+				at,
+				event,
+				phase,
+				label: "Workflow start",
+				...(detailParts.length > 0 ? { detail: detailParts.join(" · ") } : {}),
+			};
+		}
+		case "phase_start":
+			return {
+				at,
+				event,
+				phase,
+				label: `Phase start: ${phase ?? "unknown"}`,
+			};
+		case "prep_batch_start":
+			return {
+				at,
+				event,
+				phase,
+				label: `Prep batch ${asFiniteNumber(payload.iteration) ?? "?"}`,
+				detail: `count ${asFiniteNumber(payload.batch_count) ?? "?"}, size ${
+					asFiniteNumber(payload.batch_size) ?? "?"
+				}`,
+			};
+		case "prep_stage_done": {
+			const stage = asString(payload.stage) ?? "stage";
+			const processed = asFiniteNumber(payload.processed_count);
+			const failed = asFiniteNumber(payload.failed_count);
+			const elapsed = asFiniteNumber(payload.elapsed_ms);
+			const detailParts = [
+				processed !== undefined ? `${processed} processed` : null,
+				failed !== undefined ? `${failed} failed` : null,
+				elapsed !== undefined ? formatElapsedMs(elapsed) : null,
+			].filter(Boolean);
+			return {
+				at,
+				event,
+				phase,
+				label: `${stage} done`,
+				...(detailParts.length > 0 ? { detail: detailParts.join(" · ") } : {}),
+			};
+		}
+		case "prep_batch_summary":
+			return {
+				at,
+				event,
+				phase,
+				label: `Prep batch ${asFiniteNumber(payload.iteration) ?? "?"} summary`,
+				detail: `prepared ${
+					asFiniteNumber(payload.prepared_posts_in_batch) ?? 0
+				} · produced ${
+					asBoolean(payload.produced_prepared_posts) ? "yes" : "no"
+				}`,
+			};
+		case "quota_detected":
+			return {
+				at,
+				event,
+				phase,
+				label: "Google quota detected",
+				detail: asString(payload.message),
+			};
+		case "phase_transition":
+			return {
+				at,
+				event,
+				phase,
+				label: `${asString(payload.from_phase) ?? "prep"} → ${
+					asString(payload.to_phase) ?? "stego"
+				}`,
+				detail: asString(payload.reason)?.replace(/_/g, " "),
+			};
+		case "stego_batch_start":
+			return {
+				at,
+				event,
+				phase,
+				label: "Stego batch start",
+				detail: `tag ${asString(payload.tag) ?? "?"} · list_offset ${
+					asFiniteNumber(payload.list_offset) ?? 0
+				}`,
+			};
+		case "stego_post_done": {
+			const postId = asString(payload.post_id) ?? "unknown post";
+			const succeeded = asBoolean(payload.succeeded);
+			const retryCount = asFiniteNumber(payload.retry_count);
+			return {
+				at,
+				event,
+				phase,
+				label: `${postId} ${succeeded ? "ok" : "failed"}`,
+				detail:
+					retryCount !== undefined ? `${retryCount} retr${retryCount === 1 ? "y" : "ies"}` : undefined,
+			};
+		}
+		case "stego_batch_summary":
+			return {
+				at,
+				event,
+				phase,
+				label: "Stego batch summary",
+				detail: `processed ${
+					asFiniteNumber(payload.processed_count) ?? 0
+				} · ok ${asFiniteNumber(payload.succeeded_count) ?? 0} · failed ${
+					asFiniteNumber(payload.failed_count) ?? 0
+				}`,
+			};
+		case "phase_done":
+			return {
+				at,
+				event,
+				phase,
+				label: `Phase done: ${phase ?? "unknown"}`,
+				detail: asString(payload.stop_reason)?.replace(/_/g, " "),
+			};
+		default:
+			return {
+				at,
+				event,
+				phase,
+				label: event.replace(/_/g, " "),
+			};
+	}
+}
+
+function buildPrepQuotaModelFromResult(
+	result: unknown,
+	outcome: PrepQuotaStructuredModel["outcome"],
+): PrepQuotaStructuredModel | null {
+	if (!isRecord(result)) return null;
+	const succeeded = asBoolean(result.succeeded);
+	const tag = asString(result.tag);
+	const prep = parsePrepQuotaPrepSummary(result.prep);
+	const stego = parsePrepQuotaStegoSummary(result.stego);
+	const phaseTransition = parsePrepQuotaPhaseTransition(result.phase_transition);
+	if (succeeded === undefined || tag === undefined || !prep || !stego) {
+		return null;
+	}
+	return {
+		command: PREP_QUOTA_WORKFLOW_COMMAND,
+		outcome,
+		tag,
+		payloadProvided: null,
+		prep,
+		stego,
+		phaseTransition,
+		timeline: [],
+		rawResult: result,
+	};
+}
+
+export function isPrepQuotaEndpoint(active: {
+	endpoint: string;
+	request: { path: string } | null;
+}): boolean {
+	if (active.request?.path === `/workflows/${PREP_QUOTA_WORKFLOW_COMMAND}`)
+		return true;
+	return active.endpoint.includes(`/workflows/${PREP_QUOTA_WORKFLOW_COMMAND}`);
+}
+
+export function extractPrepQuotaFromAdminResponse(
+	data: unknown,
+): PrepQuotaStructuredModel | null {
+	if (!isRecord(data)) return null;
+	const payload = data.payload;
+	if (!isRecord(payload) || payload.ok !== true) return null;
+	return buildPrepQuotaModelFromResult(payload.data, "success");
+}
+
+export function buildPrepQuotaStructuredModelFromSync(
+	command: string,
+	result: unknown,
+): PrepQuotaStructuredModel | null {
+	if (command !== PREP_QUOTA_WORKFLOW_COMMAND) return null;
+	return buildPrepQuotaModelFromResult(result, "success");
+}
+
+export function buildPrepQuotaStructuredModel(
+	events: StreamEventView[],
+): PrepQuotaStructuredModel | null {
+	let command: string | undefined;
+	let tag: string | undefined;
+	let payloadProvided: boolean | null = null;
+	let batchCount: number | undefined;
+	let batchSize: number | undefined;
+	let prep: PrepQuotaPrepSummary | undefined;
+	let stego: PrepQuotaStegoSummary | undefined;
+	let phaseTransition: PrepQuotaPhaseTransition | null | undefined;
+	let errorMessage: string | undefined;
+	let errorDetails: unknown;
+	let rawResult: unknown;
+	let sawError = false;
+	const timeline: PrepQuotaTimelineRow[] = [];
+
+	for (const event of events) {
+		if (event.event === "status" && isRecord(event.data)) {
+			const statusCommand = asString(event.data.command);
+			if (statusCommand) command = statusCommand;
+			continue;
+		}
+		if (event.event === "progress" && isRecord(event.data)) {
+			const inner = asString(event.data.event);
+			if (!inner) continue;
+			timeline.push(
+				buildPrepQuotaTimelineRow(inner, event.data, event.receivedAt),
+			);
+			if (inner === "workflow_start") {
+				const nextTag = asString(event.data.tag);
+				if (nextTag) tag = nextTag;
+				const pp = asBoolean(event.data.payload_provided);
+				if (pp !== undefined) payloadProvided = pp;
+				const bc = asFiniteNumber(event.data.batch_count);
+				if (bc !== undefined) batchCount = bc;
+				const bs = asFiniteNumber(event.data.batch_size);
+				if (bs !== undefined) batchSize = bs;
+			}
+			if (inner === "phase_done") {
+				if (event.data.phase === "prep") {
+					const parsed = parsePrepQuotaPrepSummary(event.data);
+					if (parsed) prep = parsed;
+				}
+				if (event.data.phase === "stego") {
+					const partialStego = parsePrepQuotaStegoSummary({
+						...event.data,
+						run_all: true,
+						tag: tag ?? "",
+						list_offset: 0,
+						results: stego?.results ?? [],
+					});
+					if (partialStego) stego = partialStego;
+				}
+			}
+			if (inner === "phase_transition") {
+				const parsed = parsePrepQuotaPhaseTransition(event.data);
+				if (parsed !== undefined) phaseTransition = parsed;
+			}
+			continue;
+		}
+		if (event.event === "result") {
+			const resultPayload = isRecord(event.data) ? event.data : null;
+			const resultCommand = resultPayload ? asString(resultPayload.command) : undefined;
+			const result =
+				resultPayload && "result" in resultPayload
+					? resultPayload.result
+					: event.data;
+			if (resultCommand) command = resultCommand;
+			rawResult = result;
+			const built = buildPrepQuotaModelFromResult(result, "success");
+			if (built) {
+				tag = built.tag;
+				prep = built.prep;
+				stego = built.stego;
+				phaseTransition = built.phaseTransition;
+			}
+			continue;
+		}
+		if (event.event === "error") {
+			sawError = true;
+			if (isRecord(event.data)) {
+				errorMessage =
+					asString(event.data.message) ??
+					asString(event.data.error) ??
+					toPrettyJson(event.data);
+				errorDetails = event.data;
+				const errCommand = asString(event.data.command);
+				if (errCommand) command = errCommand;
+			} else {
+				errorMessage = String(event.data);
+				errorDetails = event.data;
+			}
+		}
+	}
+
+	if (command !== PREP_QUOTA_WORKFLOW_COMMAND) return null;
+
+	return {
+		command,
+		outcome: sawError ? "error" : rawResult ? "success" : "pending",
+		tag,
+		payloadProvided,
+		...(batchCount !== undefined ? { batchCount } : {}),
+		...(batchSize !== undefined ? { batchSize } : {}),
+		...(prep ? { prep } : {}),
+		...(stego ? { stego } : {}),
+		...(phaseTransition !== undefined ? { phaseTransition } : {}),
+		timeline,
+		...(errorMessage ? { errorMessage } : {}),
+		...(errorDetails !== undefined ? { errorDetails } : {}),
+		...(rawResult !== undefined ? { rawResult } : {}),
+	};
 }
