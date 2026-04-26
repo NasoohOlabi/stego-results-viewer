@@ -105,3 +105,28 @@ export async function postMetricsPost(
 	}
 	return { ok: true, data: env.data as Record<string, unknown> };
 }
+
+export async function deleteMetricsSample(
+	base: string,
+	query: { filename: string; output_dir?: string },
+): Promise<
+	| { ok: true; data: Record<string, unknown> }
+	| { ok: false; error: string; httpStatus?: number }
+> {
+	const qs = new URLSearchParams({ filename: query.filename });
+	if (query.output_dir?.trim()) {
+		qs.set("output_dir", query.output_dir.trim());
+	}
+	const res = await fetch(`${base}/tools/metrics/sample?${qs.toString()}`, {
+		method: "DELETE",
+	});
+	const env = await readEnvelope(res);
+	if (!env.ok || env.data === undefined || typeof env.data !== "object") {
+		return {
+			ok: false,
+			error: env.error ?? `HTTP ${env.httpStatus}`,
+			httpStatus: env.httpStatus,
+		};
+	}
+	return { ok: true, data: env.data as Record<string, unknown> };
+}

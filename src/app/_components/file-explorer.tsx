@@ -14,6 +14,7 @@ import {
 	Search,
 	Settings,
 	Shield,
+	Trophy,
 	Trash2
 } from "lucide-react";
 import Link from "next/link";
@@ -235,6 +236,17 @@ export function FileExplorer({
 					>
 						<ScrollText className="h-4 w-4" />
 						Workflow LLM prompts
+					</Link>
+					<Link
+						href={`/showcase?folder=${selectedPathId}`}
+						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+							pathname === "/showcase"
+								? "bg-white/10 text-white"
+								: "text-white/50 hover:bg-white/5 hover:text-white"
+						}`}
+					>
+						<Trophy className="h-4 w-4" />
+						Codex Showcase
 					</Link>
 					<Link
 						href={`/workflows-runs?folder=${selectedPathId}`}

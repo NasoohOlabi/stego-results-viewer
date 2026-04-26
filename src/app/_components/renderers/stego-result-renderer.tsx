@@ -199,10 +199,16 @@ export function StegoResultRenderer({
 				content: JSON.stringify(nextResults, null, 2),
 			});
 			setResults(nextResults);
-			await utils.files.getFileContent.invalidate({
-				filename,
-				pathId: pathId ?? "side-wing",
-			});
+			const resolvedPathId = pathId ?? "side-wing";
+			await Promise.all([
+				utils.files.getFileContent.invalidate({
+					filename,
+					pathId: resolvedPathId,
+				}),
+				// Keep the explorer in sync in case the file contents change how the
+				// user navigates the current result set.
+				utils.files.listFiles.invalidate({ pathId: resolvedPathId }),
+			]);
 		} catch (error) {
 			setDeleteError(
 				error instanceof Error ? error.message : "Failed to delete result.",
