@@ -1,5 +1,41 @@
-import type { ApiResponseView, HttpMethod, StreamEventView } from "./types";
+import type {
+	ApiResponseView,
+	HttpMethod,
+	RecentUpdatesResponse,
+	StreamEventView,
+} from "./types";
 import { parseJsonOrText, parseSseEvent } from "./utils";
+
+export async function fetchRecentUpdates(
+	baseUrl: string,
+	options: { days: number; limit: number; signal?: AbortSignal },
+): Promise<RecentUpdatesResponse> {
+	const base = baseUrl.replace(/\/+$/, "");
+	const qs = new URLSearchParams({
+		days: String(options.days),
+		limit: String(options.limit),
+	});
+	const url = `${base}/state/recent-updates?${qs.toString()}`;
+
+	const res = await fetch(url, {
+		method: "GET",
+		headers: { "Content-Type": "application/json" },
+		signal: options.signal,
+	});
+	const payload = (await res.json().catch(() => null)) as unknown;
+	if (!res.ok) {
+		return {
+			ok: false,
+			error:
+				payload ??
+				`HTTP ${res.status}${res.statusText ? ` ${res.statusText}` : ""}`,
+		};
+	}
+	if (!payload || typeof payload !== "object") {
+		return { ok: false, error: "Invalid response payload." };
+	}
+	return payload as RecentUpdatesResponse;
+}
 
 export async function executeAdminApiRequest(options: {
 	method: HttpMethod;

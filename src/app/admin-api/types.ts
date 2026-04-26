@@ -55,6 +55,42 @@ export interface StreamEventDisplayItem {
 	heartbeats?: StreamEventView[];
 }
 
+export interface RecentUpdateTopPath {
+	path: string;
+	touches: number;
+}
+
+export interface RecentUpdateCommit {
+	commit: string;
+	short_commit: string;
+	author: string;
+	committed_at: string;
+	subject: string;
+	files_changed_total: number;
+	files_changed_visible: number;
+	generated_files_changed: number;
+	insertions: number;
+	deletions: number;
+	paths: string[];
+	has_more_paths: boolean;
+}
+
+export interface RecentUpdatesData {
+	generated_at_utc: string;
+	days: number;
+	limit: number;
+	count: number;
+	authors: string[];
+	top_paths: RecentUpdateTopPath[];
+	commits: RecentUpdateCommit[];
+}
+
+export interface RecentUpdatesResponse {
+	ok: boolean;
+	data?: RecentUpdatesData;
+	error?: unknown;
+}
+
 /** Parsed row for stego batch `stage_progress` (latest per post_id wins). */
 export interface WorkflowRunBatchRow {
 	post_id: string;
