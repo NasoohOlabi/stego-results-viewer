@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { ShowcaseContent } from "./showcase-content";
 
 export const metadata: Metadata = {
-	title: "Codex Showcase",
+	title: "Research Showcase",
 };
 
 export default function ShowcasePage() {

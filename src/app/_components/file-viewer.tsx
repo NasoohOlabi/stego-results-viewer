@@ -61,7 +61,7 @@ export function FileViewer() {
 	}
 
 	return (
-		<div className="flex h-screen w-full">
+		<div className="flex h-screen w-full overflow-hidden">
 			<div className="shrink-0">
 				<FileExplorer
 					files={files}
@@ -71,8 +71,8 @@ export function FileViewer() {
 					onPathSelect={handlePathSelect}
 				/>
 			</div>
-			<div className="min-w-0 flex-1">
-				<div className="border-white/10 border-b bg-black/20 px-6 py-4 backdrop-blur-sm">
+			<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+				<div className="shrink-0 border-white/10 border-b bg-black/20 px-6 py-4 backdrop-blur-sm">
 					<div className="mx-auto max-w-6xl">
 						<h1 className="font-semibold text-2xl text-white">
 							Artifact Explorer
@@ -84,15 +84,17 @@ export function FileViewer() {
 					</div>
 				</div>
 				{contentLoading && selectedFile ? (
-					<div className="flex h-full items-center justify-center">
+					<div className="flex min-h-0 flex-1 items-center justify-center">
 						<p className="text-white/50">Loading file content...</p>
 					</div>
 				) : (
-					<CodeViewer
-						content={fileContent ?? null}
-						filename={selectedFile}
-						pathId={apiPathId}
-					/>
+					<div className="min-h-0 flex-1">
+						<CodeViewer
+							content={fileContent ?? null}
+							filename={selectedFile}
+							pathId={apiPathId}
+						/>
+					</div>
 				)}
 			</div>
 		</div>

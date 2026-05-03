@@ -1,11 +1,14 @@
-import { readdir, readFile, writeFile } from "fs/promises";
-import { join } from "path";
+import { readdir, readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { z } from "zod";
-
-import { getResolvedPath } from "~/server/paths";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { getResolvedPath, getResultSources } from "~/server/paths";
 
 export const filesRouter = createTRPCRouter({
+	listSources: publicProcedure.query(async () => {
+		return getResultSources();
+	}),
+
 	listFiles: publicProcedure
 		.input(z.object({ pathId: z.string().default("side-wing") }))
 		.query(async ({ input }) => {
@@ -25,10 +28,12 @@ export const filesRouter = createTRPCRouter({
 		}),
 
 	getFileContent: publicProcedure
-		.input(z.object({
-			filename: z.string(),
-			pathId: z.string().default("side-wing"),
-		}))
+		.input(
+			z.object({
+				filename: z.string(),
+				pathId: z.string().default("side-wing"),
+			}),
+		)
 		.query(async ({ input }) => {
 			try {
 				const path = getResolvedPath(input.pathId);
@@ -37,16 +42,20 @@ export const filesRouter = createTRPCRouter({
 				return content;
 			} catch (error) {
 				console.error("Error reading file:", error);
-				throw new Error(`Failed to read file: ${input.filename} in ${input.pathId}`);
+				throw new Error(
+					`Failed to read file: ${input.filename} in ${input.pathId}`,
+				);
 			}
 		}),
 
 	updateFileContent: publicProcedure
-		.input(z.object({
-			filename: z.string(),
-			content: z.string(),
-			pathId: z.string().default("side-wing"),
-		}))
+		.input(
+			z.object({
+				filename: z.string(),
+				content: z.string(),
+				pathId: z.string().default("side-wing"),
+			}),
+		)
 		.mutation(async ({ input }) => {
 			try {
 				const path = getResolvedPath(input.pathId);
@@ -55,7 +64,9 @@ export const filesRouter = createTRPCRouter({
 				return { ok: true as const };
 			} catch (error) {
 				console.error("Error writing file:", error);
-				throw new Error(`Failed to write file: ${input.filename} in ${input.pathId}`);
+				throw new Error(
+					`Failed to write file: ${input.filename} in ${input.pathId}`,
+				);
 			}
 		}),
 });

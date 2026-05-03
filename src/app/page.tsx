@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default async function Home() {
 	return (
 		<HydrateClient>
-			<main className="h-screen w-full text-white">
+			<main className="h-screen w-full overflow-hidden text-white">
 				<Suspense
 					fallback={
 						<div className="flex h-screen items-center justify-center">

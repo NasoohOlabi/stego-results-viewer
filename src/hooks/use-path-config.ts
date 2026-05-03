@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { api } from "~/trpc/react";
 
 const STORAGE_KEY = "stego-path-config";
 
@@ -10,6 +11,8 @@ export interface PathEntry {
 	path?: string;
 	enabled: boolean;
 	isBuiltIn: boolean;
+	isGenerated?: boolean;
+	fileCount?: number;
 }
 
 const DEFAULT_ENTRIES: PathEntry[] = [
@@ -25,7 +28,9 @@ function loadStored(): PathEntry[] {
 		const parsed = JSON.parse(raw) as PathEntry[];
 		// Merge with defaults: override built-in enabled state, append custom
 		const builtInIds = new Set(DEFAULT_ENTRIES.map((e) => e.id));
-		const overrides = new Map(parsed.filter((e) => builtInIds.has(e.id)).map((e) => [e.id, e]));
+		const overrides = new Map(
+			parsed.filter((e) => builtInIds.has(e.id)).map((e) => [e.id, e]),
+		);
 		const custom = parsed.filter((e) => !e.isBuiltIn);
 		return [
 			...DEFAULT_ENTRIES.map((d) => {
@@ -47,19 +52,53 @@ function saveStored(entries: PathEntry[]) {
 /** Returns the pathId to send to the API (built-in id or absolute path for custom) */
 export function getPathIdForApi(entry: PathEntry): string {
 	if (entry.isBuiltIn) return entry.id;
+	if (entry.isGenerated) return entry.id;
 	return entry.path ?? entry.id;
 }
 
 export function usePathConfig() {
 	const [entries, setEntries] = useState<PathEntry[]>(DEFAULT_ENTRIES);
+	const { data: discoveredSources = [] } = api.files.listSources.useQuery(
+		undefined,
+		{
+			staleTime: 30_000,
+		},
+	);
 
 	useEffect(() => {
 		setEntries(loadStored());
 	}, []);
 
+	useEffect(() => {
+		if (discoveredSources.length === 0) return;
+		setEntries((current) => {
+			const currentById = new Map(current.map((entry) => [entry.id, entry]));
+			const discoveredEntries = discoveredSources.map((source) => {
+				const currentEntry = currentById.get(source.id);
+				return {
+					id: source.id,
+					label: source.label,
+					path: source.path,
+					enabled: currentEntry?.enabled ?? true,
+					isBuiltIn: source.isBuiltIn,
+					isGenerated: source.kind === "generated",
+					fileCount: source.fileCount,
+				};
+			});
+			const discoveredIds = new Set(discoveredEntries.map((entry) => entry.id));
+			const customEntries = current.filter(
+				(entry) =>
+					!entry.isBuiltIn &&
+					!entry.isGenerated &&
+					!discoveredIds.has(entry.id),
+			);
+			return [...discoveredEntries, ...customEntries];
+		});
+	}, [discoveredSources]);
+
 	const save = useCallback((next: PathEntry[]) => {
 		setEntries(next);
-		saveStored(next);
+		saveStored(next.filter((entry) => !entry.isGenerated));
 	}, []);
 
 	const enabledPaths = entries.filter((e) => e.enabled);
@@ -90,10 +129,11 @@ export function usePathConfig() {
 	);
 
 	const updatePath = useCallback(
-		(id: string, updates: Partial<Pick<PathEntry, "label" | "path" | "enabled">>) => {
-			save(
-				entries.map((e) => (e.id === id ? { ...e, ...updates } : e)),
-			);
+		(
+			id: string,
+			updates: Partial<Pick<PathEntry, "label" | "path" | "enabled">>,
+		) => {
+			save(entries.map((e) => (e.id === id ? { ...e, ...updates } : e)));
 		},
 		[entries, save],
 	);
