@@ -366,6 +366,25 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 
 	return (
 		<div className="space-y-4 rounded-xl border border-white/10 bg-white/5 p-4">
+			<div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+				<h2 className="font-semibold text-base text-white">Workflow console</h2>
+				<p className="mt-1 text-sm text-white/65">
+					Pick an endpoint, run it, then inspect the summary or raw response
+					below. Keep advanced controls hidden unless you need custom request
+					bodies or debug details.
+				</p>
+				<div className="mt-3 flex flex-wrap gap-2 text-xs text-white/60">
+					<span className="rounded-full bg-white/10 px-3 py-1">
+						1. Choose API
+					</span>
+					<span className="rounded-full bg-white/10 px-3 py-1">
+						2. Run request
+					</span>
+					<span className="rounded-full bg-white/10 px-3 py-1">
+						3. Read summary or events
+					</span>
+				</div>
+			</div>
 			<div className="flex flex-wrap items-center gap-2">
 				{tabs.map((tab, index) => (
 					<div
@@ -428,9 +447,13 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 								}
 								type="checkbox"
 							/>
-							Show advanced controls for this API section (
-							{getApiToolLabel(activeTab.apiToolId)})
+							Show advanced request controls for {getApiToolLabel(activeTab.apiToolId)}
 						</label>
+						<p className="mt-2 text-[11px] leading-5 text-white/45">
+							Most workflow endpoints stream with SSE by default. The response
+							panel will show a summary when it can, with raw events still
+							available.
+						</p>
 					</div>
 					{showAdvancedApiControls ? (
 						<AdminApiToolPanels

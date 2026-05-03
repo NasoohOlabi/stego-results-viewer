@@ -334,7 +334,13 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 	return (
 		<section className="rounded-xl border border-white/10 bg-black/30 p-4">
 			<div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-				<h2 className="font-semibold text-lg">Active Tab Response</h2>
+				<div>
+					<h2 className="font-semibold text-lg">Active tab response</h2>
+					<p className="mt-1 text-xs text-white/45">
+						Known workflow responses get a structured summary. Raw JSON and raw
+						SSE events stay available for debugging.
+					</p>
+				</div>
 				<div className="flex flex-wrap items-center gap-2">
 					<button
 						className="rounded-md bg-white/10 px-3 py-1 text-xs hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
@@ -431,6 +437,15 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 				</p>
 			) : null}
 			<div className="space-y-3 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3">
+				{activeTabResponse.status === "idle" ? (
+					<div className="rounded-lg border border-dashed border-white/10 bg-white/5 p-4">
+						<h3 className="font-medium text-sm text-white">Nothing has run yet</h3>
+						<p className="mt-1 text-sm text-white/55">
+							Run an endpoint above. For long workflows, expect `status`,
+							`progress`, `log`, `result`, and `done` events.
+						</p>
+					</div>
+				) : null}
 				{ssePayload ? (
 					prepQuotaSseModel ? (
 						<>

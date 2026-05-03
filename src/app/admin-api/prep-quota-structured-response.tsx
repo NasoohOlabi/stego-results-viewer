@@ -57,30 +57,71 @@ export function PrepQuotaStructuredResponse(
 	props: PrepQuotaStructuredResponseProps,
 ) {
 	const { model, loading } = props;
-	const statusBadge =
+	const requestStatusBadge =
 		model.outcome === "error"
 			? "bg-rose-500/25 text-rose-200"
 			: model.outcome === "success"
 				? "bg-emerald-500/25 text-emerald-200"
 				: "bg-amber-500/25 text-amber-200";
-	const statusLabel =
+	const requestStatusLabel =
 		model.outcome === "error"
 			? "Error"
 			: model.outcome === "success"
-				? "Done"
+				? "Workflow finished"
 				: "Running";
 	const prep = model.prep;
 	const stego = model.stego;
 	const rows = stego ? stegoRows(stego) : [];
+	const prepCompleted = Boolean(prep && prep.prepared_posts > 0);
+	const researchCompleted = Boolean(prep && prep.research_processed > 0);
+	const finalOutputsCount = stego?.succeeded_count ?? 0;
+	const finalOutputMissing =
+		Boolean(stego) && stego.processed_count > 0 && finalOutputsCount === 0;
+	const statusSummaryBadges: Array<{
+		label: string;
+		className: string;
+	}> = [];
+
+	if (prepCompleted) {
+		statusSummaryBadges.push({
+			label: "Prep complete",
+			className: "bg-cyan-500/20 text-cyan-100",
+		});
+	}
+	if (researchCompleted) {
+		statusSummaryBadges.push({
+			label: "Research complete",
+			className: "bg-sky-500/20 text-sky-100",
+		});
+	}
+	if (finalOutputMissing) {
+		statusSummaryBadges.push({
+			label: "No final sample",
+			className: "bg-amber-500/25 text-amber-100",
+		});
+	} else if (finalOutputsCount > 0) {
+		statusSummaryBadges.push({
+			label: `Final outputs: ${finalOutputsCount}`,
+			className: "bg-emerald-500/25 text-emerald-100",
+		});
+	}
+
+	const operatorSummary = finalOutputMissing
+		? "This run prepared post data, but did not produce a new final stego sample."
+		: finalOutputsCount > 0
+			? `This run produced ${finalOutputsCount} final stego sample${finalOutputsCount === 1 ? "" : "s"}.`
+			: prepCompleted
+				? "This run completed prep work. Final output status is still pending."
+				: null;
 
 	return (
 		<div className="space-y-3">
 			<div className="rounded-lg border border-white/10 bg-black/25 p-3">
 				<div className="mb-2 flex flex-wrap items-center gap-2">
 					<span
-						className={`rounded px-2 py-0.5 font-medium text-xs ${statusBadge}`}
+						className={`rounded px-2 py-0.5 font-medium text-xs ${requestStatusBadge}`}
 					>
-						{statusLabel}
+						{requestStatusLabel}
 					</span>
 					<span className="rounded bg-violet-500/20 px-2 py-0.5 font-mono text-[11px] text-violet-200">
 						{model.command}
@@ -121,6 +162,33 @@ export function PrepQuotaStructuredResponse(
 					</p>
 				) : null}
 			</div>
+
+			{statusSummaryBadges.length > 0 || operatorSummary ? (
+				<section className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+					<h3 className="font-semibold text-sm text-white/85">Status summary</h3>
+					{statusSummaryBadges.length > 0 ? (
+						<div className="mt-2 flex flex-wrap gap-2 text-xs">
+							{statusSummaryBadges.map((badge) => (
+								<span
+									className={`rounded px-2 py-1 font-medium ${badge.className}`}
+									key={badge.label}
+								>
+									{badge.label}
+								</span>
+							))}
+						</div>
+					) : null}
+					{operatorSummary ? (
+						<p className="mt-2 text-sm text-white/75">{operatorSummary}</p>
+					) : null}
+					{finalOutputMissing ? (
+						<p className="mt-2 text-white/50 text-xs">
+							Prep artifacts can exist without any new final file in
+							<code className="mx-1 text-white/70">output-results/</code>.
+						</p>
+					) : null}
+				</section>
+			) : null}
 
 			<div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
 				<section className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-3">

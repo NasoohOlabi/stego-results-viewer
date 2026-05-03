@@ -53,3 +53,4 @@ stats.db
 stats.db-journal
 stats.db-wal
 stats.db-shm
+backend docs

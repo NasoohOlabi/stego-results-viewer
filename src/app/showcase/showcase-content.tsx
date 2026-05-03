@@ -350,9 +350,9 @@ export function ShowcaseContent() {
 									</div>
 								</div>
 								<div className="grid gap-4 xl:grid-cols-2">
-									{showcaseQuery.data.profiles.map((profile) => (
+									{showcaseQuery.data.profiles.map((profile, index) => (
 										<div
-											key={profile.profile}
+											key={`${profile.profile}-${index}`}
 											className="rounded-3xl border border-white/10 bg-white/[0.04] p-5"
 										>
 											<div className="flex flex-wrap items-center justify-between gap-3">
@@ -459,9 +459,9 @@ export function ShowcaseContent() {
 										>
 											All ({showcaseQuery.data.samples.length})
 										</button>
-										{showcaseQuery.data.profiles.map((profile) => (
+										{showcaseQuery.data.profiles.map((profile, index) => (
 											<button
-												key={profile.profile}
+												key={`${profile.profile}-${index}`}
 												type="button"
 												onClick={() => setProfileFilter(profile.profile)}
 												className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${

@@ -74,11 +74,36 @@ function DashboardContent() {
 			</div>
 			<div className="flex-1 overflow-y-auto p-8">
 				<div className="mx-auto max-w-7xl space-y-8">
-					<header>
-						<h1 className="font-bold text-3xl">Dashboard</h1>
-						<p className="text-white/50">
-							Overview of steganography results in {selectedLabel} folder.
-						</p>
+					<header className="space-y-4">
+						<div>
+							<h1 className="font-bold text-3xl">Dashboard</h1>
+							<p className="text-white/50">
+								Overview of steganography results in {selectedLabel}.
+							</p>
+						</div>
+						<div className="grid gap-3 md:grid-cols-3">
+							<div className="rounded-xl border border-white/10 bg-white/5 p-4">
+								<h2 className="font-medium text-sm text-white">What this shows</h2>
+								<p className="mt-1 text-xs leading-5 text-white/55">
+									High-level compression, angle, and payload trends across the
+									current result set.
+								</p>
+							</div>
+							<div className="rounded-xl border border-white/10 bg-white/5 p-4">
+								<h2 className="font-medium text-sm text-white">When to use it</h2>
+								<p className="mt-1 text-xs leading-5 text-white/55">
+									Use Dashboard first to spot drift or outliers before opening
+									individual artifacts.
+								</p>
+							</div>
+							<div className="rounded-xl border border-white/10 bg-white/5 p-4">
+								<h2 className="font-medium text-sm text-white">Next step</h2>
+								<p className="mt-1 text-xs leading-5 text-white/55">
+									If a metric looks odd, jump back to Explorer and inspect the
+									corresponding JSON directly.
+								</p>
+							</div>
+						</div>
 					</header>
 					<div className="space-y-4 border-white/10 border-t pt-8">
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

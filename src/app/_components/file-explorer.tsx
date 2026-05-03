@@ -15,7 +15,7 @@ import {
 	Settings,
 	Shield,
 	Trophy,
-	Trash2
+	Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -25,7 +25,7 @@ import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
-	AccordionTrigger
+	AccordionTrigger,
 } from "~/components/ui/accordion";
 import { usePathConfig } from "~/hooks/use-path-config";
 
@@ -70,12 +70,36 @@ function fileMatchesQuery(filename: string, queryLower: string): boolean {
 	);
 }
 
+const primaryRoutes = [
+	{ href: "/", label: "Explorer", icon: Home },
+	{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+	{ href: "/admin-api", label: "Admin API", icon: Shield },
+	{ href: "/workflows-runs", label: "Workflow Runs", icon: Logs },
+] as const;
+
+const secondaryRoutes = [
+	{ href: "/prompt-logs", label: "Prompt Logs", icon: MessageSquareText },
+	{ href: "/api-logs", label: "API Logs", icon: Logs },
+	{
+		href: "/workflow-llm-prompts",
+		label: "Workflow LLM prompts",
+		icon: ScrollText,
+	},
+	{ href: "/double-process-new-post", label: "Double-process", icon: GitCompare },
+	{
+		href: "/prep-until-google-quota-then-stego",
+		label: "Prep until quota",
+		icon: Search,
+	},
+	{ href: "/showcase", label: "Codex Showcase", icon: Trophy },
+] as const;
+
 export function FileExplorer({
 	files,
 	selectedFile,
 	onFileSelect,
 	selectedPathId,
-	onPathSelect
+	onPathSelect,
 }: FileExplorerProps) {
 	const { pathEntries, enabledPaths, togglePath, addPath, removePath } =
 		usePathConfig();
@@ -83,38 +107,45 @@ export function FileExplorer({
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [newLabel, setNewLabel] = useState("");
 	const [newPath, setNewPath] = useState("");
+	const [openItems, setOpenItems] = useState<string[]>([]);
+	const [fileSearchQuery, setFileSearchQuery] = useState("");
+	const [searchHighlight, setSearchHighlight] = useState(0);
 
 	const groupedFiles = useMemo(() => {
 		const groups: Record<string, ParsedFile[]> = {};
 		for (const file of files) {
 			const parsed = parseFilename(file);
-			const id = parsed.id;
-			(groups[id] ??= []).push(parsed);
+			(groups[parsed.id] ??= []).push(parsed);
 		}
 		return groups;
 	}, [files]);
 
 	const sortedIds = useMemo(
 		() => Object.keys(groupedFiles).sort(),
-		[groupedFiles]
+		[groupedFiles],
 	);
-
-	const [openItems, setOpenItems] = useState<string[]>([]);
-
-	const [fileSearchQuery, setFileSearchQuery] = useState("");
-	const [searchHighlight, setSearchHighlight] = useState(0);
 
 	const searchFiltered = useMemo(() => {
 		const q = fileSearchQuery.trim().toLowerCase();
 		if (!q) return null;
 		return files
-			.filter((f) => fileMatchesQuery(f, q))
+			.filter((file) => fileMatchesQuery(file, q))
 			.sort((a, b) => a.localeCompare(b));
 	}, [files, fileSearchQuery]);
 
 	useEffect(() => {
 		setSearchHighlight(0);
 	}, [fileSearchQuery, searchFiltered?.length]);
+
+	useEffect(() => {
+		if (!selectedFile) return;
+		const parsed = parseFilename(selectedFile);
+		setOpenItems((prev) =>
+			prev.includes(parsed.id) ? prev : [...prev, parsed.id],
+		);
+	}, [selectedFile]);
+
+	const pathname = usePathname();
 
 	const openFileFromSearch = (filename: string) => {
 		setFileSearchQuery("");
@@ -137,157 +168,101 @@ export function FileExplorer({
 		}
 		if (e.key === "ArrowDown") {
 			e.preventDefault();
-			setSearchHighlight((i) =>
-				Math.min(i + 1, searchFiltered.length - 1),
-			);
+			setSearchHighlight((i) => Math.min(i + 1, searchFiltered.length - 1));
 		} else if (e.key === "ArrowUp") {
 			e.preventDefault();
 			setSearchHighlight((i) => Math.max(i - 1, 0));
 		}
 	};
 
-	useEffect(() => {
-		if (selectedFile) {
-			const parsed = parseFilename(selectedFile);
-			setOpenItems((prev) => {
-				if (prev.includes(parsed.id)) return prev;
-				return [...prev, parsed.id];
-			});
-		}
-	}, [selectedFile]);
-
-	const pathname = usePathname();
-
 	const handleAddPath = () => {
-		if (newLabel.trim() && newPath.trim()) {
-			const id = addPath(newLabel.trim(), newPath.trim());
-			setNewLabel("");
-			setNewPath("");
-			onPathSelect(id);
-		}
+		if (!newLabel.trim() || !newPath.trim()) return;
+		const id = addPath(newLabel.trim(), newPath.trim());
+		setNewLabel("");
+		setNewPath("");
+		onPathSelect(id);
 	};
 
 	return (
-		<div className="flex h-screen w-80 flex-col overflow-hidden border-r border-white/10 bg-zinc-950/80 backdrop-blur-md">
+		<div className="flex h-screen w-80 flex-col overflow-hidden border-white/10 border-r bg-zinc-950/80 backdrop-blur-md">
 			<div className="shrink-0 p-4 pb-2">
-				<div className="mb-6 space-y-1">
-					<Link
-						href={`/?folder=${selectedPathId}`}
-						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-							pathname === "/"
-								? "bg-white/10 text-white"
-								: "text-white/50 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<Home className="h-4 w-4" />
-						Explorer
-					</Link>
-					<Link
-						href={`/dashboard?folder=${selectedPathId}`}
-						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-							pathname === "/dashboard"
-								? "bg-white/10 text-white"
-								: "text-white/50 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<LayoutDashboard className="h-4 w-4" />
-						Dashboard
-					</Link>
-					<Link
-						href={`/admin-api?folder=${selectedPathId}`}
-						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-							pathname === "/admin-api"
-								? "bg-white/10 text-white"
-								: "text-white/50 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<Shield className="h-4 w-4" />
-						Admin API
-					</Link>
-					<Link
-						href={`/prompt-logs?folder=${selectedPathId}`}
-						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-							pathname === "/prompt-logs"
-								? "bg-white/10 text-white"
-								: "text-white/50 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<MessageSquareText className="h-4 w-4" />
-						Prompt Logs
-					</Link>
-					<Link
-						href={`/api-logs?folder=${selectedPathId}`}
-						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-							pathname === "/api-logs"
-								? "bg-white/10 text-white"
-								: "text-white/50 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<Logs className="h-4 w-4" />
-						API Logs
-					</Link>
-					<Link
-						href={`/workflow-llm-prompts?folder=${selectedPathId}`}
-						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-							pathname === "/workflow-llm-prompts"
-								? "bg-white/10 text-white"
-								: "text-white/50 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<ScrollText className="h-4 w-4" />
-						Workflow LLM prompts
-					</Link>
-					<Link
-						href={`/showcase?folder=${selectedPathId}`}
-						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-							pathname === "/showcase"
-								? "bg-white/10 text-white"
-								: "text-white/50 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<Trophy className="h-4 w-4" />
-						Codex Showcase
-					</Link>
-					<Link
-						href={`/workflows-runs?folder=${selectedPathId}`}
-						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-							pathname === "/workflows-runs"
-								? "bg-white/10 text-white"
-								: "text-white/50 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<Logs className="h-4 w-4" />
-						Workflow Runs
-					</Link>
-					<Link
-						href={`/double-process-new-post?folder=${selectedPathId}`}
-						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-							pathname === "/double-process-new-post"
-								? "bg-white/10 text-white"
-								: "text-white/50 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<GitCompare className="h-4 w-4" />
-						Double-process new post
-					</Link>
-					<Link
-						href={`/prep-until-google-quota-then-stego?folder=${selectedPathId}`}
-						className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-							pathname === "/prep-until-google-quota-then-stego"
-								? "bg-white/10 text-white"
-								: "text-white/50 hover:bg-white/5 hover:text-white"
-						}`}
-					>
-						<Search className="h-4 w-4" />
-						Prep until quota then stego
-					</Link>
+				<div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+					<p className="text-[11px] font-medium uppercase tracking-[0.18em] text-emerald-300/80">
+						Stego Results Viewer
+					</p>
+					<h2 className="mt-2 font-semibold text-lg text-white">
+						Inspect artifacts, metrics, and workflows
+					</h2>
+					<p className="mt-2 text-xs leading-5 text-white/55">
+						Start with Explorer for JSON artifacts, Dashboard for summary
+						metrics, and Admin API for live backend workflow calls.
+					</p>
+				</div>
+
+				<div className="mb-3">
+					<p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">
+						Main
+					</p>
+					<div className="space-y-1">
+						{primaryRoutes.map(({ href, label, icon: Icon }) => {
+							const target =
+								href === "/"
+									? `/?folder=${selectedPathId}`
+									: `${href}?folder=${selectedPathId}`;
+							const isActive = pathname === href;
+							return (
+								<Link
+									key={href}
+									href={target}
+									className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+										isActive
+											? "bg-white/10 text-white"
+											: "text-white/55 hover:bg-white/5 hover:text-white"
+									}`}
+								>
+									<Icon className="h-4 w-4" />
+									{label}
+								</Link>
+							);
+						})}
+					</div>
+				</div>
+
+				<div className="mb-6">
+					<p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">
+						Extra
+					</p>
+					<div className="space-y-1">
+						{secondaryRoutes.map(({ href, label, icon: Icon }) => {
+							const isActive = pathname === href;
+							return (
+								<Link
+									key={href}
+									href={`${href}?folder=${selectedPathId}`}
+									className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+										isActive
+											? "bg-white/10 text-white"
+											: "text-white/45 hover:bg-white/5 hover:text-white"
+									}`}
+								>
+									<Icon className="h-4 w-4" />
+									{label}
+								</Link>
+							);
+						})}
+					</div>
 				</div>
 
 				<div className="mb-4 flex items-center justify-between">
-					<h2 className="font-semibold text-lg">Files</h2>
+					<div>
+						<h2 className="font-semibold text-lg">Files</h2>
+						<p className="text-xs text-white/40">
+							Grouped by post or artifact id
+						</p>
+					</div>
 					<button
 						type="button"
-						onClick={() => setSettingsOpen((o) => !o)}
+						onClick={() => setSettingsOpen((open) => !open)}
 						className={`rounded-md p-1.5 transition-colors ${
 							settingsOpen
 								? "bg-white/10 text-white"
@@ -299,8 +274,12 @@ export function FileExplorer({
 					</button>
 				</div>
 
-				{settingsOpen && (
+				{settingsOpen ? (
 					<div className="mb-4 space-y-3 rounded-lg border border-white/10 bg-white/5 p-3">
+						<p className="text-[11px] leading-5 text-white/55">
+							Built-in paths are shortcuts. Custom entries must be absolute
+							paths.
+						</p>
 						<div className="space-y-2">
 							{pathEntries.map((entry) => (
 								<div
@@ -331,7 +310,7 @@ export function FileExplorer({
 									>
 										{entry.label}
 									</span>
-									{!entry.isBuiltIn && (
+									{!entry.isBuiltIn ? (
 										<button
 											type="button"
 											onClick={() => removePath(entry.id)}
@@ -340,11 +319,11 @@ export function FileExplorer({
 										>
 											<Trash2 className="h-3.5 w-3.5" />
 										</button>
-									)}
+									) : null}
 								</div>
 							))}
 						</div>
-						<div className="space-y-2 border-t border-white/10 pt-2">
+						<div className="space-y-2 border-white/10 border-t pt-2">
 							<input
 								type="text"
 								placeholder="Label"
@@ -369,7 +348,7 @@ export function FileExplorer({
 							</button>
 						</div>
 					</div>
-				)}
+				) : null}
 
 				<div className="flex flex-wrap gap-1 rounded-lg bg-white/5 p-1">
 					{enabledPaths.map((entry) => {
@@ -399,16 +378,17 @@ export function FileExplorer({
 						<Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-white/35" />
 						<input
 							type="search"
-							placeholder="Search by name, id, or tag…"
+							placeholder="Search by name, id, or tag..."
 							value={fileSearchQuery}
 							onChange={(e) => setFileSearchQuery(e.target.value)}
 							onKeyDown={handleSearchKeyDown}
 							autoComplete="off"
-							className="w-full rounded-md border border-white/10 bg-white/5 py-2 pr-2 pl-8 text-xs text-white placeholder:text-white/35 focus:border-white/20 focus:outline-none"
+							className="w-full rounded-md border border-white/10 bg-white/5 py-2 pl-8 pr-2 text-xs text-white placeholder:text-white/35 focus:border-white/20 focus:outline-none"
 						/>
 					</div>
 				</div>
 			</div>
+
 			<div className="flex-1 overflow-y-auto px-2 pb-4">
 				{searchFiltered !== null ? (
 					<div className="space-y-1 pt-1">
@@ -420,10 +400,10 @@ export function FileExplorer({
 							searchFiltered.map((filename, idx) => {
 								const parsed = parseFilename(filename);
 								const isSelected = selectedFile === filename;
-								const isHl = idx === searchHighlight;
+								const isHighlighted = idx === searchHighlight;
 								const display =
 									parsed.tag != null
-										? `${parsed.id} · ${formatTag(parsed.tag)}`
+										? `${parsed.id} - ${formatTag(parsed.tag)}`
 										: parsed.id;
 								return (
 									<button
@@ -432,7 +412,7 @@ export function FileExplorer({
 										onClick={() => openFileFromSearch(filename)}
 										onMouseEnter={() => setSearchHighlight(idx)}
 										className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm transition-colors ${
-											isHl
+											isHighlighted
 												? "bg-white/15 text-white"
 												: isSelected
 													? "bg-white/20 text-white"
@@ -452,102 +432,103 @@ export function FileExplorer({
 						)}
 					</div>
 				) : (
-				<Accordion
-					type="multiple"
-					value={openItems}
-					onValueChange={setOpenItems}
-					className="w-full space-y-1"
-				>
-					{sortedIds.map((id) => {
-						const items = groupedFiles[id]!;
-						if (items.length === 1 && items[0]) {
-							const item = items[0];
-							const isSelected = selectedFile === item.filename;
-							return (
-								<div key={id} className="px-2">
-									<button
-										type="button"
-										onClick={() => onFileSelect(item.filename)}
-										className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm transition-colors ${
-											isSelected
-												? "bg-white/20 text-white"
-												: "text-white/70 hover:bg-white/10 hover:text-white"
-										}`}
-									>
-										<FileJson className="h-4 w-4 shrink-0 opacity-50" />
-										<span className="truncate" title={item.filename}>
-											{item.id}
-											{item.tag && (
-												<span className="ml-2 text-[10px] opacity-40">
-													{formatTag(item.tag)}
-												</span>
-											)}
-										</span>
-									</button>
-								</div>
-							);
-						}
-
-						return (
-							<AccordionItem
-								key={id}
-								value={id}
-								className="border-none px-2"
-							>
-								<AccordionTrigger className="group flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10 hover:text-white hover:no-underline data-[state=open]:bg-white/5 [&>svg:last-child]:hidden">
-									<Folder className="h-4 w-4 shrink-0 opacity-50" />
-									<span className="flex-1 truncate text-left">
-										{id}
-									</span>
-									<span className="ml-2 rounded bg-white/10 px-1.5 py-0.5 text-[10px]">
-										{items.length}
-									</span>
-									<ChevronRight className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-90" />
-								</AccordionTrigger>
-								<AccordionContent className="pb-1 pt-1 ml-4 border-l border-white/10">
-									<div className="space-y-1 pl-2">
-										{items
-											.sort((a, b) =>
-												(a.tag ?? a.filename).localeCompare(
-													b.tag ?? b.filename
-												)
-											)
-											.map((item) => {
-												const isSelected =
-													selectedFile === item.filename;
-												const displayName = item.tag
-													? formatTag(item.tag)
-													: item.filename.replace(/\.json$/i, "");
-
-												return (
-													<button
-														key={item.filename}
-														type="button"
-														onClick={() =>
-															onFileSelect(item.filename)
-														}
-														className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors ${
-															isSelected
-																? "bg-white/20 text-white"
-																: "text-white/50 hover:bg-white/10 hover:text-white"
-														}`}
-													>
-														<FileJson className="h-3 w-3 shrink-0 opacity-50" />
-														<span
-															className="truncate"
-															title={item.filename}
-														>
-															{displayName}
+					<>
+						<div className="px-3 pb-2 text-[11px] text-white/35">
+							{files.length} file{files.length === 1 ? "" : "s"}
+						</div>
+						<Accordion
+							type="multiple"
+							value={openItems}
+							onValueChange={setOpenItems}
+							className="w-full space-y-1"
+						>
+							{sortedIds.map((id) => {
+								const items = groupedFiles[id]!;
+								if (items.length === 1 && items[0]) {
+									const item = items[0];
+									const isSelected = selectedFile === item.filename;
+									return (
+										<div key={id} className="px-2">
+											<button
+												type="button"
+												onClick={() => onFileSelect(item.filename)}
+												className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm transition-colors ${
+													isSelected
+														? "bg-white/20 text-white"
+														: "text-white/70 hover:bg-white/10 hover:text-white"
+												}`}
+											>
+												<FileJson className="h-4 w-4 shrink-0 opacity-50" />
+												<span className="truncate" title={item.filename}>
+													{item.id}
+													{item.tag ? (
+														<span className="ml-2 text-[10px] opacity-40">
+															{formatTag(item.tag)}
 														</span>
-													</button>
-												);
-											})}
-									</div>
-								</AccordionContent>
-							</AccordionItem>
-						);
-					})}
-				</Accordion>
+													) : null}
+												</span>
+											</button>
+										</div>
+									);
+								}
+
+								return (
+									<AccordionItem
+										key={id}
+										value={id}
+										className="border-none px-2"
+									>
+										<AccordionTrigger className="group flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10 hover:text-white hover:no-underline data-[state=open]:bg-white/5 [&>svg:last-child]:hidden">
+											<Folder className="h-4 w-4 shrink-0 opacity-50" />
+											<span className="flex-1 truncate text-left">{id}</span>
+											<span className="ml-2 rounded bg-white/10 px-1.5 py-0.5 text-[10px]">
+												{items.length}
+											</span>
+											<ChevronRight className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+										</AccordionTrigger>
+										<AccordionContent className="ml-4 border-white/10 border-l pb-1 pt-1">
+											<div className="space-y-1 pl-2">
+												{items
+													.sort((a, b) =>
+														(a.tag ?? a.filename).localeCompare(
+															b.tag ?? b.filename,
+														),
+													)
+													.map((item) => {
+														const isSelected =
+															selectedFile === item.filename;
+														const displayName = item.tag
+															? formatTag(item.tag)
+															: item.filename.replace(/\.json$/i, "");
+
+														return (
+															<button
+																key={item.filename}
+																type="button"
+																onClick={() => onFileSelect(item.filename)}
+																className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors ${
+																	isSelected
+																		? "bg-white/20 text-white"
+																		: "text-white/50 hover:bg-white/10 hover:text-white"
+																}`}
+															>
+																<FileJson className="h-3 w-3 shrink-0 opacity-50" />
+																<span
+																	className="truncate"
+																	title={item.filename}
+																>
+																	{displayName}
+																</span>
+															</button>
+														);
+													})}
+											</div>
+										</AccordionContent>
+									</AccordionItem>
+								);
+							})}
+						</Accordion>
+					</>
 				)}
 			</div>
 		</div>

@@ -71,7 +71,18 @@ export function FileViewer() {
 					onPathSelect={handlePathSelect}
 				/>
 			</div>
-			<div className="flex-1 min-w-0">
+			<div className="min-w-0 flex-1">
+				<div className="border-white/10 border-b bg-black/20 px-6 py-4 backdrop-blur-sm">
+					<div className="mx-auto max-w-6xl">
+						<h1 className="font-semibold text-2xl text-white">
+							Artifact Explorer
+						</h1>
+						<p className="mt-1 max-w-3xl text-sm text-white/65">
+							Pick a result file on the left. Parsed view is better for quick
+							inspection. Raw view is useful when you need exact JSON.
+						</p>
+					</div>
+				</div>
 				{contentLoading && selectedFile ? (
 					<div className="flex h-full items-center justify-center">
 						<p className="text-white/50">Loading file content...</p>
