@@ -54,3 +54,10 @@ stats.db-journal
 stats.db-wal
 stats.db-shm
 backend docs
+
+# dev run logs and temporary visualization files
+codex-next-dev.err.log
+codex-next-dev.log
+tmp-stego-process-2.png
+tmp-stego-process.png
+
