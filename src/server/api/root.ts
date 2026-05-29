@@ -1,4 +1,5 @@
 import { filesRouter } from "~/server/api/routers/files";
+import { overnightFindingsRouter } from "~/server/api/routers/overnight-findings";
 import { postRouter } from "~/server/api/routers/post";
 import { promptLogsRouter } from "~/server/api/routers/prompt-logs";
 import { showcaseRouter } from "~/server/api/routers/showcase";
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
 	stats: statsRouter,
 	promptLogs: promptLogsRouter,
 	showcase: showcaseRouter,
+	overnightFindings: overnightFindingsRouter,
 });
 
 // export type definition of API

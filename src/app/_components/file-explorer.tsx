@@ -9,11 +9,12 @@ import {
 	Logs,
 	MessageSquareText,
 	Plus,
+	RadioTower,
+	Scale,
 	Search,
 	Settings,
 	Shield,
 	Trash2,
-	Trophy,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -76,9 +77,10 @@ function compactPathLabel(label: string) {
 }
 
 const primaryRoutes = [
-	{ href: "/showcase", label: "Research Showcase", icon: Trophy },
 	{ href: "/", label: "Explorer", icon: Home },
-	{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+	{ href: "/stego-process", label: "Stego Process", icon: RadioTower },
+	{ href: "/overnight-findings", label: "Overnight Findings", icon: LayoutDashboard },
+	{ href: "/zlg-comparison", label: "ZLG Comparison", icon: Scale },
 	{ href: "/admin-api", label: "Admin API", icon: Shield },
 	{ href: "/workflows-runs", label: "Workflow Runs", icon: Logs },
 ] as const;
@@ -186,7 +188,7 @@ export function FileExplorer({
 						Artifacts, metrics, workflows
 					</h2>
 					<p className="mt-1 text-white/55 text-xs leading-5">
-						Use Research Showcase for benchmark progress and Explorer for JSON.
+						Use Overnight Findings for current metrics and Explorer for JSON.
 					</p>
 				</div>
 

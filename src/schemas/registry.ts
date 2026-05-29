@@ -5,6 +5,7 @@ import { StegoResultCompressionView } from "~/app/_components/renderers/stego-re
 import { StegoTextOnlyRenderer as StegoTextOnlyOldRenderer } from "~/app/_components/renderers/stego-result-old-renderer";
 import { StegoResultRenderer } from "~/app/_components/renderers/stego-result-renderer";
 import { StegoTextOnlyRenderer } from "~/app/_components/renderers/stego-text-only-renderer";
+import { StegoProcessVisual } from "~/app/_components/stego-process/stego-process-visual";
 import { divergenceMetricsSchema } from "./divergence-metrics";
 import { stegoResultSchema } from "./stego-result";
 import { stegoComplexResultSchema } from "./stego-result-old";
@@ -84,6 +85,11 @@ registerRenderer({
 			id: "compression",
 			label: "Compression",
 			component: StegoResultCompressionView,
+		},
+		{
+			id: "process",
+			label: "Process",
+			component: StegoProcessVisual,
 		},
 	],
 });

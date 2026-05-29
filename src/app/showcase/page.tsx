@@ -1,15 +1,5 @@
-import type { Metadata } from "next";
-import { Suspense } from "react";
-import { ShowcaseContent } from "./showcase-content";
-
-export const metadata: Metadata = {
-	title: "Research Showcase",
-};
+import { redirect } from "next/navigation";
 
 export default function ShowcasePage() {
-	return (
-		<Suspense fallback={<div>Loading...</div>}>
-			<ShowcaseContent />
-		</Suspense>
-	);
+	redirect("/overnight-findings");
 }
