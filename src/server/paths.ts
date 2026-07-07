@@ -6,10 +6,16 @@ const SIDE_WING_REPO_PATH = resolve(process.cwd(), "..", "stego-side-wing");
 const SIDE_WING_PATH = join(SIDE_WING_REPO_PATH, "output-results");
 const LOCAL_PATH = join(process.cwd(), "output-results");
 const E2E_RUNS_PATH = join(SIDE_WING_REPO_PATH, "metrics", "e2e_runs");
+const SINGLE_POST_TWICE_RUNS_PATH = join(
+	SIDE_WING_REPO_PATH,
+	"metrics",
+	"single_post_twice_no_cache_runs",
+);
 
 const BUILT_IN_MAP: Record<string, string> = {
 	"side-wing": SIDE_WING_PATH,
 	local: LOCAL_PATH,
+	"single-post-twice-no-cache": SINGLE_POST_TWICE_RUNS_PATH,
 } as const;
 
 export interface ResultSource {

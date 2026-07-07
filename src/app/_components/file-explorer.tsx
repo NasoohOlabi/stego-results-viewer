@@ -79,6 +79,11 @@ function compactPathLabel(label: string) {
 const primaryRoutes = [
 	{ href: "/", label: "Explorer", icon: Home },
 	{ href: "/stego-process", label: "Stego Process", icon: RadioTower },
+	{
+		href: "/single-post-twice-no-cache",
+		label: "Single Post Twice",
+		icon: ChevronRight,
+	},
 	{ href: "/overnight-findings", label: "Overnight Findings", icon: LayoutDashboard },
 	{ href: "/zlg-comparison", label: "ZLG Comparison", icon: Scale },
 	{ href: "/admin-api", label: "Admin API", icon: Shield },
