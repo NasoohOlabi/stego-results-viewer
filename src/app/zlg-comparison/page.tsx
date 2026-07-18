@@ -13,6 +13,10 @@ import {
 	PerplexityHistogram,
 } from "./_components/perplexity-histogram";
 import { SampleBrowser, type SampleCard } from "./_components/sample-browser";
+import {
+	TangentDbQualityPanel,
+	type TangentDbQualitySummary,
+} from "./_components/tangent-db-quality-panel";
 
 type ResultRow = {
 	post_id?: string;
@@ -62,6 +66,11 @@ type MetricsSummary = {
 	human_likeness_preference?: HumanLikenessSummary;
 	thread_relevance?: ThreadQualitySummary;
 	writing_quality?: ThreadQualitySummary;
+	tangent_db_quality?: TangentDbQualitySummary;
+	tangent_db_quality_summaries?: {
+		legacy?: TangentDbQualitySummary;
+		v1?: TangentDbQualitySummary;
+	};
 };
 
 type ThreadQualitySummary = {
@@ -342,6 +351,10 @@ export default async function ZlgComparisonPage() {
 	const writingQuality =
 		metricsSummary?.writing_quality ??
 		(readJson(WRITING_QUALITY_SUMMARY_JSON) as ThreadQualitySummary | null);
+	const tangentDbV1 =
+		metricsSummary?.tangent_db_quality_summaries?.v1 ??
+		metricsSummary?.tangent_db_quality;
+	const tangentDbLegacy = metricsSummary?.tangent_db_quality_summaries?.legacy;
 	const ourClusteredDetection = clusteredDetectionRate(
 		susResults,
 		"our_method",
@@ -513,6 +526,8 @@ export default async function ZlgComparisonPage() {
 						<h1 className="font-bold text-3xl">Our Method vs ZLG Baseline</h1>
 						<p className="font-mono text-slate-500 text-xs">{RUN_DIR}</p>
 					</header>
+
+					<TangentDbQualityPanel legacy={tangentDbLegacy} v1={tangentDbV1} />
 
 					{metricsSummary && susSummary ? (
 						<section className="rounded-xl border border-cyan-400/20 bg-gradient-to-br from-cyan-400/5 via-transparent to-orange-400/5 p-5">
