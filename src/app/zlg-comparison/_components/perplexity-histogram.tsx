@@ -1,6 +1,15 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+	Bar,
+	BarChart,
+	CartesianGrid,
+	Legend,
+	ResponsiveContainer,
+	Tooltip,
+	XAxis,
+	YAxis,
+} from "recharts";
 import { OURS_COLOR, ZLG_COLOR } from "./metric-bar-chart";
 
 export type HistogramBin = { bin: string; ours: number; zlg: number };
@@ -10,13 +19,25 @@ export function PerplexityHistogram({ bins }: { bins: HistogramBin[] }) {
 	return (
 		<div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
 			<p className="font-medium text-slate-200 text-sm">
-				GPT-2 Perplexity Distribution (lower = more predictable / natural to the judge model)
+				Fluency proxy: GPT-2 perplexity distribution (lower = more predictable
+				to GPT-2)
+			</p>
+			<p className="mt-1 text-amber-200/75 text-xs">
+				This is not reader-facing naturalness or evidence of human authorship;
+				unusually low perplexity can also characterize AI text.
 			</p>
 			<div className="mt-3 h-64">
 				<ResponsiveContainer height="100%" width="100%">
-					<BarChart data={bins} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
+					<BarChart
+						data={bins}
+						margin={{ top: 4, right: 8, bottom: 4, left: -12 }}
+					>
 						<CartesianGrid stroke="#ffffff14" vertical={false} />
-						<XAxis dataKey="bin" stroke="#94a3b8" tick={{ fill: "#94a3b8", fontSize: 11 }} />
+						<XAxis
+							dataKey="bin"
+							stroke="#94a3b8"
+							tick={{ fill: "#94a3b8", fontSize: 11 }}
+						/>
 						<YAxis stroke="#94a3b8" tick={{ fill: "#94a3b8", fontSize: 11 }} />
 						<Tooltip
 							contentStyle={{
@@ -27,8 +48,18 @@ export function PerplexityHistogram({ bins }: { bins: HistogramBin[] }) {
 							}}
 						/>
 						<Legend wrapperStyle={{ fontSize: "12px" }} />
-						<Bar dataKey="ours" fill={OURS_COLOR} name="Our Method" radius={[4, 4, 0, 0]} />
-						<Bar dataKey="zlg" fill={ZLG_COLOR} name="ZLG Baseline" radius={[4, 4, 0, 0]} />
+						<Bar
+							dataKey="ours"
+							fill={OURS_COLOR}
+							name="Our Method"
+							radius={[4, 4, 0, 0]}
+						/>
+						<Bar
+							dataKey="zlg"
+							fill={ZLG_COLOR}
+							name="ZLG Baseline"
+							radius={[4, 4, 0, 0]}
+						/>
 					</BarChart>
 				</ResponsiveContainer>
 			</div>

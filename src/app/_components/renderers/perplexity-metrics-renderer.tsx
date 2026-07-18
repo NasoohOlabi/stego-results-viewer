@@ -92,11 +92,16 @@ export function PerplexityMetricsRenderer({
 	return (
 		<div className="space-y-8">
 			<header>
-				<h2 className="font-bold text-2xl">Perplexity Metrics</h2>
+				<h2 className="font-bold text-2xl">Fluency Proxy: Perplexity</h2>
 				<p className="text-white/50">
 					Generated at {new Date(data.created_at_utc).toLocaleString()}
 				</p>
 			</header>
+			<p className="rounded-lg border border-amber-400/25 bg-amber-400/10 p-3 text-amber-100 text-sm">
+				Perplexity measures predictability to the scoring model, not
+				reader-facing naturalness or human authorship. Unusually low perplexity
+				can also characterize AI text.
+			</p>
 
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
 				<div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-6">
@@ -145,7 +150,9 @@ export function PerplexityMetricsRenderer({
 						<h3 className="font-semibold text-lg">Top Perplexity Outliers</h3>
 						<p className="text-white/45 text-xs">
 							Delete uses{" "}
-							<code className="text-white/70">DELETE /tools/metrics/sample</code>{" "}
+							<code className="text-white/70">
+								DELETE /tools/metrics/sample
+							</code>{" "}
 							against the Admin API base from{" "}
 							<Link
 								className="text-cyan-400/90 underline-offset-2 hover:underline"
@@ -157,7 +164,9 @@ export function PerplexityMetricsRenderer({
 						</p>
 					</div>
 					{deleteMessage ? (
-						<p className="max-w-md text-green-300/90 text-xs">{deleteMessage}</p>
+						<p className="max-w-md text-green-300/90 text-xs">
+							{deleteMessage}
+						</p>
 					) : null}
 				</div>
 				{deleteError ? (
@@ -211,7 +220,7 @@ export function PerplexityMetricsRenderer({
 						);
 					})}
 					{topOutliers.length === 0 ? (
-						<p className="rounded-lg border border-white/10 px-4 py-3 text-white/50 text-sm">
+						<p className="rounded-lg border border-white/10 px-4 py-3 text-sm text-white/50">
 							No remaining outliers in this report view.
 						</p>
 					) : null}

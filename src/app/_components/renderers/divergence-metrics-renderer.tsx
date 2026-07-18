@@ -12,11 +12,17 @@ export function DivergenceMetricsRenderer({
 	return (
 		<div className="space-y-8">
 			<header>
-				<h2 className="font-bold text-2xl">Divergence Metrics</h2>
+				<h2 className="font-bold text-2xl">
+					Topical-Fit Proxies: KL &amp; JSD
+				</h2>
 				<p className="text-white/50">
 					Generated at {new Date(data.created_at_utc).toLocaleString()}
 				</p>
 			</header>
+			<p className="rounded-lg border border-amber-400/25 bg-amber-400/10 p-3 text-amber-100 text-sm">
+				KL and JSD measure word-distribution overlap with the matched thread or
+				global corpus, not reader-facing naturalness or human authorship.
+			</p>
 
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 				{/* Dataset Summary */}

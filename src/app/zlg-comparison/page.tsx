@@ -373,7 +373,9 @@ export default async function ZlgComparisonPage() {
 					winnerCount: capacityWin.count,
 				},
 				{
-					label: "Perplexity (GPT-2)",
+					label: "Fluency proxy: GPT-2 perplexity",
+					caveat:
+						"Model predictability, not reader-facing naturalness or human authorship; unusually low perplexity can also characterize AI text.",
 					ours: ourBlock?.perplexity_gpt2_mean ?? null,
 					zlg: zlgBlock?.perplexity_gpt2_mean ?? null,
 					lowerIsBetter: true,
@@ -382,7 +384,9 @@ export default async function ZlgComparisonPage() {
 					winnerCount: perplexityWin.count,
 				},
 				{
-					label: "KL divergence vs matched post",
+					label: "Topical-fit proxy: KL vs matched post",
+					caveat:
+						"Measures word-distribution overlap with the thread, not reader-facing naturalness or human authorship.",
 					ours: ourBlock?.kl_matched_post_mean ?? null,
 					zlg: zlgBlock?.kl_matched_post_mean ?? null,
 					lowerIsBetter: true,
@@ -391,7 +395,9 @@ export default async function ZlgComparisonPage() {
 					winnerCount: klMatchedWin.count,
 				},
 				{
-					label: "JSD vs matched post",
+					label: "Topical-fit proxy: JSD vs matched post",
+					caveat:
+						"Measures word-distribution overlap with the thread, not reader-facing naturalness or human authorship.",
 					ours: ourBlock?.jsd_matched_post_mean ?? null,
 					zlg: zlgBlock?.jsd_matched_post_mean ?? null,
 					lowerIsBetter: true,
@@ -400,7 +406,9 @@ export default async function ZlgComparisonPage() {
 					winnerCount: jsdMatchedWin.count,
 				},
 				{
-					label: "KL divergence vs global corpus",
+					label: "Distributional proxy: KL vs global corpus",
+					caveat:
+						"Measures word-distribution overlap with the corpus, not reader-facing naturalness or human authorship.",
 					ours: ourBlock?.kl_global_corpus_mean ?? null,
 					zlg: zlgBlock?.kl_global_corpus_mean ?? null,
 					lowerIsBetter: true,
@@ -409,7 +417,9 @@ export default async function ZlgComparisonPage() {
 					winnerCount: klGlobalWin.count,
 				},
 				{
-					label: "JSD vs global corpus",
+					label: "Distributional proxy: JSD vs global corpus",
+					caveat:
+						"Measures word-distribution overlap with the corpus, not reader-facing naturalness or human authorship.",
 					ours: ourBlock?.jsd_global_corpus_mean ?? null,
 					zlg: zlgBlock?.jsd_global_corpus_mean ?? null,
 					lowerIsBetter: true,
@@ -519,21 +529,21 @@ export default async function ZlgComparisonPage() {
 								{fmtNum(zlgBlock?.total_embedded_bits_mean, 1)} bits). ZLG's
 								shorter, simpler completions score{" "}
 								<span className="font-semibold text-orange-300">
-									lower (more &ldquo;natural&rdquo;) on GPT-2 perplexity and
-									KL/JSD divergence
+									lower on GPT-2 perplexity and KL/JSD divergence
 								</span>
-								, a statistical text-distribution proxy. But when an LLM judge
-								actually reads each comment embedded in its real thread
-								alongside 9 genuine replies, it catches ZLG{" "}
+								, fluency/topical-fit proxies that do not measure reader-facing
+								naturalness or human authorship. When an LLM judge actually
+								reads each comment embedded in its real thread alongside 9
+								genuine replies, it catches ZLG{" "}
 								<span className="font-semibold text-cyan-300">
 									{ourDetection && zlgDetection
 										? `${(zlgDetection / ourDetection).toFixed(1)}x more often`
 										: "more often"}
 								</span>{" "}
 								than our method ({fmtPct(zlgDetection)} vs{" "}
-								{fmtPct(ourDetection)} detection rate, 10% = chance). Two
-								different naturalness proxies disagree — worth sitting with
-								rather than picking whichever favors one method.
+								{fmtPct(ourDetection)} detection rate, 10% = chance). The
+								distributional proxies and reader-facing evaluation capture
+								different properties.
 							</p>
 						</section>
 					) : null}
@@ -635,8 +645,8 @@ export default async function ZlgComparisonPage() {
 						<section className="space-y-4 rounded-xl border border-white/10 bg-white/[0.04] p-5">
 							<div className="flex flex-wrap items-baseline justify-between gap-2">
 								<h2 className="font-semibold text-lg">
-									Capacity, Perplexity &amp; KL/JSD ({paired.paired_n ?? "n/a"}{" "}
-									paired samples)
+									Capacity &amp; distributional proxies (
+									{paired.paired_n ?? "n/a"} paired samples)
 								</h2>
 								<div className="flex items-center gap-3 text-xs">
 									<span className="flex items-center gap-1 text-slate-400">
@@ -647,6 +657,11 @@ export default async function ZlgComparisonPage() {
 									</span>
 								</div>
 							</div>
+							<p className="text-amber-200/75 text-xs leading-relaxed">
+								Perplexity is a model-predictability/fluency proxy; KL and JSD
+								are word-distribution topical-fit proxies. None is a
+								reader-facing measure of naturalness or human authorship.
+							</p>
 
 							{metricsSummary?.capacity_fields_note ? (
 								<div className="rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-amber-100 text-xs leading-relaxed">

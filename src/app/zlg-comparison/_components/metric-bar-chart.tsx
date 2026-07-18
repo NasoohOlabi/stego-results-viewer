@@ -1,6 +1,15 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+	Bar,
+	BarChart,
+	CartesianGrid,
+	Cell,
+	ResponsiveContainer,
+	Tooltip,
+	XAxis,
+	YAxis,
+} from "recharts";
 
 export const OURS_COLOR = "#22d3ee";
 export const ZLG_COLOR = "#fb923c";
@@ -8,6 +17,7 @@ export const CHANCE_COLOR = "#64748b";
 
 export type MetricCardData = {
 	label: string;
+	caveat?: string;
 	ours: number | null;
 	zlg: number | null;
 	unit?: string;
@@ -37,7 +47,11 @@ function MetricCard({ metric }: { metric: MetricCardData }) {
 					? "Tie"
 					: "n/a";
 	const winnerColor =
-		metric.winner === "ours" ? OURS_COLOR : metric.winner === "zlg" ? ZLG_COLOR : "#94a3b8";
+		metric.winner === "ours"
+			? OURS_COLOR
+			: metric.winner === "zlg"
+				? ZLG_COLOR
+				: "#94a3b8";
 
 	const directionHint =
 		metric.lowerIsBetter === undefined
@@ -49,16 +63,27 @@ function MetricCard({ metric }: { metric: MetricCardData }) {
 	return (
 		<div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
 			<div className="flex items-start justify-between gap-2">
-				<p className="font-medium text-slate-200 text-sm leading-tight">{metric.label}</p>
+				<p className="font-medium text-slate-200 text-sm leading-tight">
+					{metric.label}
+				</p>
 				{directionHint ? (
 					<span className="shrink-0 whitespace-nowrap rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-slate-400">
 						{directionHint}
 					</span>
 				) : null}
 			</div>
+			{metric.caveat ? (
+				<p className="mt-2 text-amber-200/75 text-xs leading-relaxed">
+					{metric.caveat}
+				</p>
+			) : null}
 			<div className="mt-2 h-28">
 				<ResponsiveContainer height="100%" width="100%">
-					<BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, bottom: 4, left: 4 }}>
+					<BarChart
+						data={data}
+						layout="vertical"
+						margin={{ top: 4, right: 16, bottom: 4, left: 4 }}
+					>
 						<CartesianGrid horizontal={false} stroke="#ffffff14" />
 						<XAxis hide type="number" />
 						<YAxis
@@ -92,14 +117,18 @@ function MetricCard({ metric }: { metric: MetricCardData }) {
 				<span className="text-slate-400">
 					<span style={{ color: OURS_COLOR }}>●</span>{" "}
 					<span
-						className={metric.winner === "ours" ? "font-bold text-slate-100" : undefined}
+						className={
+							metric.winner === "ours" ? "font-bold text-slate-100" : undefined
+						}
 					>
 						{metric.ours?.toFixed(2) ?? "n/a"}
 					</span>
 					{"  "}
 					<span style={{ color: ZLG_COLOR }}>●</span>{" "}
 					<span
-						className={metric.winner === "zlg" ? "font-bold text-slate-100" : undefined}
+						className={
+							metric.winner === "zlg" ? "font-bold text-slate-100" : undefined
+						}
 					>
 						{metric.zlg?.toFixed(2) ?? "n/a"}
 					</span>
