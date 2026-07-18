@@ -39,6 +39,7 @@ type MethodMetricBlock = {
 	kl_global_corpus_mean?: number;
 	jsd_global_corpus_mean?: number;
 	word_count_mean?: number;
+	lexical_quality_index_mean?: number;
 };
 
 type PairedStat = {
@@ -59,6 +60,22 @@ type MetricsSummary = {
 		| Record<string, never>;
 	capacity_fields_note?: string;
 	human_likeness_preference?: HumanLikenessSummary;
+	thread_relevance?: ThreadQualitySummary;
+	writing_quality?: ThreadQualitySummary;
+};
+
+type ThreadQualitySummary = {
+	valid_judgments?: number;
+	independent_paired_post_clusters?: number;
+	method_row_level_means?: { our_method?: number; zlg?: number };
+	our_minus_zlg_post_cluster_mean?: number | null;
+	our_minus_zlg_bootstrap_95_ci?: { lower: number; upper: number } | null;
+	two_sided_sign_test_p?: number | null;
+	provenance?: Array<{
+		provider?: string;
+		judge_model?: string;
+		judge_prompt_sha256?: string;
+	}>;
 };
 
 type HumanLikenessSummary = {
@@ -141,6 +158,14 @@ const SUS_RESULTS_JSONL = path.join(
 const HUMAN_LIKENESS_SUMMARY_JSON = path.join(
 	COMPARISON_DIR,
 	"human_likeness_summary.json",
+);
+const THREAD_RELEVANCE_SUMMARY_JSON = path.join(
+	COMPARISON_DIR,
+	"thread_relevance_summary.json",
+);
+const WRITING_QUALITY_SUMMARY_JSON = path.join(
+	COMPARISON_DIR,
+	"writing_quality_summary.json",
 );
 
 function readJson(pathname: string): Record<string, unknown> | null {
@@ -311,6 +336,12 @@ export default async function ZlgComparisonPage() {
 	) as HumanLikenessSummary | null;
 	const humanLikeness =
 		metricsSummary?.human_likeness_preference ?? humanLikenessFile;
+	const threadRelevance =
+		metricsSummary?.thread_relevance ??
+		(readJson(THREAD_RELEVANCE_SUMMARY_JSON) as ThreadQualitySummary | null);
+	const writingQuality =
+		metricsSummary?.writing_quality ??
+		(readJson(WRITING_QUALITY_SUMMARY_JSON) as ThreadQualitySummary | null);
 	const ourClusteredDetection = clusteredDetectionRate(
 		susResults,
 		"our_method",
@@ -568,6 +599,38 @@ export default async function ZlgComparisonPage() {
 						</section>
 					) : null}
 
+					<section className="space-y-4 rounded-xl border border-white/10 bg-white/[0.04] p-5">
+						<div>
+							<h2 className="font-semibold text-lg">
+								Naturalness, separated into two axes
+							</h2>
+							<p className="mt-1 text-slate-400 text-xs">
+								M3 measures fit to the thread. M4 and M5 measure writing quality
+								independently of topical fit; higher is better.
+							</p>
+						</div>
+						<div className="grid gap-3 lg:grid-cols-3">
+							<QualityAxisCard
+								label="M3 · Thread relevance"
+								summary={threadRelevance}
+							/>
+							<QualityAxisCard
+								label="M4 · Writing quality (judge)"
+								summary={writingQuality}
+							/>
+							<HeadlineMetric
+								detail="Deterministic lexical diversity, repetition, bigram, and length-sanity index · 0–100"
+								label="M5 · Lexical quality (objective)"
+								value={
+									ourBlock?.lexical_quality_index_mean === undefined &&
+									zlgBlock?.lexical_quality_index_mean === undefined
+										? "Not run"
+										: `${fmtNum(ourBlock?.lexical_quality_index_mean, 1)} ours · ${fmtNum(zlgBlock?.lexical_quality_index_mean, 1)} ZLG`
+								}
+							/>
+						</div>
+					</section>
+
 					{metricCards.length > 0 ? (
 						<section className="space-y-4 rounded-xl border border-white/10 bg-white/[0.04] p-5">
 							<div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -753,5 +816,30 @@ function HeadlineMetric({
 			<p className="mt-2 font-bold text-2xl text-slate-100">{value}</p>
 			<p className="mt-2 text-slate-400 text-xs">{detail}</p>
 		</div>
+	);
+}
+
+function QualityAxisCard({
+	label,
+	summary,
+}: {
+	label: string;
+	summary: ThreadQualitySummary | null | undefined;
+}) {
+	const provenance = summary?.provenance?.[0];
+	return (
+		<HeadlineMetric
+			detail={
+				summary
+					? `Post-cluster Δ ours−ZLG ${fmtNum(summary.our_minus_zlg_post_cluster_mean)} · 95% CI ${fmtNum(summary.our_minus_zlg_bootstrap_95_ci?.lower)}–${fmtNum(summary.our_minus_zlg_bootstrap_95_ci?.upper)} · ${summary.independent_paired_post_clusters ?? "n/a"} posts · p=${fmtP(summary.two_sided_sign_test_p)} · ${provenance?.provider ?? "?"}/${provenance?.judge_model ?? "?"} prompt ${provenance?.judge_prompt_sha256?.slice(0, 12) ?? "?"}`
+					: "Awaiting cached judge results; no live judge is run by this page."
+			}
+			label={label}
+			value={
+				summary
+					? `${fmtNum(summary.method_row_level_means?.our_method)} ours · ${fmtNum(summary.method_row_level_means?.zlg)} ZLG`
+					: "Not run"
+			}
+		/>
 	);
 }
