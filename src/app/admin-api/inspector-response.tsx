@@ -1,5 +1,5 @@
-import { ObjectInspector } from "react-inspector";
 import type { ReactNode } from "react";
+import { ObjectInspector } from "react-inspector";
 import { normalizeForInspector } from "./utils";
 
 export function renderInspectorValue(value: unknown): ReactNode {
@@ -10,7 +10,7 @@ export function renderInspectorValue(value: unknown): ReactNode {
 
 	if (typeof normalized !== "object") {
 		return (
-			<pre className="whitespace-pre-wrap wrap-break-word text-xs leading-relaxed text-white/80">
+			<pre className="wrap-break-word whitespace-pre-wrap text-white/80 text-xs leading-relaxed">
 				{String(normalized)}
 			</pre>
 		);
@@ -18,11 +18,7 @@ export function renderInspectorValue(value: unknown): ReactNode {
 
 	return (
 		<div className="overflow-auto text-xs leading-relaxed">
-			<ObjectInspector
-				data={normalized}
-				theme="chromeDark"
-				expandLevel={2}
-			/>
+			<ObjectInspector data={normalized} expandLevel={2} theme="chromeDark" />
 		</div>
 	);
 }

@@ -4,7 +4,7 @@ import { HydrateClient } from "~/trpc/server";
 import { FileViewer } from "./_components/file-viewer";
 
 export const metadata: Metadata = {
-	title: "Result files"
+	title: "Result files",
 };
 
 export default async function Home() {

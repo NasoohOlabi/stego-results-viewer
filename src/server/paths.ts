@@ -5,17 +5,31 @@ import { basename, isAbsolute, join, relative, resolve } from "node:path";
 const SIDE_WING_REPO_PATH = resolve(process.cwd(), "..", "stego-side-wing");
 const SIDE_WING_PATH = join(SIDE_WING_REPO_PATH, "output-results");
 const LOCAL_PATH = join(process.cwd(), "output-results");
-const E2E_RUNS_PATH = join(SIDE_WING_REPO_PATH, "metrics", "e2e_runs");
+const METRICS_PATH = join(SIDE_WING_REPO_PATH, "metrics");
+const E2E_RUNS_PATH = join(METRICS_PATH, "e2e_runs");
 const SINGLE_POST_TWICE_RUNS_PATH = join(
-	SIDE_WING_REPO_PATH,
-	"metrics",
+	METRICS_PATH,
 	"single_post_twice_no_cache_runs",
 );
+
+/** Every metrics subtree that may contain `output-results` sample dirs. */
+const GENERATED_SCAN_ROOTS = [
+	E2E_RUNS_PATH,
+	join(METRICS_PATH, "model_ablation_runs"),
+	join(METRICS_PATH, "feedback_runs"),
+	join(METRICS_PATH, "angle_scan_runs"),
+] as const;
 
 const BUILT_IN_MAP: Record<string, string> = {
 	"side-wing": SIDE_WING_PATH,
 	local: LOCAL_PATH,
 	"single-post-twice-no-cache": SINGLE_POST_TWICE_RUNS_PATH,
+} as const;
+
+const BUILT_IN_LABELS: Record<string, string> = {
+	"side-wing": "Side Wing default",
+	local: "Local (this repo)",
+	"single-post-twice-no-cache": "Single-post-twice runs",
 } as const;
 
 export interface ResultSource {
@@ -28,7 +42,7 @@ export interface ResultSource {
 	fileCount: number;
 }
 
-function encodeGeneratedPath(path: string) {
+export function encodeGeneratedPath(path: string) {
 	return `generated:${Buffer.from(path).toString("base64url")}`;
 }
 
@@ -72,13 +86,13 @@ async function readOutputDirectorySource(
 	try {
 		const resolved = assertGeneratedPath(path);
 		const stats = await stat(resolved);
-		const rel = relative(E2E_RUNS_PATH, resolved);
-		const parts = rel.split(/[\\/]/).filter(Boolean);
-		const runName = parts[0] ?? basename(resolved);
-		const profileName = parts.length > 2 ? parts.at(-2) : null;
-		const label = profileName
-			? `${runName} / ${profileName} output-results`
-			: `Latest run: ${runName}`;
+		// Label from the path relative to metrics/, minus the trailing
+		// "output-results": e.g. "e2e_runs/quality_100x_20260711 / balanced".
+		const rel = relative(METRICS_PATH, resolved);
+		const parts = rel.split(/[\\/]/).filter(Boolean).slice(0, -1);
+		const runName = parts.slice(0, 2).join("/") || basename(resolved);
+		const profileName = parts.length > 2 ? parts.slice(2).join(" / ") : null;
+		const label = profileName ? `${runName} / ${profileName}` : runName;
 
 		return {
 			id: encodeGeneratedPath(resolved),
@@ -121,13 +135,26 @@ async function findGeneratedOutputDirs(root: string, maxDepth: number) {
 	return found;
 }
 
+/** Absolute path of side-wing's `metrics/` dir (for progress scanning). */
+export function getMetricsPath(): string {
+	return METRICS_PATH;
+}
+
+/** All discovered `output-results` dirs across every generated-run root. */
+export async function findAllGeneratedOutputDirs(): Promise<string[]> {
+	const found = await Promise.all(
+		GENERATED_SCAN_ROOTS.map((root) => findGeneratedOutputDirs(root, 4)),
+	);
+	return found.flat();
+}
+
 export async function getResultSources(): Promise<ResultSource[]> {
 	const defaults = await Promise.all(
 		Object.entries(BUILT_IN_MAP).map(async ([id, path]) => {
 			const stats = await stat(path).catch(() => null);
 			return {
 				id,
-				label: id === "side-wing" ? "Side Wing default" : "Local",
+				label: BUILT_IN_LABELS[id] ?? id,
 				path,
 				isBuiltIn: true,
 				kind: "default" as const,
@@ -137,14 +164,19 @@ export async function getResultSources(): Promise<ResultSource[]> {
 		}),
 	);
 
-	const generatedPaths = await findGeneratedOutputDirs(E2E_RUNS_PATH, 3);
+	const generatedPaths = await findAllGeneratedOutputDirs();
 	const generated = (
 		await Promise.all(
 			generatedPaths.map((path) => readOutputDirectorySource(path)),
 		)
 	)
 		.filter((source): source is ResultSource => source !== null)
-		.sort((a, b) => b.mtimeMs - a.mtimeMs);
+		// Sources with samples first (newest run first); empty dirs last.
+		.sort(
+			(a, b) =>
+				Number(b.fileCount > 0) - Number(a.fileCount > 0) ||
+				b.mtimeMs - a.mtimeMs,
+		);
 
 	return [...defaults, ...generated];
 }

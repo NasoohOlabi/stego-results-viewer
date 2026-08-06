@@ -5,7 +5,7 @@ import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
-	AccordionTrigger
+	AccordionTrigger,
 } from "~/components/ui/accordion";
 import type { StegoComplexResult } from "~/schemas/stego-result-old";
 import { AngleTable } from "../angle-table";
@@ -19,16 +19,16 @@ interface StegoTextOnlyRendererProps {
 
 export function StegoTextOnlyRenderer({
 	data,
-	filename: _filename
+	filename: _filename,
 }: StegoTextOnlyRendererProps) {
 	return (
 		<div className="space-y-4">
 			<div className="text-sm text-white/50">Parsed</div>
-			<div className="flex items-center justify-between border-b border-white/10 pb-2">
-				<h4 className="text-lg font-semibold text-white">
+			<div className="flex items-center justify-between border-white/10 border-b pb-2">
+				<h4 className="font-semibold text-lg text-white">
 					Steganographic Texts
 				</h4>
-				<span className="text-xs text-white/50">
+				<span className="text-white/50 text-xs">
 					{data.length} item{data.length !== 1 ? "s" : ""}
 				</span>
 			</div>
@@ -36,9 +36,7 @@ export function StegoTextOnlyRenderer({
 				{data.map((item, index) => {
 					const searchResults = Object.values(item.post.search_results)
 						.flat()
-						.map(
-							(x) => x.content_analysis ?? x.content_fetched ?? x.snippet
-						)
+						.map((x) => x.content_analysis ?? x.content_fetched ?? x.snippet)
 						.filter((x): x is string => typeof x === "string");
 					return (
 						<>
@@ -46,49 +44,47 @@ export function StegoTextOnlyRenderer({
 								<div>
 									Embedded:{" "}
 									<span
+										className="rounded-md bg-blue-700 px-0.5"
 										title="comments"
-										className="bg-blue-700 px-0.5  rounded-md"
 									>
 										{item.embedding.commentEmbedding.bitsUsed}
 									</span>
 									<span
+										className="mx-1 rounded-md bg-green-700 px-0.5"
 										title="angles"
-										className="bg-green-700 px-0.5 mx-1 rounded-md"
 									>
 										{/* add a space every three characters */}
 										{item.embedding.angleEmbedding.bitsUsed.replace(
 											/(\d{3})(?=\d)/g,
-											"$1 "
+											"$1 ",
 										)}
 									</span>
 									({item.embedding.totalBitsEmbedded}) bits
 								</div>
 								<div>
-									comments:{" "}
-									{JSON.stringify(item.post.comments, null, 2)}
+									comments: {JSON.stringify(item.post.comments, null, 2)}
 								</div>
 								<div>
 									picked comment chain:{" "}
 									{JSON.stringify(
-										item.embedding.commentEmbedding
-											.pickedCommentChain,
+										item.embedding.commentEmbedding.pickedCommentChain,
 										null,
-										2
+										2,
 									)}
 								</div>
 							</div>
-							<div className="border border-white/10 p-2 rounded-md">
+							<div className="rounded-md border border-white/10 p-2">
 								<div className="flex items-center justify-between">
 									<h5>{item.post.title}</h5>
 									<div>
-										<span className="text-xs text-white/50">
+										<span className="text-white/50 text-xs">
 											{item.post.score} points
 										</span>
 										<a
-											href={`https://www.reddit.com${item.post.permalink}`}
-											target="_blank"
-											rel="noopener noreferrer"
 											className="ml-2 inline-flex items-center text-white/50 hover:text-white"
+											href={`https://www.reddit.com${item.post.permalink}`}
+											rel="noopener noreferrer"
+											target="_blank"
 											title="Go to post"
 										>
 											<ExternalLink size={14} />
@@ -107,8 +103,8 @@ export function StegoTextOnlyRenderer({
 										Link:{" "}
 										<a
 											href={item.post.url}
-											target="_blank"
 											rel="noopener noreferrer"
+											target="_blank"
 										>
 											{item.post.url}
 										</a>
@@ -117,13 +113,13 @@ export function StegoTextOnlyRenderer({
 							</div>
 							<PostValidationActions postId={item.post?.id} />
 							<div
-								key={index}
 								className="group relative rounded-lg border border-white/10 p-4 transition-colors hover:bg-white/5"
+								key={index}
 							>
-								<div className="absolute top-2 right-2 text-[10px] font-mono text-white/20 group-hover:text-white/40">
+								<div className="absolute top-2 right-2 font-mono text-[10px] text-white/20 group-hover:text-white/40">
 									#{index + 1}
 								</div>
-								<div className="whitespace-pre-wrap text-lg leading-relaxed text-white/90">
+								<div className="whitespace-pre-wrap text-lg text-white/90 leading-relaxed">
 									Stego text: ({item.stegoText.length} characters)
 									<div>{item.stegoText}</div>
 								</div>
@@ -133,18 +129,14 @@ export function StegoTextOnlyRenderer({
 								<div className="italic">
 									{item.embedding.compression.payload}
 								</div>
-								{item.embedding.compression.usedDict
-									? "Compressed"
-									: "Encoded"}
+								{item.embedding.compression.usedDict ? "Compressed" : "Encoded"}
 								: ({item.embedding.compression.compressed.length} bits ~{" "}
-								{Math.ceil(
-									item.embedding.compression.compressed.length / 8
-								)}{" "}
+								{Math.ceil(item.embedding.compression.compressed.length / 8)}{" "}
 								bytes){" "}
 								{item.embedding.compression.usedDict
 									? `Ratio: ${item.embedding.compression.ratio * 100}%`
 									: ""}
-								<div className="italic whitespace-pre-wrap wrap-break-word w-[calc(70vw-2rem)]">
+								<div className="wrap-break-word w-[calc(70vw-2rem)] whitespace-pre-wrap italic">
 									{item.embedding.compression.compressed}
 								</div>
 								{item.embedding.compression.usedDict ? (
@@ -157,28 +149,27 @@ export function StegoTextOnlyRenderer({
 														dock:{reference.doc} idx:
 														{reference.idx} len:{reference.len}
 													</li>
-												)
+												),
 											)}
 										</ul>
 									</div>
 								) : null}
 							</div>
 							<div className="mt-4">
-								<Accordion type="single" collapsible>
+								<Accordion collapsible type="single">
 									<AccordionItem value="total-angles">
 										<AccordionTrigger>
 											Total Angles Selected First (
 											{
-												item.embedding.angleEmbedding
-													.totalAnglesSelectedFirst.length
+												item.embedding.angleEmbedding.totalAnglesSelectedFirst
+													.length
 											}
 											)
 										</AccordionTrigger>
 										<AccordionContent>
 											<AngleTable
 												data={
-													item.embedding.angleEmbedding
-														.totalAnglesSelectedFirst
+													item.embedding.angleEmbedding.totalAnglesSelectedFirst
 												}
 											/>
 										</AccordionContent>
@@ -186,7 +177,7 @@ export function StegoTextOnlyRenderer({
 								</Accordion>
 							</div>
 							<div className="mt-4">
-								<Accordion type="single" collapsible>
+								<Accordion collapsible type="single">
 									<AccordionItem value="search-results">
 										<AccordionTrigger>
 											{" "}

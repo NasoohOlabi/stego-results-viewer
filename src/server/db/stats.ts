@@ -1,11 +1,11 @@
-import Database from 'better-sqlite3';
-import { join } from 'path';
+import Database from "better-sqlite3";
+import { join } from "path";
 
-const dbPath = join(process.cwd(), 'stats.db');
+const dbPath = join(process.cwd(), "stats.db");
 const db = new Database(dbPath);
 
 // Enable WAL mode for better concurrency and performance
-db.pragma('journal_mode = WAL');
+db.pragma("journal_mode = WAL");
 
 // Initialize schema
 db.exec(`

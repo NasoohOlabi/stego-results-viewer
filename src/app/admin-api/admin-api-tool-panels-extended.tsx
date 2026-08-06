@@ -624,7 +624,12 @@ function PrepUntilQuotaThenStegoPanel(props: {
 	const send = () => {
 		const tag = prepQuotaTag.trim();
 		if (!tag) {
-			setTabError(tabId, `${base}${PREP_QUOTA_PATH}`, "POST", "tag is required");
+			setTabError(
+				tabId,
+				`${base}${PREP_QUOTA_PATH}`,
+				"POST",
+				"tag is required",
+			);
 			return;
 		}
 		const batchCountRaw = prepQuotaBatchCount.trim();
@@ -666,10 +671,9 @@ function PrepUntilQuotaThenStegoPanel(props: {
 		<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
 			<h2 className="font-semibold text-lg">Prep Until Quota, Then Stego</h2>
 			<p className="text-white/60 text-xs">
-				<code className="text-white/80">POST {PREP_QUOTA_PATH}</code>
-				{" "}runs repeated prep batches (
-				<code className="text-white/80">data-load</code> â†’{" "}
-				<code className="text-white/80">research</code> â†’{" "}
+				<code className="text-white/80">POST {PREP_QUOTA_PATH}</code> runs
+				repeated prep batches (<code className="text-white/80">data-load</code>{" "}
+				â†’ <code className="text-white/80">research</code> â†’{" "}
 				<code className="text-white/80">gen-angles</code>) until Google quota is
 				detected, then flips into recursive stego processing for the required{" "}
 				<code className="text-white/80">tag</code>.

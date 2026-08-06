@@ -177,24 +177,28 @@ export function RecentUpdatesPanel() {
 								>
 									<div className="flex flex-wrap items-start justify-between gap-2">
 										<div>
-											<div className="font-medium text-sm">{commit.subject}</div>
-											<div className="mt-1 text-xs text-white/60">
+											<div className="font-medium text-sm">
+												{commit.subject}
+											</div>
+											<div className="mt-1 text-white/60 text-xs">
 												<span title={commit.committed_at}>
 													{formatLocalTimestamp(commit.committed_at)}
 												</span>{" "}
 												| {commit.author} | {commit.short_commit}
 											</div>
 										</div>
-										<div className="text-right text-xs text-white/80">
+										<div className="text-right text-white/80 text-xs">
 											<div>
 												+{numberFormatter.format(commit.insertions)} / -
 												{numberFormatter.format(commit.deletions)}
 											</div>
 											<div className="text-white/60">
-												Visible {numberFormatter.format(commit.files_changed_visible)} |
+												Visible{" "}
+												{numberFormatter.format(commit.files_changed_visible)} |
 												Generated{" "}
-												{numberFormatter.format(commit.generated_files_changed)} |
-												Total {numberFormatter.format(commit.files_changed_total)}
+												{numberFormatter.format(commit.generated_files_changed)}{" "}
+												| Total{" "}
+												{numberFormatter.format(commit.files_changed_total)}
 											</div>
 										</div>
 									</div>

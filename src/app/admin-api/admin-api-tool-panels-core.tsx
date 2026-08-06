@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { AdminApiToolPanelsProps } from "./admin-api-tool-panels-props";
 
 export function AdminApiToolPanelsCore(
-	props: AdminApiToolPanelsProps
+	props: AdminApiToolPanelsProps,
 ): ReactNode {
 	const {
 		tab,
@@ -22,117 +22,81 @@ export function AdminApiToolPanelsCore(
 		jsonWriteBody,
 		setJsonWriteBody,
 		callApi,
-		setTabError
+		setTabError,
 	} = props;
 
 	switch (tab.apiToolId) {
 		case "service":
 			return (
-				<section className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
-					<h2 className="text-lg font-semibold">Service</h2>
+				<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+					<h2 className="font-semibold text-lg">Service</h2>
 					<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
 						<button
-							type="button"
-							onClick={() =>
-								callApi(
-									"GET",
-									"/health",
-									undefined,
-									undefined,
-									tab.id
-								)
-							}
 							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+							onClick={() =>
+								callApi("GET", "/health", undefined, undefined, tab.id)
+							}
+							type="button"
 						>
 							GET /health
 						</button>
 						<button
-							type="button"
-							onClick={() =>
-								callApi(
-									"GET",
-									"/state/steps",
-									undefined,
-									undefined,
-									tab.id
-								)
-							}
 							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+							onClick={() =>
+								callApi("GET", "/state/steps", undefined, undefined, tab.id)
+							}
+							type="button"
 						>
 							GET /state/steps
 						</button>
 						<button
-							type="button"
-							onClick={() =>
-								callApi(
-									"GET",
-									"/state/paths",
-									undefined,
-									undefined,
-									tab.id
-								)
-							}
 							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+							onClick={() =>
+								callApi("GET", "/state/paths", undefined, undefined, tab.id)
+							}
+							type="button"
 						>
 							GET /state/paths
 						</button>
 						<button
-							type="button"
-							onClick={() =>
-								callApi(
-									"GET",
-									"/state/logs",
-									undefined,
-									undefined,
-									tab.id
-								)
-							}
 							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+							onClick={() =>
+								callApi("GET", "/state/logs", undefined, undefined, tab.id)
+							}
+							type="button"
 						>
 							GET /state/logs
 						</button>
 						<button
-							type="button"
-							onClick={() =>
-								callApi(
-									"DELETE",
-									"/state/logs",
-									undefined,
-									undefined,
-									tab.id
-								)
-							}
 							className="rounded-md bg-rose-500/20 px-3 py-2 text-sm hover:bg-rose-500/30"
+							onClick={() =>
+								callApi("DELETE", "/state/logs", undefined, undefined, tab.id)
+							}
+							type="button"
 						>
 							DELETE /state/logs
 						</button>
 						<button
-							type="button"
-							onClick={() =>
-								callApi(
-									"GET",
-									"/logging/tags",
-									undefined,
-									undefined,
-									tab.id
-								)
-							}
 							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+							onClick={() =>
+								callApi("GET", "/logging/tags", undefined, undefined, tab.id)
+							}
+							type="button"
 						>
 							GET /logging/tags
 						</button>
 						<button
-							type="button"
+							className="rounded-md bg-blue-500/20 px-3 py-2 text-sm hover:bg-blue-500/30"
 							onClick={() =>
 								callApi(
 									"POST",
 									"/admin/kv/migrate",
 									undefined,
 									undefined,
-									tab.id
+									tab.id,
 								)
 							}
-							className="rounded-md bg-blue-500/20 px-3 py-2 text-sm hover:bg-blue-500/30"
+							type="button"
 						>
 							POST /admin/kv/migrate
 						</button>
@@ -141,14 +105,14 @@ export function AdminApiToolPanelsCore(
 			);
 		case "cache-admin":
 			return (
-				<section className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
-					<h2 className="text-lg font-semibold">Cache Admin</h2>
+				<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+					<h2 className="font-semibold text-lg">Cache Admin</h2>
 					<div className="flex gap-2">
 						<select
+							className="flex-1 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+							onChange={(e) => setCacheTarget(e.target.value)}
 							title="Cache clear target"
 							value={cacheTarget}
-							onChange={(e) => setCacheTarget(e.target.value)}
-							className="flex-1 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
 						>
 							<option value="all">all</option>
 							<option value="flask">flask</option>
@@ -156,32 +120,32 @@ export function AdminApiToolPanelsCore(
 							<option value="angles">angles</option>
 						</select>
 						<button
-							type="button"
+							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
 							onClick={() =>
 								callApi(
 									"GET",
 									"/admin/cache/stats",
 									undefined,
 									undefined,
-									tab.id
+									tab.id,
 								)
 							}
-							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+							type="button"
 						>
 							Stats
 						</button>
 						<button
-							type="button"
+							className="rounded-md bg-rose-500/20 px-3 py-2 text-sm hover:bg-rose-500/30"
 							onClick={() =>
 								callApi(
 									"POST",
 									"/admin/cache/clear",
 									undefined,
 									{ target: cacheTarget },
-									tab.id
+									tab.id,
 								)
 							}
-							className="rounded-md bg-rose-500/20 px-3 py-2 text-sm hover:bg-rose-500/30"
+							type="button"
 						>
 							Clear
 						</button>
@@ -190,33 +154,33 @@ export function AdminApiToolPanelsCore(
 			);
 		case "state-filesystem":
 			return (
-				<section className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
-					<h2 className="text-lg font-semibold">State Filesystem</h2>
+				<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+					<h2 className="font-semibold text-lg">State Filesystem</h2>
 					<div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
 						<input
-							value={fsPath}
-							onChange={(e) => setFsPath(e.target.value)}
 							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+							onChange={(e) => setFsPath(e.target.value)}
 							placeholder="path"
+							value={fsPath}
 						/>
 						<input
-							value={fsLimit}
-							onChange={(e) => setFsLimit(e.target.value)}
 							className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+							onChange={(e) => setFsLimit(e.target.value)}
 							placeholder="limit"
+							value={fsLimit}
 						/>
 						<label className="flex items-center gap-2 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm">
 							<input
-								type="checkbox"
 								checked={fsRecursive}
 								onChange={(e) => setFsRecursive(e.target.checked)}
+								type="checkbox"
 							/>
 							recursive
 						</label>
 					</div>
 					<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
 						<button
-							type="button"
+							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
 							onClick={() =>
 								callApi(
 									"GET",
@@ -224,70 +188,70 @@ export function AdminApiToolPanelsCore(
 									{
 										path: fsPath,
 										recursive: fsRecursive,
-										limit: fsLimit
+										limit: fsLimit,
 									},
 									undefined,
-									tab.id
+									tab.id,
 								)
 							}
-							className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+							type="button"
 						>
 							List
 						</button>
 						<button
-							type="button"
+							className="rounded-md bg-rose-500/20 px-3 py-2 text-sm hover:bg-rose-500/30"
 							onClick={() =>
 								callApi(
 									"DELETE",
 									"/state/fs/delete",
 									{ path: fsPath, recursive: fsRecursive },
 									undefined,
-									tab.id
+									tab.id,
 								)
 							}
-							className="rounded-md bg-rose-500/20 px-3 py-2 text-sm hover:bg-rose-500/30"
+							type="button"
 						>
 							Delete
 						</button>
 					</div>
 
 					<input
-						value={jsonReadPath}
-						onChange={(e) => setJsonReadPath(e.target.value)}
 						className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+						onChange={(e) => setJsonReadPath(e.target.value)}
 						placeholder="read json path"
+						value={jsonReadPath}
 					/>
 					<button
-						type="button"
+						className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
 						onClick={() =>
 							callApi(
 								"GET",
 								"/state/fs/read-json",
 								{ path: jsonReadPath },
 								undefined,
-								tab.id
+								tab.id,
 							)
 						}
-						className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+						type="button"
 					>
 						Read JSON
 					</button>
 
 					<input
-						value={jsonWritePath}
-						onChange={(e) => setJsonWritePath(e.target.value)}
 						className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+						onChange={(e) => setJsonWritePath(e.target.value)}
 						placeholder="write json path"
+						value={jsonWritePath}
 					/>
 					<textarea
-						title="JSON body for write-json"
-						placeholder='{"hello":"world"}'
-						value={jsonWriteBody}
+						className="min-h-24 rounded-md border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs"
 						onChange={(e) => setJsonWriteBody(e.target.value)}
-						className="min-h-24 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-xs font-mono"
+						placeholder='{"hello":"world"}'
+						title="JSON body for write-json"
+						value={jsonWriteBody}
 					/>
 					<button
-						type="button"
+						className="rounded-md bg-blue-500/20 px-3 py-2 text-sm hover:bg-blue-500/30"
 						onClick={() => {
 							try {
 								callApi(
@@ -297,20 +261,20 @@ export function AdminApiToolPanelsCore(
 									{
 										path: jsonWritePath,
 										data: JSON.parse(jsonWriteBody),
-										overwrite: true
+										overwrite: true,
 									},
-									tab.id
+									tab.id,
 								);
 							} catch {
 								setTabError(
 									tab.id,
 									`${base}/state/fs/write-json`,
 									"POST",
-									"Invalid JSON body for write-json"
+									"Invalid JSON body for write-json",
 								);
 							}
 						}}
-						className="rounded-md bg-blue-500/20 px-3 py-2 text-sm hover:bg-blue-500/30"
+						type="button"
 					>
 						Write JSON
 					</button>

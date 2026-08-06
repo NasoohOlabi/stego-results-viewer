@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { FileExplorer } from "~/app/_components/file-explorer";
 import { usePathConfig } from "~/hooks/use-path-config";
 import { api } from "~/trpc/react";

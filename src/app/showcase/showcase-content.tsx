@@ -53,9 +53,9 @@ export function ShowcaseContent() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const pathname = usePathname();
-	const { enabledPaths, getPathIdForApiById } = usePathConfig();
+	const { enabledPaths, defaultPathId, getPathIdForApiById } = usePathConfig();
 
-	const selectedPathId = searchParams.get("folder") ?? "side-wing";
+	const selectedPathId = searchParams.get("folder") ?? defaultPathId;
 	const apiPathId = getPathIdForApiById(selectedPathId) ?? selectedPathId;
 	const isValidPath = enabledPaths.some((path) => path.id === selectedPathId);
 

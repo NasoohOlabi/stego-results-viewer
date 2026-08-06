@@ -4,20 +4,11 @@ import {
 	ChevronRight,
 	FileJson,
 	Folder,
-	Home,
-	LayoutDashboard,
-	Logs,
-	MessageSquareText,
 	Plus,
-	RadioTower,
-	Scale,
 	Search,
 	Settings,
-	Shield,
 	Trash2,
 } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import type { KeyboardEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -76,25 +67,6 @@ function compactPathLabel(label: string) {
 		.replace(" output-results", "");
 }
 
-const primaryRoutes = [
-	{ href: "/", label: "Explorer", icon: Home },
-	{ href: "/stego-process", label: "Stego Process", icon: RadioTower },
-	{
-		href: "/single-post-twice-no-cache",
-		label: "Single Post Twice",
-		icon: ChevronRight,
-	},
-	{ href: "/overnight-findings", label: "Overnight Findings", icon: LayoutDashboard },
-	{ href: "/zlg-comparison", label: "ZLG Comparison", icon: Scale },
-	{ href: "/admin-api", label: "Admin API", icon: Shield },
-	{ href: "/workflows-runs", label: "Workflow Runs", icon: Logs },
-] as const;
-
-const secondaryRoutes = [
-	{ href: "/prompt-logs", label: "Prompt Logs", icon: MessageSquareText },
-	{ href: "/api-logs", label: "API Logs", icon: Logs },
-] as const;
-
 export function FileExplorer({
 	files,
 	selectedFile,
@@ -144,8 +116,6 @@ export function FileExplorer({
 		);
 	}, [selectedFile]);
 
-	const pathname = usePathname();
-
 	const openFileFromSearch = (filename: string) => {
 		setFileSearchQuery("");
 		onFileSelect(filename);
@@ -193,62 +163,12 @@ export function FileExplorer({
 						Artifacts, metrics, workflows
 					</h2>
 					<p className="mt-1 text-white/55 text-xs leading-5">
-						Use Overnight Findings for current metrics and Explorer for JSON.
+						Press{" "}
+						<kbd className="rounded bg-white/10 px-1 py-0.5 text-white/70">
+							⌘K
+						</kbd>{" "}
+						or use the left rail to switch views.
 					</p>
-				</div>
-
-				<div className="mb-3">
-					<p className="mb-2 px-1 font-medium text-[11px] text-white/35 uppercase tracking-[0.18em]">
-						Main
-					</p>
-					<div className="space-y-1">
-						{primaryRoutes.map(({ href, label, icon: Icon }) => {
-							const target =
-								href === "/"
-									? `/?folder=${selectedPathId}`
-									: `${href}?folder=${selectedPathId}`;
-							const isActive = pathname === href;
-							return (
-								<Link
-									className={`flex items-center gap-2 rounded-md px-3 py-2 font-medium text-sm transition-colors ${
-										isActive
-											? "bg-white/10 text-white"
-											: "text-white/55 hover:bg-white/5 hover:text-white"
-									}`}
-									href={target}
-									key={href}
-								>
-									<Icon className="h-4 w-4" />
-									{label}
-								</Link>
-							);
-						})}
-					</div>
-				</div>
-
-				<div className="mb-4">
-					<p className="mb-2 px-1 font-medium text-[11px] text-white/35 uppercase tracking-[0.18em]">
-						Extra
-					</p>
-					<div className="space-y-1">
-						{secondaryRoutes.map(({ href, label, icon: Icon }) => {
-							const isActive = pathname === href;
-							return (
-								<Link
-									className={`flex items-center gap-2 rounded-md px-3 py-2 font-medium text-sm transition-colors ${
-										isActive
-											? "bg-white/10 text-white"
-											: "text-white/45 hover:bg-white/5 hover:text-white"
-									}`}
-									href={`${href}?folder=${selectedPathId}`}
-									key={href}
-								>
-									<Icon className="h-4 w-4" />
-									{label}
-								</Link>
-							);
-						})}
-					</div>
 				</div>
 
 				<div className="mb-3 flex items-center justify-between">

@@ -2,18 +2,19 @@
 
 import { useMemo, useState } from "react";
 import { renderInspectorValue } from "./inspector-response";
+import { PrepQuotaStructuredResponse } from "./prep-quota-structured-response";
 import type { ApiResponseView, StreamEventView } from "./types";
 import { useRequestElapsedMs } from "./use-request-elapsed";
 import {
-	buildPrepQuotaStructuredModel,
-	buildPrepQuotaStructuredModelFromSync,
 	buildCopyRequestAndResponseText,
 	buildCurlBash,
+	buildPrepQuotaStructuredModel,
+	buildPrepQuotaStructuredModelFromSync,
 	buildStreamEventItems,
 	buildWorkflowRunStructuredModel,
 	buildWorkflowRunStructuredModelFromSync,
-	extractPrepQuotaFromAdminResponse,
 	extractLoggingTagsFromAdminResponse,
+	extractPrepQuotaFromAdminResponse,
 	extractStateLogsFromAdminResponse,
 	extractValidatePostFromAdminResponse,
 	extractWorkflowRunSyncResult,
@@ -31,7 +32,6 @@ import {
 	isWorkflowRunEndpoint,
 	isWorkflowRunsEndpoint,
 } from "./utils";
-import { PrepQuotaStructuredResponse } from "./prep-quota-structured-response";
 import { WorkflowRunStructuredResponse } from "./workflow-run-structured-response";
 
 export interface AdminApiActiveResponseProps {
@@ -135,7 +135,8 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 		[ssePayload, isWorkflowRun],
 	);
 	const prepQuotaSseModel = useMemo(
-		() => (ssePayload ? buildPrepQuotaStructuredModel(ssePayload.events) : null),
+		() =>
+			ssePayload ? buildPrepQuotaStructuredModel(ssePayload.events) : null,
 		[ssePayload],
 	);
 
@@ -336,7 +337,7 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 			<div className="mb-2 flex flex-wrap items-center justify-between gap-2">
 				<div>
 					<h2 className="font-semibold text-lg">Active tab response</h2>
-					<p className="mt-1 text-xs text-white/45">
+					<p className="mt-1 text-white/45 text-xs">
 						Known workflow responses get a structured summary. Raw JSON and raw
 						SSE events stay available for debugging.
 					</p>
@@ -438,8 +439,10 @@ export function AdminApiActiveResponse(props: AdminApiActiveResponseProps) {
 			) : null}
 			<div className="space-y-3 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3">
 				{activeTabResponse.status === "idle" ? (
-					<div className="rounded-lg border border-dashed border-white/10 bg-white/5 p-4">
-						<h3 className="font-medium text-sm text-white">Nothing has run yet</h3>
+					<div className="rounded-lg border border-white/10 border-dashed bg-white/5 p-4">
+						<h3 className="font-medium text-sm text-white">
+							Nothing has run yet
+						</h3>
 						<p className="mt-1 text-sm text-white/55">
 							Run an endpoint above. For long workflows, expect `status`,
 							`progress`, `log`, `result`, and `done` events.

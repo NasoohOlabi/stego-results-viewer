@@ -49,8 +49,8 @@ export function CodeViewer({ content, filename, pathId }: CodeViewerProps) {
 		return (
 			<div className="flex h-full items-center justify-center px-6">
 				<div className="max-w-lg rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-					<h2 className="font-semibold text-xl text-white">No file selected</h2>
-					<p className="mt-2 text-sm leading-6 text-white/60">
+					<h2 className="font-semibold text-white text-xl">No file selected</h2>
+					<p className="mt-2 text-sm text-white/60 leading-6">
 						Choose a JSON artifact from the left panel to inspect its structured
 						view, then switch to raw mode if you need the exact payload.
 					</p>
@@ -65,7 +65,7 @@ export function CodeViewer({ content, filename, pathId }: CodeViewerProps) {
 				<div className="flex items-start justify-between gap-4">
 					<div>
 						<h3 className="font-medium text-sm text-white">{filename}</h3>
-						<p className="mt-1 text-xs text-white/45">
+						<p className="mt-1 text-white/45 text-xs">
 							{viewMode === "parsed"
 								? "Parsed view highlights the important fields first."
 								: "Raw view shows the exact JSON stored on disk."}

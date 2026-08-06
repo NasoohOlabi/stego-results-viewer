@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo } from "react";
 import { FileExplorer } from "~/app/_components/file-explorer";
 import { StegoProcessVisual } from "~/app/_components/stego-process/stego-process-visual";
-import { stegoResultSchema } from "~/schemas/stego-result";
 import { usePathConfig } from "~/hooks/use-path-config";
+import { stegoResultSchema } from "~/schemas/stego-result";
 import { api } from "~/trpc/react";
 
 function parseStegoResult(content: string | null) {
@@ -23,10 +23,10 @@ export function StegoProcessPageContent() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const pathname = usePathname();
-	const { enabledPaths, getPathIdForApiById } = usePathConfig();
+	const { enabledPaths, defaultPathId, getPathIdForApiById } = usePathConfig();
 
 	const selectedFile = searchParams.get("filename");
-	const selectedPathId = searchParams.get("folder") ?? "side-wing";
+	const selectedPathId = searchParams.get("folder") ?? defaultPathId;
 	const apiPathId = getPathIdForApiById(selectedPathId) ?? selectedPathId;
 	const isValidPath = enabledPaths.some((p) => p.id === selectedPathId);
 
@@ -37,7 +37,14 @@ export function StegoProcessPageContent() {
 			params.delete("filename");
 			router.replace(`${pathname}?${params.toString()}`);
 		}
-	}, [selectedPathId, enabledPaths, pathname, router, searchParams, isValidPath]);
+	}, [
+		selectedPathId,
+		enabledPaths,
+		pathname,
+		router,
+		searchParams,
+		isValidPath,
+	]);
 
 	const handleFileSelect = (filename: string) => {
 		const params = new URLSearchParams(searchParams.toString());
@@ -52,32 +59,37 @@ export function StegoProcessPageContent() {
 		router.push(`${pathname}?${params.toString()}`, { scroll: false });
 	};
 
-	const { data: files = [], isLoading: filesLoading } = api.files.listFiles.useQuery(
-		{ pathId: apiPathId },
-		{ enabled: isValidPath },
-	);
+	const { data: files = [], isLoading: filesLoading } =
+		api.files.listFiles.useQuery(
+			{ pathId: apiPathId },
+			{ enabled: isValidPath },
+		);
 
 	const resolvedFile = useMemo(() => {
 		if (selectedFile && files.includes(selectedFile)) return selectedFile;
-		return files.length > 0 ? files[files.length - 1] ?? null : null;
+		return files.length > 0 ? (files[files.length - 1] ?? null) : null;
 	}, [files, selectedFile]);
 
-	const { data: fileContent, isLoading: contentLoading } = api.files.getFileContent.useQuery(
-		{ filename: resolvedFile ?? "", pathId: apiPathId },
-		{ enabled: Boolean(resolvedFile) && isValidPath },
-	);
+	const { data: fileContent, isLoading: contentLoading } =
+		api.files.getFileContent.useQuery(
+			{ filename: resolvedFile ?? "", pathId: apiPathId },
+			{ enabled: Boolean(resolvedFile) && isValidPath },
+		);
 
-	const stegoData = useMemo(() => parseStegoResult(fileContent ?? null), [fileContent]);
+	const stegoData = useMemo(
+		() => parseStegoResult(fileContent ?? null),
+		[fileContent],
+	);
 
 	return (
 		<div className="flex h-screen w-full overflow-hidden">
 			<div className="shrink-0">
 				<FileExplorer
 					files={files}
-					selectedFile={resolvedFile}
 					onFileSelect={handleFileSelect}
-					selectedPathId={selectedPathId}
 					onPathSelect={handlePathSelect}
+					selectedFile={resolvedFile}
+					selectedPathId={selectedPathId}
 				/>
 			</div>
 			<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -88,7 +100,9 @@ export function StegoProcessPageContent() {
 							Showing process stages from the selected result artifact.
 						</p>
 						{resolvedFile ? (
-							<p className="mt-1 font-mono text-xs text-white/45">{resolvedFile}</p>
+							<p className="mt-1 font-mono text-white/45 text-xs">
+								{resolvedFile}
+							</p>
 						) : null}
 					</div>
 				</div>

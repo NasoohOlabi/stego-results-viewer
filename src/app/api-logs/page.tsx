@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { ApiLogsContent } from "./api-logs-content";
 
 export const metadata: Metadata = {
-	title: "API logs (live)"
+	title: "API logs (live)",
 };
 
 export default function ApiLogsPage() {

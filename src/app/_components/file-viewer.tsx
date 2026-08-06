@@ -1,20 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { usePathConfig } from "~/hooks/use-path-config";
 import { api } from "~/trpc/react";
 import { CodeViewer } from "./code-viewer";
 import { FileExplorer } from "./file-explorer";
-import { usePathConfig } from "~/hooks/use-path-config";
 
 export function FileViewer() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const pathname = usePathname();
-	const { enabledPaths, getPathIdForApiById } = usePathConfig();
+	const { enabledPaths, defaultPathId, getPathIdForApiById } = usePathConfig();
 
 	const selectedFile = searchParams.get("filename");
-	const selectedPathId = searchParams.get("folder") ?? "side-wing";
+	const selectedPathId = searchParams.get("folder") ?? defaultPathId;
 	const apiPathId = getPathIdForApiById(selectedPathId) ?? selectedPathId;
 	const isValidPath = enabledPaths.some((p) => p.id === selectedPathId);
 
@@ -25,7 +25,14 @@ export function FileViewer() {
 			params.delete("filename");
 			router.replace(`${pathname}?${params.toString()}`);
 		}
-	}, [selectedPathId, enabledPaths, pathname, router, searchParams, isValidPath]);
+	}, [
+		selectedPathId,
+		enabledPaths,
+		pathname,
+		router,
+		searchParams,
+		isValidPath,
+	]);
 
 	const handleFileSelect = (filename: string) => {
 		const params = new URLSearchParams(searchParams.toString());
@@ -65,10 +72,10 @@ export function FileViewer() {
 			<div className="shrink-0">
 				<FileExplorer
 					files={files}
-					selectedFile={selectedFile}
 					onFileSelect={handleFileSelect}
-					selectedPathId={selectedPathId}
 					onPathSelect={handlePathSelect}
+					selectedFile={selectedFile}
+					selectedPathId={selectedPathId}
 				/>
 			</div>
 			<div className="flex min-w-0 flex-1 flex-col overflow-hidden">

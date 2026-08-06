@@ -1,10 +1,7 @@
 "use client";
 
 import { renderInspectorValue } from "./inspector-response";
-import type {
-	PrepQuotaStructuredModel,
-	PrepQuotaStegoSummary,
-} from "./utils";
+import type { PrepQuotaStegoSummary, PrepQuotaStructuredModel } from "./utils";
 import { formatElapsedMs, labelStoppedReason } from "./utils";
 
 function stopReasonText(reason: string | undefined): string {
@@ -40,7 +37,8 @@ function stegoRows(summary: PrepQuotaStegoSummary): Array<{
 						: `result-${index + 1}`,
 				succeeded: row.succeeded === true,
 				retryCount:
-					typeof row.retry_count === "number" && Number.isFinite(row.retry_count)
+					typeof row.retry_count === "number" &&
+					Number.isFinite(row.retry_count)
 						? row.retry_count
 						: null,
 			},
@@ -148,8 +146,8 @@ export function PrepQuotaStructuredResponse(
 					) : null}
 				</div>
 				<p className="text-sm text-white/80">
-					Quota-aware prep pipeline that switches into recursive stego once Google
-					search quota is detected or prep work is exhausted.
+					Quota-aware prep pipeline that switches into recursive stego once
+					Google search quota is detected or prep work is exhausted.
 				</p>
 				{loading ? (
 					<p className="mt-2 text-white/55 text-xs">
@@ -165,7 +163,9 @@ export function PrepQuotaStructuredResponse(
 
 			{statusSummaryBadges.length > 0 || operatorSummary ? (
 				<section className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-					<h3 className="font-semibold text-sm text-white/85">Status summary</h3>
+					<h3 className="font-semibold text-sm text-white/85">
+						Status summary
+					</h3>
 					{statusSummaryBadges.length > 0 ? (
 						<div className="mt-2 flex flex-wrap gap-2 text-xs">
 							{statusSummaryBadges.map((badge) => (
@@ -201,7 +201,9 @@ export function PrepQuotaStructuredResponse(
 							</div>
 							<div className="rounded bg-black/25 p-2">
 								<p className="text-white/45">Stop reason</p>
-								<p className="text-white/90">{stopReasonText(prep.stop_reason)}</p>
+								<p className="text-white/90">
+									{stopReasonText(prep.stop_reason)}
+								</p>
 							</div>
 							<div className="rounded bg-black/25 p-2">
 								<p className="text-white/45">Data-load processed</p>
@@ -308,8 +310,9 @@ export function PrepQuotaStructuredResponse(
 				<div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs">
 					<p className="font-semibold text-amber-100">Phase transition</p>
 					<p className="mt-1 text-amber-50/90">
-						{model.phaseTransition.from_phase} → {model.phaseTransition.to_phase}
-						{" "}because {model.phaseTransition.reason.replace(/_/g, " ")}.
+						{model.phaseTransition.from_phase} →{" "}
+						{model.phaseTransition.to_phase} because{" "}
+						{model.phaseTransition.reason.replace(/_/g, " ")}.
 					</p>
 				</div>
 			) : null}
@@ -333,9 +336,7 @@ export function PrepQuotaStructuredResponse(
 									<td className="px-2 py-2">
 										<span
 											className={
-												row.succeeded
-													? "text-emerald-200"
-													: "text-rose-200"
+												row.succeeded ? "text-emerald-200" : "text-rose-200"
 											}
 										>
 											{row.succeeded ? "ok" : "failed"}
@@ -353,10 +354,15 @@ export function PrepQuotaStructuredResponse(
 
 			{model.timeline.length > 0 ? (
 				<div className="rounded-lg border border-white/10 bg-black/20 p-3">
-					<div className="mb-2 font-semibold text-white/70 text-xs">Timeline</div>
+					<div className="mb-2 font-semibold text-white/70 text-xs">
+						Timeline
+					</div>
 					<ol className="space-y-2 border-white/10 border-l pl-3 text-xs">
 						{model.timeline.map((row, index) => (
-							<li className="text-white/80" key={`${row.at}-${row.event}-${index}`}>
+							<li
+								className="text-white/80"
+								key={`${row.at}-${row.event}-${index}`}
+							>
 								<span className="text-white/40">
 									{new Date(row.at).toLocaleTimeString()}
 								</span>{" "}

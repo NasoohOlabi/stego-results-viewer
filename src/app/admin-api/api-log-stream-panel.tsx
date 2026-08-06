@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
-import type { AppRouter } from "~/server/api/root";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "~/lib/utils";
+import type { AppRouter } from "~/server/api/root";
 import { api } from "~/trpc/react";
 import { ADMIN_API_STORAGE_KEY } from "./types";
 
@@ -175,7 +175,10 @@ function getEntryTags(entry: ApiLogEntry): string[] {
 	return Array.from(out).sort((a, b) => a.localeCompare(b));
 }
 
-function mergeTagIdLists(catalogIds: string[], entryTags: Set<string>): string[] {
+function mergeTagIdLists(
+	catalogIds: string[],
+	entryTags: Set<string>,
+): string[] {
 	const seen = new Set<string>();
 	const ordered: string[] = [];
 	for (const id of catalogIds) {
@@ -201,7 +204,10 @@ function readCandidates(raw: Record<string, unknown>): unknown[] {
 	return [raw, extra, data].filter(Boolean) as Record<string, unknown>[];
 }
 
-function pickString(raw: Record<string, unknown>, keys: string[]): string | null {
+function pickString(
+	raw: Record<string, unknown>,
+	keys: string[],
+): string | null {
 	for (const source of readCandidates(raw)) {
 		for (const key of keys) {
 			const value = source[key];
@@ -211,7 +217,10 @@ function pickString(raw: Record<string, unknown>, keys: string[]): string | null
 	return null;
 }
 
-function pickNumber(raw: Record<string, unknown>, keys: string[]): number | null {
+function pickNumber(
+	raw: Record<string, unknown>,
+	keys: string[],
+): number | null {
 	for (const source of readCandidates(raw)) {
 		for (const key of keys) {
 			const value = source[key];
@@ -221,7 +230,10 @@ function pickNumber(raw: Record<string, unknown>, keys: string[]): number | null
 	return null;
 }
 
-function pickBoolean(raw: Record<string, unknown>, keys: string[]): boolean | null {
+function pickBoolean(
+	raw: Record<string, unknown>,
+	keys: string[],
+): boolean | null {
 	for (const source of readCandidates(raw)) {
 		for (const key of keys) {
 			const value = source[key];
@@ -315,8 +327,13 @@ function deriveEntries(entries: ApiLogEntry[]): DerivedLogEntry[] {
 	return entries.map((entry) => {
 		const msg = entry.msg ?? "";
 		const attempt = extractAttempt(msg);
-		const errorKind = pickString(entry.raw, ["error_kind", "exception_type", "type"]);
-		const retryable = pickBoolean(entry.raw, ["retryable"]) ?? /retry/i.test(msg);
+		const errorKind = pickString(entry.raw, [
+			"error_kind",
+			"exception_type",
+			"type",
+		]);
+		const retryable =
+			pickBoolean(entry.raw, ["retryable"]) ?? /retry/i.test(msg);
 		const componentLabel =
 			entry.component ?? entry.logger ?? "unknown component";
 		const isError =
@@ -389,11 +406,11 @@ function buildRunSummaries(entries: DerivedLogEntry[]): RunSummary[] {
 	return Array.from(runs.entries())
 		.map(([key, runEntries]) => {
 			const ordered = [...runEntries].sort((a, b) => {
-				if (a.timestampMs !== b.timestampMs) return a.timestampMs - b.timestampMs;
+				if (a.timestampMs !== b.timestampMs)
+					return a.timestampMs - b.timestampMs;
 				return a.lineNumber - b.lineNumber;
 			});
-			const command =
-				ordered.find((entry) => entry.command)?.command ?? null;
+			const command = ordered.find((entry) => entry.command)?.command ?? null;
 			const postMap = new Map<string, DerivedLogEntry[]>();
 			for (const entry of ordered) {
 				if (!entry.postId) continue;
@@ -409,7 +426,10 @@ function buildRunSummaries(entries: DerivedLogEntry[]): RunSummary[] {
 				.sort((a, b) => {
 					const rank = statusRank(b.status) - statusRank(a.status);
 					if (rank !== 0) return rank;
-					return b.entries[b.entries.length - 1]?.timestampMs - a.entries[a.entries.length - 1]?.timestampMs;
+					return (
+						b.entries[b.entries.length - 1]?.timestampMs -
+						a.entries[a.entries.length - 1]?.timestampMs
+					);
 				});
 
 			const errorCounts = new Map<string, number>();
@@ -424,16 +444,24 @@ function buildRunSummaries(entries: DerivedLogEntry[]): RunSummary[] {
 
 			const endEntry = [...ordered]
 				.reverse()
-				.find((entry) => entry.event === "workflow_run_end" || entry.isTerminal);
+				.find(
+					(entry) => entry.event === "workflow_run_end" || entry.isTerminal,
+				);
 			const hasTerminalFailure =
-				ordered.some((entry) => entry.isTerminal && entry.failureClass !== null) ||
-				ordered.some((entry) => entry.isError);
-			const hasWarnings = ordered.some((entry) => entry.isWarning || entry.isRetry);
-			const hasEnd = ordered.some((entry) => entry.event === "workflow_run_end");
+				ordered.some(
+					(entry) => entry.isTerminal && entry.failureClass !== null,
+				) || ordered.some((entry) => entry.isError);
+			const hasWarnings = ordered.some(
+				(entry) => entry.isWarning || entry.isRetry,
+			);
+			const hasEnd = ordered.some(
+				(entry) => entry.event === "workflow_run_end",
+			);
 
 			let status: RunSummary["status"] = "in progress";
 			if (hasEnd && !hasTerminalFailure && !hasWarnings) status = "success";
-			else if (hasEnd && !hasTerminalFailure && hasWarnings) status = "partial failure";
+			else if (hasEnd && !hasTerminalFailure && hasWarnings)
+				status = "partial failure";
 			else if (hasTerminalFailure) status = "failed";
 
 			const startedAt = ordered[0]?.ts ?? null;
@@ -455,9 +483,13 @@ function buildRunSummaries(entries: DerivedLogEntry[]): RunSummary[] {
 				durationMs: Number.isFinite(durationMs ?? NaN) ? durationMs : null,
 				command,
 				errorCount: ordered.filter((entry) => entry.isError).length,
-				warningCount: ordered.filter((entry) => entry.isWarning || entry.isRetry).length,
-				postsFailed: postSummaries.filter((post) => post.status === "failed").length,
-				postsSucceeded: postSummaries.filter((post) => post.status === "ok").length,
+				warningCount: ordered.filter(
+					(entry) => entry.isWarning || entry.isRetry,
+				).length,
+				postsFailed: postSummaries.filter((post) => post.status === "failed")
+					.length,
+				postsSucceeded: postSummaries.filter((post) => post.status === "ok")
+					.length,
 				topErrorKind,
 				postSummaries,
 			};
@@ -471,7 +503,10 @@ function buildRunSummaries(entries: DerivedLogEntry[]): RunSummary[] {
 		});
 }
 
-function buildPostSummary(postId: string, entries: DerivedLogEntry[]): PostSummary {
+function buildPostSummary(
+	postId: string,
+	entries: DerivedLogEntry[],
+): PostSummary {
 	const ordered = [...entries].sort((a, b) => {
 		if (a.timestampMs !== b.timestampMs) return a.timestampMs - b.timestampMs;
 		return a.lineNumber - b.lineNumber;
@@ -482,20 +517,28 @@ function buildPostSummary(postId: string, entries: DerivedLogEntry[]): PostSumma
 	const selectedIdx =
 		[...ordered]
 			.reverse()
-			.find((entry) => typeof entry.selectedIdx === "number")?.selectedIdx ?? null;
+			.find((entry) => typeof entry.selectedIdx === "number")?.selectedIdx ??
+		null;
 	const decodedIndicesLast =
-		[...ordered]
-			.reverse()
-			.find((entry) => entry.decodedIndices.length > 0)?.decodedIndices ?? [];
+		[...ordered].reverse().find((entry) => entry.decodedIndices.length > 0)
+			?.decodedIndices ?? [];
 	const finalErrorEntry = [...ordered]
 		.reverse()
 		.find((entry) => entry.isTerminal || entry.isError || entry.failureClass);
-	const hadTransportError = ordered.some((entry) => entry.failureClass === "transport");
-	const hadContractError = ordered.some((entry) => entry.failureClass === "contract");
-	const hadValidationError = ordered.some((entry) => entry.failureClass === "validation");
+	const hadTransportError = ordered.some(
+		(entry) => entry.failureClass === "transport",
+	);
+	const hadContractError = ordered.some(
+		(entry) => entry.failureClass === "contract",
+	);
+	const hadValidationError = ordered.some(
+		(entry) => entry.failureClass === "validation",
+	);
 	let status: PostSummary["status"] = "in progress";
-	if (finalErrorEntry?.isTerminal || finalErrorEntry?.isError) status = "failed";
-	else if (ordered.some((entry) => entry.isWarning || entry.isRetry)) status = "warning";
+	if (finalErrorEntry?.isTerminal || finalErrorEntry?.isError)
+		status = "failed";
+	else if (ordered.some((entry) => entry.isWarning || entry.isRetry))
+		status = "warning";
 	else if (ordered.length > 0) status = "ok";
 
 	return {
@@ -506,9 +549,7 @@ function buildPostSummary(postId: string, entries: DerivedLogEntry[]): PostSumma
 		attemptCount,
 		llmRetryCount: ordered.filter((entry) => entry.isRetry).length,
 		finalErrorKind:
-			finalErrorEntry?.errorKind ??
-			finalErrorEntry?.failureClass ??
-			null,
+			finalErrorEntry?.errorKind ?? finalErrorEntry?.failureClass ?? null,
 		selectedIdx,
 		decodedIndicesLast,
 		hadTransportError,
@@ -538,7 +579,9 @@ function statusRank(
 	}
 }
 
-function getStatusTone(status: RunSummary["status"] | PostSummary["status"]): string {
+function getStatusTone(
+	status: RunSummary["status"] | PostSummary["status"],
+): string {
 	switch (status) {
 		case "failed":
 			return "border-red-500/30 bg-red-500/10 text-red-100";
@@ -570,11 +613,15 @@ function getFailureTone(failureClass: FailureClass): string {
 }
 
 function getLevelTone(entry: DerivedLogEntry): string {
-	if (entry.isTerminal || entry.isError) return "border-red-500/30 bg-red-500/10 text-red-100";
+	if (entry.isTerminal || entry.isError)
+		return "border-red-500/30 bg-red-500/10 text-red-100";
 	if (entry.failureClass === "validation" || entry.isRetry) {
 		return "border-amber-500/30 bg-amber-500/10 text-amber-100";
 	}
-	if (entry.event === "workflow_run_register" || entry.event === "workflow_run_end") {
+	if (
+		entry.event === "workflow_run_register" ||
+		entry.event === "workflow_run_end"
+	) {
 		return "border-sky-500/30 bg-sky-500/10 text-sky-100";
 	}
 	return "border-white/10 bg-white/10 text-white/70";
@@ -596,13 +643,18 @@ function MetricCard(props: {
 	hint?: string | null;
 }) {
 	return (
-		<div className={cn("rounded-xl border p-3", props.tone ?? "border-white/10 bg-white/5")}>
-			<div className="text-[11px] uppercase tracking-[0.18em] text-white/45">
+		<div
+			className={cn(
+				"rounded-xl border p-3",
+				props.tone ?? "border-white/10 bg-white/5",
+			)}
+		>
+			<div className="text-[11px] text-white/45 uppercase tracking-[0.18em]">
 				{props.label}
 			</div>
-			<div className="mt-2 text-xl font-semibold text-white">{props.value}</div>
+			<div className="mt-2 font-semibold text-white text-xl">{props.value}</div>
 			{props.hint ? (
-				<div className="mt-1 text-xs text-white/55">{props.hint}</div>
+				<div className="mt-1 text-white/55 text-xs">{props.hint}</div>
 			) : null}
 		</div>
 	);
@@ -624,7 +676,9 @@ export function ApiLogStreamPanel() {
 	const [onlyErrors, setOnlyErrors] = useState(false);
 	const [onlyRetries, setOnlyRetries] = useState(false);
 	const [onlyTerminal, setOnlyTerminal] = useState(false);
-	const [streamState, setStreamState] = useState<"idle" | "connected" | "error">("idle");
+	const [streamState, setStreamState] = useState<
+		"idle" | "connected" | "error"
+	>("idle");
 	const [streamError, setStreamError] = useState<string | null>(null);
 	const [stateLogsBase, setStateLogsBase] = useState("");
 	const [stateLogs, setStateLogs] = useState<StateLogsPayload | null>(null);
@@ -802,7 +856,9 @@ export function ApiLogStreamPanel() {
 			return;
 		}
 
-		const source = new EventSource(`/api/prompt-logs/stream?backfill=${numericLimit}`);
+		const source = new EventSource(
+			`/api/prompt-logs/stream?backfill=${numericLimit}`,
+		);
 		setStreamState("idle");
 		setStreamError(null);
 
@@ -810,7 +866,9 @@ export function ApiLogStreamPanel() {
 			const payload = JSON.parse((event as MessageEvent).data) as {
 				entries?: ApiLogEntry[];
 			};
-			const initialEntries = Array.isArray(payload.entries) ? payload.entries : [];
+			const initialEntries = Array.isArray(payload.entries)
+				? payload.entries
+				: [];
 			setEntries((prev) => {
 				if (initialEntries.length === 0 && prev.length > 0) return prev;
 				return initialEntries;
@@ -822,7 +880,8 @@ export function ApiLogStreamPanel() {
 			const payload = JSON.parse((event as MessageEvent).data) as {
 				entries?: ApiLogEntry[];
 			};
-			if (!Array.isArray(payload.entries) || payload.entries.length === 0) return;
+			if (!Array.isArray(payload.entries) || payload.entries.length === 0)
+				return;
 			setEntries((prev) => upsertEntries(prev, payload.entries ?? []));
 			setStreamState("connected");
 		});
@@ -831,7 +890,9 @@ export function ApiLogStreamPanel() {
 			const payload = JSON.parse((event as MessageEvent).data) as {
 				entries?: ApiLogEntry[];
 			};
-			const resetEntries = Array.isArray(payload.entries) ? payload.entries : [];
+			const resetEntries = Array.isArray(payload.entries)
+				? payload.entries
+				: [];
 			setEntries((prev) => {
 				if (resetEntries.length === 0 && prev.length > 0) {
 					void refetchSnapshot();
@@ -873,9 +934,9 @@ export function ApiLogStreamPanel() {
 
 	const componentOptions = useMemo(
 		() =>
-			Array.from(new Set(derivedEntries.map((entry) => entry.componentLabel))).sort(
-				(a, b) => a.localeCompare(b),
-			),
+			Array.from(
+				new Set(derivedEntries.map((entry) => entry.componentLabel)),
+			).sort((a, b) => a.localeCompare(b)),
 		[derivedEntries],
 	);
 
@@ -921,16 +982,26 @@ export function ApiLogStreamPanel() {
 	const filteredEntries = useMemo(() => {
 		const query = search.trim().toLowerCase();
 		return derivedEntries.filter((entry) => {
-			if (selectedRunId !== "all" && (entry.runId ?? "__no_run__") !== selectedRunId) {
+			if (
+				selectedRunId !== "all" &&
+				(entry.runId ?? "__no_run__") !== selectedRunId
+			) {
 				return false;
 			}
-			if (selectedPostId !== "all" && entry.postId !== selectedPostId) return false;
+			if (selectedPostId !== "all" && entry.postId !== selectedPostId)
+				return false;
 			if (levelFilter !== "all" && entry.level !== levelFilter) return false;
-			if (componentFilter !== "all" && entry.componentLabel !== componentFilter) {
+			if (
+				componentFilter !== "all" &&
+				entry.componentLabel !== componentFilter
+			) {
 				return false;
 			}
 			if (methodFilter !== "all" && entry.method !== methodFilter) return false;
-			if (statusFilter !== "all" && statusGroup(entry.status) !== statusFilter) {
+			if (
+				statusFilter !== "all" &&
+				statusGroup(entry.status) !== statusFilter
+			) {
 				return false;
 			}
 			if (failureFilter !== "all" && entry.failureClass !== failureFilter) {
@@ -996,7 +1067,10 @@ export function ApiLogStreamPanel() {
 		tagsByEntryId,
 	]);
 
-	const runSummaries = useMemo(() => buildRunSummaries(filteredEntries), [filteredEntries]);
+	const runSummaries = useMemo(
+		() => buildRunSummaries(filteredEntries),
+		[filteredEntries],
+	);
 
 	useEffect(() => {
 		if (selectedRunId === "all") return;
@@ -1027,7 +1101,8 @@ export function ApiLogStreamPanel() {
 		const base = [...filteredEntries];
 		if (selectedRun) {
 			base.sort((a, b) => {
-				if (a.timestampMs !== b.timestampMs) return a.timestampMs - b.timestampMs;
+				if (a.timestampMs !== b.timestampMs)
+					return a.timestampMs - b.timestampMs;
 				return a.lineNumber - b.lineNumber;
 			});
 			return base;
@@ -1045,8 +1120,11 @@ export function ApiLogStreamPanel() {
 			return;
 		}
 		setSelectedId((current) => {
-			if (current && visibleEntries.some((entry) => entry.id === current)) return current;
-			const terminal = [...visibleEntries].reverse().find((entry) => entry.isTerminal);
+			if (current && visibleEntries.some((entry) => entry.id === current))
+				return current;
+			const terminal = [...visibleEntries]
+				.reverse()
+				.find((entry) => entry.isTerminal);
 			return terminal?.id ?? visibleEntries[0]?.id ?? null;
 		});
 	}, [visibleEntries]);
@@ -1056,7 +1134,9 @@ export function ApiLogStreamPanel() {
 		[selectedId, visibleEntries],
 	);
 
-	const selectedEntryTags = selectedEntry ? tagsByEntryId.get(selectedEntry.id) ?? [] : [];
+	const selectedEntryTags = selectedEntry
+		? (tagsByEntryId.get(selectedEntry.id) ?? [])
+		: [];
 
 	const totals = useMemo(() => {
 		const runs = buildRunSummaries(derivedEntries);
@@ -1064,7 +1144,9 @@ export function ApiLogStreamPanel() {
 			runCount: runs.length,
 			terminalCount: derivedEntries.filter((entry) => entry.isTerminal).length,
 			errorCount: derivedEntries.filter((entry) => entry.isError).length,
-			warningCount: derivedEntries.filter((entry) => entry.isWarning || entry.isRetry).length,
+			warningCount: derivedEntries.filter(
+				(entry) => entry.isWarning || entry.isRetry,
+			).length,
 		};
 	}, [derivedEntries]);
 
@@ -1095,10 +1177,12 @@ export function ApiLogStreamPanel() {
 			<div className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 shadow-[0_18px_50px_-32px_rgba(15,23,42,0.9)]">
 				<div className="flex flex-wrap items-start justify-between gap-3">
 					<div className="space-y-1">
-						<h2 className="text-lg font-semibold text-white">Live log triage</h2>
+						<h2 className="font-semibold text-lg text-white">
+							Live log triage
+						</h2>
 						<p className="max-w-3xl text-sm text-white/55">
-							Grouped for fast diagnosis: start from run, narrow to post, and surface the
-							final line that explains the failure.
+							Grouped for fast diagnosis: start from run, narrow to post, and
+							surface the final line that explains the failure.
 						</p>
 					</div>
 					<div className="flex flex-wrap gap-2">
@@ -1118,11 +1202,11 @@ export function ApiLogStreamPanel() {
 									? "stream error"
 									: "stream idle"}
 						</span>
-						<span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
+						<span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70 text-xs">
 							{visibleEntries.length} visible events
 						</span>
 						{selectedRun ? (
-							<span className="rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs text-sky-100">
+							<span className="rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-sky-100 text-xs">
 								run {selectedRun.label}
 							</span>
 						) : null}
@@ -1131,47 +1215,55 @@ export function ApiLogStreamPanel() {
 
 				<div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
 					<MetricCard
+						hint={`${numericLimit} entry snapshot window`}
 						label="Loaded Entries"
 						value={String(data?.totalEntries ?? derivedEntries.length)}
-						hint={`${numericLimit} entry snapshot window`}
 					/>
 					<MetricCard
+						hint={
+							totals.runCount === 1 ? "single active run" : "grouped by run_id"
+						}
 						label="Runs In View"
 						value={String(totals.runCount)}
-						hint={totals.runCount === 1 ? "single active run" : "grouped by run_id"}
 					/>
 					<MetricCard
-						label="Errors + Terminal"
-						value={`${totals.errorCount} / ${totals.terminalCount}`}
-						tone="border-red-500/20 bg-red-500/8"
 						hint="errors first, terminal lines highlighted"
+						label="Errors + Terminal"
+						tone="border-red-500/20 bg-red-500/8"
+						value={`${totals.errorCount} / ${totals.terminalCount}`}
 					/>
 					<MetricCard
-						label="Warnings + Retries"
-						value={String(totals.warningCount)}
-						tone="border-amber-500/20 bg-amber-500/8"
 						hint="retries and recoverable warnings"
+						label="Warnings + Retries"
+						tone="border-amber-500/20 bg-amber-500/8"
+						value={String(totals.warningCount)}
 					/>
 				</div>
 			</div>
 
 			<div className="rounded-xl border border-white/10 bg-white/5 p-4">
 				<div className="flex flex-wrap items-center justify-between gap-2">
-					<h2 className="text-sm font-semibold text-white/90">Server log file</h2>
+					<h2 className="font-semibold text-sm text-white/90">
+						Server log file
+					</h2>
 					<div className="flex flex-wrap gap-2">
 						<button
-							type="button"
+							className="rounded-md border border-white/15 bg-white/10 px-2 py-1.5 text-xs hover:bg-white/15 disabled:opacity-50"
 							disabled={stateLogsLoading}
 							onClick={() => void refreshStateLogs()}
-							className="rounded-md border border-white/15 bg-white/10 px-2 py-1.5 text-xs hover:bg-white/15 disabled:opacity-50"
+							type="button"
 						>
 							Refresh from API
 						</button>
 						<button
-							type="button"
-							disabled={truncateBusy || stateLogsLoading || !stateLogs?.file_logging_enabled}
+							className="rounded-md border border-rose-500/30 bg-rose-500/15 px-2 py-1.5 text-rose-100 text-xs hover:bg-rose-500/25 disabled:opacity-40"
+							disabled={
+								truncateBusy ||
+								stateLogsLoading ||
+								!stateLogs?.file_logging_enabled
+							}
 							onClick={() => void truncateServerLogFile()}
-							className="rounded-md border border-rose-500/30 bg-rose-500/15 px-2 py-1.5 text-xs text-rose-100 hover:bg-rose-500/25 disabled:opacity-40"
+							type="button"
 						>
 							Truncate on server
 						</button>
@@ -1187,7 +1279,9 @@ export function ApiLogStreamPanel() {
 					) : null}
 				</p>
 				{stateLogsLoading ? (
-					<p className="mt-2 text-xs text-white/55">Loading server log state...</p>
+					<p className="mt-2 text-white/55 text-xs">
+						Loading server log state...
+					</p>
 				) : stateLogs ? (
 					<dl className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
 						<div className="rounded-md border border-white/10 bg-black/20 px-2 py-1.5">
@@ -1198,16 +1292,20 @@ export function ApiLogStreamPanel() {
 						</div>
 						<div className="rounded-md border border-white/10 bg-black/20 px-2 py-1.5 sm:col-span-2">
 							<dt className="text-white/50">Path</dt>
-							<dd className="break-all font-mono text-white/85">{stateLogs.path ?? "-"}</dd>
+							<dd className="break-all font-mono text-white/85">
+								{stateLogs.path ?? "-"}
+							</dd>
 						</div>
 						<div className="rounded-md border border-white/10 bg-black/20 px-2 py-1.5">
 							<dt className="text-white/50">On-disk size</dt>
-							<dd className="font-mono text-white/85">{formatBytes(stateLogs.bytes)}</dd>
+							<dd className="font-mono text-white/85">
+								{formatBytes(stateLogs.bytes)}
+							</dd>
 						</div>
 					</dl>
 				) : null}
 				{stateLogsError ? (
-					<p className="mt-2 text-xs text-red-200/90">{stateLogsError}</p>
+					<p className="mt-2 text-red-200/90 text-xs">{stateLogsError}</p>
 				) : null}
 			</div>
 
@@ -1215,44 +1313,46 @@ export function ApiLogStreamPanel() {
 				<aside className="space-y-4">
 					<div className="rounded-xl border border-white/10 bg-white/5 p-4">
 						<div className="flex items-center justify-between gap-2">
-							<h3 className="text-sm font-semibold text-white/90">Filters</h3>
-							<label className="flex items-center gap-2 text-xs text-white/70">
+							<h3 className="font-semibold text-sm text-white/90">Filters</h3>
+							<label className="flex items-center gap-2 text-white/70 text-xs">
 								<input
-									type="checkbox"
 									checked={liveEnabled}
 									onChange={(e) => setLiveEnabled(e.target.checked)}
+									type="checkbox"
 								/>
 								Live stream
 							</label>
 						</div>
-						<p className="mt-1 text-xs text-white/50">{data?.logFilePath ?? "Loading log path..."}</p>
+						<p className="mt-1 text-white/50 text-xs">
+							{data?.logFilePath ?? "Loading log path..."}
+						</p>
 						<div className="mt-3 grid grid-cols-2 gap-2">
 							<input
-								value={limit}
-								onChange={(e) => setLimit(e.target.value)}
 								className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+								onChange={(e) => setLimit(e.target.value)}
 								placeholder="snapshot limit"
+								value={limit}
 							/>
 							<button
-								type="button"
-								onClick={() => void refetchSnapshot()}
 								className="rounded-md border border-white/15 bg-white/10 px-2 py-1.5 text-sm hover:bg-white/15"
+								onClick={() => void refetchSnapshot()}
+								type="button"
 							>
 								Reload snapshot
 							</button>
 						</div>
 						<input
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
 							className="mt-3 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+							onChange={(e) => setSearch(e.target.value)}
 							placeholder="Search run_id, post_id, message, provider..."
+							value={search}
 						/>
 						<div className="mt-3 grid grid-cols-2 gap-2">
 							<select
-								value={levelFilter}
-								onChange={(e) => setLevelFilter(e.target.value)}
 								aria-label="Filter logs by level"
 								className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+								onChange={(e) => setLevelFilter(e.target.value)}
+								value={levelFilter}
 							>
 								<option value="all">All levels</option>
 								{levelOptions.map((value) => (
@@ -1262,10 +1362,10 @@ export function ApiLogStreamPanel() {
 								))}
 							</select>
 							<select
-								value={statusFilter}
-								onChange={(e) => setStatusFilter(e.target.value)}
 								aria-label="Filter logs by status class"
 								className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+								onChange={(e) => setStatusFilter(e.target.value)}
+								value={statusFilter}
 							>
 								<option value="all">Any status class</option>
 								<option value="2xx">2xx</option>
@@ -1274,10 +1374,10 @@ export function ApiLogStreamPanel() {
 								<option value="other">other</option>
 							</select>
 							<select
-								value={componentFilter}
-								onChange={(e) => setComponentFilter(e.target.value)}
 								aria-label="Filter logs by component"
 								className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+								onChange={(e) => setComponentFilter(e.target.value)}
+								value={componentFilter}
 							>
 								<option value="all">All components</option>
 								{componentOptions.map((value) => (
@@ -1287,10 +1387,10 @@ export function ApiLogStreamPanel() {
 								))}
 							</select>
 							<select
-								value={methodFilter}
-								onChange={(e) => setMethodFilter(e.target.value)}
 								aria-label="Filter logs by HTTP method"
 								className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+								onChange={(e) => setMethodFilter(e.target.value)}
+								value={methodFilter}
 							>
 								<option value="all">Any method</option>
 								{methodOptions.map((value) => (
@@ -1300,10 +1400,10 @@ export function ApiLogStreamPanel() {
 								))}
 							</select>
 							<select
-								value={failureFilter}
-								onChange={(e) => setFailureFilter(e.target.value)}
 								aria-label="Filter logs by failure class"
 								className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-sm"
+								onChange={(e) => setFailureFilter(e.target.value)}
+								value={failureFilter}
 							>
 								<option value="all">Any failure class</option>
 								<option value="transport">Transport</option>
@@ -1314,49 +1414,49 @@ export function ApiLogStreamPanel() {
 						</div>
 						<div className="mt-3 flex flex-wrap gap-2">
 							<button
-								type="button"
-								onClick={() => setOnlyErrors((value) => !value)}
 								className={cn(
 									"rounded-full border px-3 py-1 text-xs",
 									onlyErrors
 										? "border-red-500/30 bg-red-500/10 text-red-100"
 										: "border-white/10 bg-white/5 text-white/70",
 								)}
+								onClick={() => setOnlyErrors((value) => !value)}
+								type="button"
 							>
 								Only errors
 							</button>
 							<button
-								type="button"
-								onClick={() => setOnlyRetries((value) => !value)}
 								className={cn(
 									"rounded-full border px-3 py-1 text-xs",
 									onlyRetries
 										? "border-amber-500/30 bg-amber-500/10 text-amber-100"
 										: "border-white/10 bg-white/5 text-white/70",
 								)}
+								onClick={() => setOnlyRetries((value) => !value)}
+								type="button"
 							>
 								Only retries
 							</button>
 							<button
-								type="button"
-								onClick={() => setOnlyTerminal((value) => !value)}
 								className={cn(
 									"rounded-full border px-3 py-1 text-xs",
 									onlyTerminal
 										? "border-sky-500/30 bg-sky-500/10 text-sky-100"
 										: "border-white/10 bg-white/5 text-white/70",
 								)}
+								onClick={() => setOnlyTerminal((value) => !value)}
+								type="button"
 							>
 								Only terminal failures
 							</button>
 						</div>
-						<div className="mt-3 text-xs text-white/55">
+						<div className="mt-3 text-white/55 text-xs">
 							{isLoading
 								? "Loading..."
 								: `${filteredEntries.length} matching events of ${data?.totalEntries ?? derivedEntries.length}`}
 						</div>
 						{(error || streamError) && (
-							<div className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 p-2 text-xs text-red-100">
+							<div className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 p-2 text-red-100 text-xs">
 								{error?.message ?? streamError}
 							</div>
 						)}
@@ -1364,42 +1464,43 @@ export function ApiLogStreamPanel() {
 
 					<div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-4">
 						<div className="flex flex-wrap items-center justify-between gap-2">
-							<h3 className="text-sm font-semibold text-white/90">Structured tags</h3>
+							<h3 className="font-semibold text-sm text-white/90">
+								Structured tags
+							</h3>
 							<div className="flex gap-2">
 								<button
-									type="button"
+									className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] hover:bg-white/15 disabled:opacity-50"
 									disabled={tagCatalogLoading}
 									onClick={() => void refreshTagCatalog()}
-									className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] hover:bg-white/15 disabled:opacity-50"
+									type="button"
 								>
 									{tagCatalogLoading ? "Loading..." : "Refresh"}
 								</button>
 								<button
-									type="button"
+									className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] hover:bg-white/15 disabled:opacity-40"
 									disabled={
 										tagFilterSelected.length === 0 &&
 										tagExcludeSelected.length === 0 &&
 										!onlyUntagged
 									}
 									onClick={clearTagFilter}
-									className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] hover:bg-white/15 disabled:opacity-40"
+									type="button"
 								>
 									Clear
 								</button>
 							</div>
 						</div>
-						<p className="mt-1 text-[11px] leading-snug text-white/45">
-							Tag chips support include-any and exclude-any filtering. Useful for hiding
-							noisy payload lines without losing the run timeline.
+						<p className="mt-1 text-[11px] text-white/45 leading-snug">
+							Tag chips support include-any and exclude-any filtering. Useful
+							for hiding noisy payload lines without losing the run timeline.
 						</p>
 						{tagCatalogError ? (
 							<p className="mt-2 text-[11px] text-amber-200/90">
 								Catalog error: {tagCatalogError}. Loaded log tags still work.
 							</p>
 						) : null}
-						<label className="mt-3 flex cursor-pointer items-center gap-2 text-xs text-white/65">
+						<label className="mt-3 flex cursor-pointer items-center gap-2 text-white/65 text-xs">
 							<input
-								type="checkbox"
 								checked={onlyUntagged}
 								onChange={(e) => {
 									setOnlyUntagged(e.target.checked);
@@ -1408,12 +1509,13 @@ export function ApiLogStreamPanel() {
 										setTagExcludeSelected([]);
 									}
 								}}
+								type="checkbox"
 							/>
 							Only untagged lines
 						</label>
 						<div className="mt-3 space-y-3">
 							<div>
-								<p className="text-[10px] font-medium uppercase tracking-wide text-white/40">
+								<p className="font-medium text-[10px] text-white/40 uppercase tracking-wide">
 									Include (any)
 								</p>
 								<div className="mt-1 max-h-28 overflow-y-auto rounded-md border border-white/10 bg-black/25 p-2">
@@ -1425,17 +1527,17 @@ export function ApiLogStreamPanel() {
 												const selected = tagFilterSelected.includes(id);
 												return (
 													<button
-														key={id}
-														type="button"
-														disabled={onlyUntagged}
-														title={tagDescriptionById.get(id) ?? id}
-														onClick={() => toggleTagFilter(id)}
 														className={cn(
 															"rounded-md border px-2 py-1 font-mono text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-40",
 															selected
 																? "border-violet-400/60 bg-violet-500/30 text-violet-100"
 																: "border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:bg-white/10",
 														)}
+														disabled={onlyUntagged}
+														key={id}
+														onClick={() => toggleTagFilter(id)}
+														title={tagDescriptionById.get(id) ?? id}
+														type="button"
 													>
 														{id}
 													</button>
@@ -1446,7 +1548,7 @@ export function ApiLogStreamPanel() {
 								</div>
 							</div>
 							<div>
-								<p className="text-[10px] font-medium uppercase tracking-wide text-white/40">
+								<p className="font-medium text-[10px] text-white/40 uppercase tracking-wide">
 									Exclude (any)
 								</p>
 								<div className="mt-1 max-h-28 overflow-y-auto rounded-md border border-white/10 bg-black/25 p-2">
@@ -1458,17 +1560,17 @@ export function ApiLogStreamPanel() {
 												const selected = tagExcludeSelected.includes(id);
 												return (
 													<button
-														key={`exclude-${id}`}
-														type="button"
-														disabled={onlyUntagged}
-														title={tagDescriptionById.get(id) ?? id}
-														onClick={() => toggleTagExclude(id)}
 														className={cn(
 															"rounded-md border px-2 py-1 font-mono text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-40",
 															selected
 																? "border-rose-400/60 bg-rose-500/25 text-rose-100"
 																: "border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:bg-white/10",
 														)}
+														disabled={onlyUntagged}
+														key={`exclude-${id}`}
+														onClick={() => toggleTagExclude(id)}
+														title={tagDescriptionById.get(id) ?? id}
+														type="button"
 													>
 														{id}
 													</button>
@@ -1483,14 +1585,14 @@ export function ApiLogStreamPanel() {
 
 					<div className="rounded-xl border border-white/10 bg-white/5 p-4">
 						<div className="flex items-center justify-between gap-2">
-							<h3 className="text-sm font-semibold text-white/90">Runs</h3>
+							<h3 className="font-semibold text-sm text-white/90">Runs</h3>
 							<button
-								type="button"
+								className="text-white/55 text-xs hover:text-white"
 								onClick={() => {
 									setSelectedRunId("all");
 									setSelectedPostId("all");
 								}}
-								className="text-xs text-white/55 hover:text-white"
+								type="button"
 							>
 								Show all
 							</button>
@@ -1503,21 +1605,23 @@ export function ApiLogStreamPanel() {
 							) : (
 								runSummaries.map((run) => (
 									<button
-										type="button"
-										key={run.id}
-										onClick={() => {
-											setSelectedRunId(run.id);
-											setSelectedPostId("all");
-										}}
 										className={cn(
 											"w-full rounded-xl border p-3 text-left transition-colors",
 											selectedRunId === run.id
 												? "border-cyan-400/40 bg-cyan-500/10"
 												: "border-white/10 bg-black/20 hover:bg-white/8",
 										)}
+										key={run.id}
+										onClick={() => {
+											setSelectedRunId(run.id);
+											setSelectedPostId("all");
+										}}
+										type="button"
 									>
 										<div className="flex flex-wrap items-center justify-between gap-2">
-											<span className="font-mono text-sm text-white/90">{run.label}</span>
+											<span className="font-mono text-sm text-white/90">
+												{run.label}
+											</span>
 											<span
 												className={cn(
 													"rounded-full border px-2 py-0.5 text-[11px]",
@@ -1538,16 +1642,19 @@ export function ApiLogStreamPanel() {
 												{run.warningCount} warnings
 											</span>
 											{run.command ? (
-												<span className="rounded bg-white/10 px-1.5 py-0.5">{run.command}</span>
+												<span className="rounded bg-white/10 px-1.5 py-0.5">
+													{run.command}
+												</span>
 											) : null}
 										</div>
-										<div className="mt-2 text-xs text-white/55">
+										<div className="mt-2 text-white/55 text-xs">
 											{formatTs(run.startedAt)} to {formatTs(run.endedAt)} -{" "}
 											{formatDuration(run.durationMs)}
 										</div>
 										{run.topErrorKind ? (
-											<div className="mt-1 text-xs text-white/45">
-												Top error: <span className="font-mono">{run.topErrorKind}</span>
+											<div className="mt-1 text-white/45 text-xs">
+												Top error:{" "}
+												<span className="font-mono">{run.topErrorKind}</span>
 											</div>
 										) : null}
 									</button>
@@ -1559,11 +1666,13 @@ export function ApiLogStreamPanel() {
 					{selectedRun ? (
 						<div className="rounded-xl border border-white/10 bg-white/5 p-4">
 							<div className="flex items-center justify-between gap-2">
-								<h3 className="text-sm font-semibold text-white/90">Posts in run</h3>
+								<h3 className="font-semibold text-sm text-white/90">
+									Posts in run
+								</h3>
 								<button
-									type="button"
+									className="text-white/55 text-xs hover:text-white"
 									onClick={() => setSelectedPostId("all")}
-									className="text-xs text-white/55 hover:text-white"
+									type="button"
 								>
 									All posts
 								</button>
@@ -1576,18 +1685,20 @@ export function ApiLogStreamPanel() {
 								) : (
 									selectedRun.postSummaries.map((post) => (
 										<button
-											type="button"
-											key={post.id}
-											onClick={() => setSelectedPostId(post.postId)}
 											className={cn(
 												"w-full rounded-xl border p-3 text-left transition-colors",
 												selectedPostId === post.postId
 													? "border-cyan-400/40 bg-cyan-500/10"
 													: "border-white/10 bg-black/20 hover:bg-white/8",
 											)}
+											key={post.id}
+											onClick={() => setSelectedPostId(post.postId)}
+											type="button"
 										>
 											<div className="flex items-center justify-between gap-2">
-												<span className="font-mono text-sm text-white/90">{post.postId}</span>
+												<span className="font-mono text-sm text-white/90">
+													{post.postId}
+												</span>
 												<span
 													className={cn(
 														"rounded-full border px-2 py-0.5 text-[11px]",
@@ -1610,7 +1721,7 @@ export function ApiLogStreamPanel() {
 													</span>
 												) : null}
 											</div>
-											<div className="mt-2 text-xs text-white/55">
+											<div className="mt-2 text-white/55 text-xs">
 												{buildEvidenceLine(post)}
 											</div>
 										</button>
@@ -1626,13 +1737,15 @@ export function ApiLogStreamPanel() {
 						<div className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-950 to-black p-4">
 							<div className="flex flex-wrap items-start justify-between gap-3">
 								<div>
-									<div className="text-[11px] uppercase tracking-[0.18em] text-white/45">
+									<div className="text-[11px] text-white/45 uppercase tracking-[0.18em]">
 										Selected run
 									</div>
-									<h3 className="mt-1 font-mono text-lg text-white">{selectedRun.label}</h3>
+									<h3 className="mt-1 font-mono text-lg text-white">
+										{selectedRun.label}
+									</h3>
 									<p className="mt-1 text-sm text-white/55">
-										Start from the run boundary, then narrow to post-level failures and the
-										terminal evidence line.
+										Start from the run boundary, then narrow to post-level
+										failures and the terminal evidence line.
 									</p>
 								</div>
 								<div
@@ -1646,38 +1759,44 @@ export function ApiLogStreamPanel() {
 							</div>
 							<div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
 								<MetricCard
-									label="Command"
-									value={selectedRun.command ?? "n/a"}
 									hint="workflow command"
+									label="Command"
 									tone="border-white/10 bg-white/5"
+									value={selectedRun.command ?? "n/a"}
 								/>
 								<MetricCard
-									label="Posts"
-									value={`${selectedRun.postsSucceeded}/${selectedRun.postCount}`}
 									hint="succeeded / total"
+									label="Posts"
 									tone="border-white/10 bg-white/5"
+									value={`${selectedRun.postsSucceeded}/${selectedRun.postCount}`}
 								/>
 								<MetricCard
+									hint={
+										selectedRun.topErrorKind
+											? `top: ${selectedRun.topErrorKind}`
+											: null
+									}
 									label="Errors"
-									value={String(selectedRun.errorCount)}
-									hint={selectedRun.topErrorKind ? `top: ${selectedRun.topErrorKind}` : null}
 									tone="border-red-500/20 bg-red-500/8"
+									value={String(selectedRun.errorCount)}
 								/>
 								<MetricCard
-									label="Duration"
-									value={formatDuration(selectedRun.durationMs)}
 									hint={`${formatTs(selectedRun.startedAt)} to ${formatTs(selectedRun.endedAt)}`}
+									label="Duration"
 									tone="border-sky-500/20 bg-sky-500/8"
+									value={formatDuration(selectedRun.durationMs)}
 								/>
 							</div>
 							{selectedRun.postSummaries.length > 0 ? (
 								<div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
-									<div className="text-xs font-semibold text-white/85">Collapsed post summary</div>
+									<div className="font-semibold text-white/85 text-xs">
+										Collapsed post summary
+									</div>
 									<div className="mt-2 space-y-2">
 										{selectedRun.postSummaries.slice(0, 4).map((post) => (
 											<div
-												key={`summary-${post.id}`}
 												className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80"
+												key={`summary-${post.id}`}
 											>
 												{buildEvidenceLine(post)}
 											</div>
@@ -1691,10 +1810,10 @@ export function ApiLogStreamPanel() {
 					<div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
 						<div className="rounded-xl border border-white/10 bg-white/5 p-4">
 							<div className="flex flex-wrap items-center justify-between gap-2">
-								<h3 className="text-sm font-semibold text-white/90">
+								<h3 className="font-semibold text-sm text-white/90">
 									{selectedRun ? "Run timeline" : "Event stream"}
 								</h3>
-								<div className="text-xs text-white/55">
+								<div className="text-white/55 text-xs">
 									{selectedRun
 										? "chronological order inside the selected run"
 										: "newest events first"}
@@ -1706,19 +1825,24 @@ export function ApiLogStreamPanel() {
 									const rowTags = tagsByEntryId.get(entry.id) ?? [];
 									return (
 										<button
-											type="button"
-											key={entry.id}
-											onClick={() => setSelectedId(entry.id)}
 											className={cn(
 												"w-full rounded-xl border p-3 text-left transition-colors",
 												selected
 													? "border-cyan-400/40 bg-cyan-500/10"
 													: "border-white/10 bg-black/20 hover:bg-white/8",
 											)}
+											key={entry.id}
+											onClick={() => setSelectedId(entry.id)}
+											type="button"
 										>
 											<div className="flex flex-wrap items-start justify-between gap-2">
 												<div className="flex flex-wrap gap-1.5 text-[11px]">
-													<span className={cn("rounded-full border px-2 py-0.5", getLevelTone(entry))}>
+													<span
+														className={cn(
+															"rounded-full border px-2 py-0.5",
+															getLevelTone(entry),
+														)}
+													>
 														{entry.level ?? "n/a"}
 													</span>
 													<span className="rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-white/70">
@@ -1748,10 +1872,12 @@ export function ApiLogStreamPanel() {
 														L{entry.lineNumber}
 													</span>
 												</div>
-												<div className="text-[11px] text-white/50">{formatTs(entry.ts)}</div>
+												<div className="text-[11px] text-white/50">
+													{formatTs(entry.ts)}
+												</div>
 											</div>
 
-											<div className="mt-2 text-sm leading-6 text-white/90">
+											<div className="mt-2 text-sm text-white/90 leading-6">
 												{entry.msg || "(empty message)"}
 											</div>
 
@@ -1767,12 +1893,16 @@ export function ApiLogStreamPanel() {
 													</span>
 												) : null}
 												{entry.event ? (
-													<span className="rounded bg-white/10 px-1.5 py-0.5">{entry.event}</span>
+													<span className="rounded bg-white/10 px-1.5 py-0.5">
+														{entry.event}
+													</span>
 												) : null}
 												{typeof entry.attemptCurrent === "number" ? (
 													<span className="rounded bg-white/10 px-1.5 py-0.5">
 														attempt {entry.attemptCurrent}
-														{typeof entry.attemptMax === "number" ? `/${entry.attemptMax}` : ""}
+														{typeof entry.attemptMax === "number"
+															? `/${entry.attemptMax}`
+															: ""}
 													</span>
 												) : null}
 												{typeof entry.selectedIdx === "number" ? (
@@ -1792,9 +1922,9 @@ export function ApiLogStreamPanel() {
 												) : null}
 												{rowTags.slice(0, 4).map((tag) => (
 													<span
+														className="rounded bg-violet-500/20 px-1.5 py-0.5 font-mono text-violet-100/90"
 														key={`${entry.id}-${tag}`}
 														title={tagDescriptionById.get(tag) ?? tag}
-														className="rounded bg-violet-500/20 px-1.5 py-0.5 font-mono text-violet-100/90"
 													>
 														{tag}
 													</span>
@@ -1826,12 +1956,14 @@ export function ApiLogStreamPanel() {
 												{selectedEntry.componentLabel}
 											</span>
 										</div>
-										<div className="mt-3 text-sm text-white/90">{selectedEntry.msg || "(empty)"}</div>
+										<div className="mt-3 text-sm text-white/90">
+											{selectedEntry.msg || "(empty)"}
+										</div>
 									</div>
 
 									<div className="grid gap-2 text-xs sm:grid-cols-2">
 										<div className="rounded-lg border border-white/10 bg-black/20 p-3">
-											<div className="text-[11px] uppercase tracking-wide text-white/45">
+											<div className="text-[11px] text-white/45 uppercase tracking-wide">
 												Failure class
 											</div>
 											<div className="mt-2 text-sm text-white/90">
@@ -1839,7 +1971,7 @@ export function ApiLogStreamPanel() {
 											</div>
 										</div>
 										<div className="rounded-lg border border-white/10 bg-black/20 p-3">
-											<div className="text-[11px] uppercase tracking-wide text-white/45">
+											<div className="text-[11px] text-white/45 uppercase tracking-wide">
 												Terminal evidence
 											</div>
 											<div className="mt-2 text-sm text-white/90">
@@ -1847,25 +1979,27 @@ export function ApiLogStreamPanel() {
 											</div>
 										</div>
 										<div className="rounded-lg border border-white/10 bg-black/20 p-3">
-											<div className="text-[11px] uppercase tracking-wide text-white/45">
+											<div className="text-[11px] text-white/45 uppercase tracking-wide">
 												Provider / model
 											</div>
 											<div className="mt-2 text-sm text-white/90">
-												{selectedEntry.provider ?? "n/a"} / {selectedEntry.model ?? "n/a"}
+												{selectedEntry.provider ?? "n/a"} /{" "}
+												{selectedEntry.model ?? "n/a"}
 											</div>
 										</div>
 										<div className="rounded-lg border border-white/10 bg-black/20 p-3">
-											<div className="text-[11px] uppercase tracking-wide text-white/45">
+											<div className="text-[11px] text-white/45 uppercase tracking-wide">
 												Run / post
 											</div>
 											<div className="mt-2 text-sm text-white/90">
-												{selectedEntry.runId ?? "n/a"} / {selectedEntry.postId ?? "n/a"}
+												{selectedEntry.runId ?? "n/a"} /{" "}
+												{selectedEntry.postId ?? "n/a"}
 											</div>
 										</div>
 									</div>
 
-									<div className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-white/75">
-										<div className="mb-2 text-[11px] uppercase tracking-wide text-white/45">
+									<div className="rounded-lg border border-white/10 bg-black/20 p-3 text-white/75 text-xs">
+										<div className="mb-2 text-[11px] text-white/45 uppercase tracking-wide">
 											Extracted fields
 										</div>
 										<div className="grid gap-2 sm:grid-cols-2">
@@ -1877,22 +2011,36 @@ export function ApiLogStreamPanel() {
 													? `${selectedEntry.attemptCurrent}${typeof selectedEntry.attemptMax === "number" ? `/${selectedEntry.attemptMax}` : ""}`
 													: "n/a"}
 											</div>
-											<div>selected_idx: {selectedEntry.selectedIdx ?? "n/a"}</div>
-											<div>decoded_indices: {selectedEntry.decodedIndices.join(", ") || "n/a"}</div>
+											<div>
+												selected_idx: {selectedEntry.selectedIdx ?? "n/a"}
+											</div>
+											<div>
+												decoded_indices:{" "}
+												{selectedEntry.decodedIndices.join(", ") || "n/a"}
+											</div>
 											<div>error_kind: {selectedEntry.errorKind ?? "n/a"}</div>
-											<div>http_status: {selectedEntry.httpStatus ?? "n/a"}</div>
-											<div>retryable: {selectedEntry.retryable ? "true" : "false"}</div>
-											<div>prompt_hash: {selectedEntry.promptHash ?? "n/a"}</div>
-											<div>system_prompt_hash: {selectedEntry.systemPromptHash ?? "n/a"}</div>
+											<div>
+												http_status: {selectedEntry.httpStatus ?? "n/a"}
+											</div>
+											<div>
+												retryable: {selectedEntry.retryable ? "true" : "false"}
+											</div>
+											<div>
+												prompt_hash: {selectedEntry.promptHash ?? "n/a"}
+											</div>
+											<div>
+												system_prompt_hash:{" "}
+												{selectedEntry.systemPromptHash ?? "n/a"}
+											</div>
 										</div>
 									</div>
 
 									{selectedEntry.responseSnippet ? (
 										<div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3">
-											<div className="mb-2 text-[11px] uppercase tracking-wide text-orange-100/70">
+											<div className="mb-2 text-[11px] text-orange-100/70 uppercase tracking-wide">
 												Last response snippet
 											</div>
-											<pre className="max-h-40 overflow-auto whitespace-pre-wrap text-xs text-orange-50/90">
+											<pre className="max-h-40 overflow-auto whitespace-pre-wrap text-orange-50/90 text-xs">
 												{selectedEntry.responseSnippet}
 											</pre>
 										</div>
@@ -1902,9 +2050,9 @@ export function ApiLogStreamPanel() {
 										<div className="flex flex-wrap gap-1.5">
 											{selectedEntryTags.map((tag) => (
 												<span
+													className="rounded-md border border-violet-500/30 bg-violet-500/15 px-2 py-1 font-mono text-violet-100/90 text-xs"
 													key={tag}
 													title={tagDescriptionById.get(tag) ?? tag}
-													className="rounded-md border border-violet-500/30 bg-violet-500/15 px-2 py-1 font-mono text-xs text-violet-100/90"
 												>
 													{tag}
 												</span>
@@ -1913,17 +2061,18 @@ export function ApiLogStreamPanel() {
 									) : null}
 
 									<div className="rounded-lg border border-white/10 bg-black/20 p-3">
-										<div className="mb-2 text-[11px] uppercase tracking-wide text-white/45">
+										<div className="mb-2 text-[11px] text-white/45 uppercase tracking-wide">
 											Raw JSON
 										</div>
-										<pre className="max-h-[420px] overflow-auto whitespace-pre-wrap text-xs text-white/75">
+										<pre className="max-h-[420px] overflow-auto whitespace-pre-wrap text-white/75 text-xs">
 											{JSON.stringify(selectedEntry.raw, null, 2)}
 										</pre>
 									</div>
 								</div>
 							) : (
 								<div className="flex h-full min-h-[400px] items-center justify-center text-sm text-white/50">
-									Select a log event to inspect its derived fields and raw payload.
+									Select a log event to inspect its derived fields and raw
+									payload.
 								</div>
 							)}
 						</div>

@@ -33,7 +33,9 @@ export function AngleTable({ data }: AngleTableProps) {
 			header: "Category",
 			accessorKey: "category",
 			cell: (info) => (
-				<span className="font-medium text-white/90">{info.getValue() as string}</span>
+				<span className="font-medium text-white/90">
+					{info.getValue() as string}
+				</span>
 			),
 		},
 		{
@@ -69,7 +71,7 @@ export function AngleTable({ data }: AngleTableProps) {
 
 	if (data.length === 0) {
 		return (
-			<div className="text-white/30 italic py-4 text-center">
+			<div className="py-4 text-center text-white/30 italic">
 				No angles found
 			</div>
 		);
@@ -79,28 +81,37 @@ export function AngleTable({ data }: AngleTableProps) {
 		<div className="space-y-4">
 			<div className="flex items-center justify-between px-2">
 				<div className="flex items-center gap-4">
-					<div className="text-xs text-white/40">
-						Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
+					<div className="text-white/40 text-xs">
+						Showing{" "}
+						{table.getState().pagination.pageIndex *
+							table.getState().pagination.pageSize +
+							1}{" "}
+						to{" "}
 						{Math.min(
-							(table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-							data.length
+							(table.getState().pagination.pageIndex + 1) *
+								table.getState().pagination.pageSize,
+							data.length,
 						)}{" "}
 						of {data.length} results
 					</div>
 					<div className="flex items-center gap-2">
-						<label htmlFor="angle-page-size" className="text-xs text-white/40">
+						<label className="text-white/40 text-xs" htmlFor="angle-page-size">
 							Rows per page:
 						</label>
 						<select
+							className="rounded border border-white/10 bg-white/5 px-1 py-0.5 text-white/60 text-xs focus:border-white/20 focus:outline-none"
 							id="angle-page-size"
-							value={table.getState().pagination.pageSize}
 							onChange={(e) => {
 								table.setPageSize(Number(e.target.value));
 							}}
-							className="bg-white/5 border border-white/10 rounded px-1 py-0.5 text-xs text-white/60 focus:outline-none focus:border-white/20"
+							value={table.getState().pagination.pageSize}
 						>
 							{[5, 10, 20, 50].map((pageSize) => (
-								<option key={pageSize} value={pageSize} className="bg-[#1a1a1a]">
+								<option
+									className="bg-[#1a1a1a]"
+									key={pageSize}
+									value={pageSize}
+								>
 									{pageSize}
 								</option>
 							))}
@@ -109,36 +120,45 @@ export function AngleTable({ data }: AngleTableProps) {
 				</div>
 				<div className="flex items-center gap-2">
 					<button
-						onClick={() => table.previousPage()}
-						disabled={!table.getCanPreviousPage()}
 						aria-label="Previous page"
-						className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+						className="rounded-md p-1.5 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
+						disabled={!table.getCanPreviousPage()}
+						onClick={() => table.previousPage()}
 					>
 						<ChevronLeft size={18} />
 					</button>
-					<span className="text-xs font-medium text-white/60 min-w-12 text-center">
+					<span className="min-w-12 text-center font-medium text-white/60 text-xs">
 						{table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
 					</span>
 					<button
-						onClick={() => table.nextPage()}
-						disabled={!table.getCanNextPage()}
 						aria-label="Next page"
-						className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+						className="rounded-md p-1.5 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
+						disabled={!table.getCanNextPage()}
+						onClick={() => table.nextPage()}
 					>
 						<ChevronRight size={18} />
 					</button>
 				</div>
 			</div>
-			<div className="rounded-md border border-white/10 overflow-hidden">
-				<table className="w-full text-left border-collapse">
+			<div className="overflow-hidden rounded-md border border-white/10">
+				<table className="w-full border-collapse text-left">
 					<thead>
 						{table.getHeaderGroups().map((headerGroup) => (
-							<tr key={headerGroup.id} className="bg-white/5 border-b border-white/10">
+							<tr
+								className="border-white/10 border-b bg-white/5"
+								key={headerGroup.id}
+							>
 								{headerGroup.headers.map((header) => (
-									<th key={header.id} className="p-3 text-xs font-semibold text-white/40 uppercase tracking-wider">
+									<th
+										className="p-3 font-semibold text-white/40 text-xs uppercase tracking-wider"
+										key={header.id}
+									>
 										{header.isPlaceholder
 											? null
-											: flexRender(header.column.columnDef.header, header.getContext())}
+											: flexRender(
+													header.column.columnDef.header,
+													header.getContext(),
+												)}
 									</th>
 								))}
 							</tr>
@@ -146,9 +166,9 @@ export function AngleTable({ data }: AngleTableProps) {
 					</thead>
 					<tbody className="divide-y divide-white/10">
 						{table.getRowModel().rows.map((row) => (
-							<tr key={row.id} className="hover:bg-white/5 transition-colors">
+							<tr className="transition-colors hover:bg-white/5" key={row.id}>
 								{row.getVisibleCells().map((cell) => (
-									<td key={cell.id} className="p-3 align-top">
+									<td className="p-3 align-top" key={cell.id}>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}
 									</td>
 								))}

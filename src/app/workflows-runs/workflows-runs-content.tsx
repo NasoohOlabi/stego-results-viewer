@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { FileExplorer } from "~/app/_components/file-explorer";
+import { GenerationProgressSection } from "~/app/workflows-runs/generation-progress-section";
 import { usePathConfig } from "~/hooks/use-path-config";
 import { api } from "~/trpc/react";
 
@@ -23,7 +24,10 @@ interface WorkflowRunsEnvelope {
 	message?: string;
 }
 
-function normalizeRuns(payload: unknown): { runs: WorkflowRunRow[]; count: number } {
+function normalizeRuns(payload: unknown): {
+	runs: WorkflowRunRow[];
+	count: number;
+} {
 	const envelope = payload as WorkflowRunsEnvelope | null;
 	const runsRaw = envelope?.data?.runs;
 	if (!Array.isArray(runsRaw)) return { runs: [], count: 0 };
@@ -44,7 +48,7 @@ function normalizeRuns(payload: unknown): { runs: WorkflowRunRow[]; count: numbe
 				command: run.command,
 				mode: run.mode,
 				started_at: run.started_at,
-				elapsed_ms: run.elapsed_ms
+				elapsed_ms: run.elapsed_ms,
 			});
 		}
 	}
@@ -75,9 +79,9 @@ export function WorkflowsRunsContent() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const pathname = usePathname();
-	const { enabledPaths, getPathIdForApiById } = usePathConfig();
+	const { enabledPaths, defaultPathId, getPathIdForApiById } = usePathConfig();
 
-	const selectedPathId = searchParams.get("folder") ?? "side-wing";
+	const selectedPathId = searchParams.get("folder") ?? defaultPathId;
 	const apiPathId = getPathIdForApiById(selectedPathId) ?? selectedPathId;
 	const isValidPath = enabledPaths.some((p) => p.id === selectedPathId);
 
@@ -91,15 +95,15 @@ export function WorkflowsRunsContent() {
 
 	const { data: files = [] } = api.files.listFiles.useQuery(
 		{ pathId: apiPathId },
-		{ enabled: isValidPath }
+		{ enabled: isValidPath },
 	);
 
 	const [baseUrl, setBaseUrl] = useState("http://localhost:5001/api/v1");
 	const [runs, setRuns] = useState<WorkflowRunRow[]>([]);
 	const [activeCount, setActiveCount] = useState(0);
-	const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
-		"idle"
-	);
+	const [status, setStatus] = useState<
+		"idle" | "loading" | "success" | "error"
+	>("idle");
 	const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [autoRefreshMs, setAutoRefreshMs] = useState(5000);
@@ -125,7 +129,7 @@ export function WorkflowsRunsContent() {
 		try {
 			const response = await fetch(`${base}/workflows/runs`, {
 				method: "GET",
-				headers: { "Content-Type": "application/json" }
+				headers: { "Content-Type": "application/json" },
 			});
 			const payload = (await response.json()) as unknown;
 			if (!response.ok) {
@@ -141,7 +145,9 @@ export function WorkflowsRunsContent() {
 			setStatus("success");
 		} catch (error) {
 			setStatus("error");
-			setErrorMessage(error instanceof Error ? error.message : "Request failed");
+			setErrorMessage(
+				error instanceof Error ? error.message : "Request failed",
+			);
 		}
 	};
 
@@ -169,35 +175,38 @@ export function WorkflowsRunsContent() {
 			<div className="shrink-0">
 				<FileExplorer
 					files={files}
-					selectedFile={null}
 					onFileSelect={handleFileSelect}
-					selectedPathId={selectedPathId}
 					onPathSelect={handlePathSelect}
+					selectedFile={null}
+					selectedPathId={selectedPathId}
 				/>
 			</div>
 			<div className="min-w-0 flex-1 overflow-y-auto p-8">
 				<div className="mx-auto max-w-7xl space-y-4">
 					<header className="space-y-2">
-						<h1 className="text-3xl font-bold">Workflow Runs</h1>
+						<h1 className="font-bold text-3xl">Workflow Runs</h1>
 						<p className="text-sm text-white/55">
-							Dedicated view for <code>GET /workflows/runs</code> showing
-							currently running pipelines.
+							Live pipelines from <code>GET /workflows/runs</code> (needs the
+							side-wing API running), plus on-disk sample generation progress
+							for every run — including finished ones.
 						</p>
 					</header>
 
-					<section className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+					<section className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
 						<div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto]">
 							<input
-								value={baseUrl}
-								onChange={(event) => setBaseUrl(event.target.value)}
 								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+								onChange={(event) => setBaseUrl(event.target.value)}
 								placeholder="http://localhost:5001/api/v1"
+								value={baseUrl}
 							/>
 							<select
-								value={String(autoRefreshMs)}
-								onChange={(event) => setAutoRefreshMs(Number(event.target.value))}
 								className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm"
+								onChange={(event) =>
+									setAutoRefreshMs(Number(event.target.value))
+								}
 								title="Auto-refresh interval"
+								value={String(autoRefreshMs)}
 							>
 								<option value="0">Auto refresh: Off</option>
 								<option value="2000">Auto refresh: 2s</option>
@@ -205,14 +214,14 @@ export function WorkflowsRunsContent() {
 								<option value="10000">Auto refresh: 10s</option>
 							</select>
 							<button
-								type="button"
-								onClick={() => void loadRuns()}
 								className="rounded-md bg-emerald-500/20 px-3 py-2 text-sm hover:bg-emerald-500/30"
+								onClick={() => void loadRuns()}
+								type="button"
 							>
 								Refresh now
 							</button>
 						</div>
-						<div className="text-xs text-white/60">
+						<div className="text-white/60 text-xs">
 							Status:{" "}
 							<span className="font-medium text-white/85">
 								{status === "loading"
@@ -231,7 +240,7 @@ export function WorkflowsRunsContent() {
 								: ""}
 						</div>
 						{errorMessage ? (
-							<div className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
+							<div className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-red-200 text-sm">
 								Failed to load workflow runs: {errorMessage}
 							</div>
 						) : null}
@@ -240,7 +249,7 @@ export function WorkflowsRunsContent() {
 					<section className="overflow-hidden rounded-xl border border-white/10 bg-white/5">
 						<div className="overflow-x-auto">
 							<table className="min-w-full text-sm">
-								<thead className="bg-white/10 text-left text-xs uppercase tracking-wide text-white/60">
+								<thead className="bg-white/10 text-left text-white/60 text-xs uppercase tracking-wide">
 									<tr>
 										<th className="px-4 py-3">Run ID</th>
 										<th className="px-4 py-3">Command</th>
@@ -252,18 +261,15 @@ export function WorkflowsRunsContent() {
 								<tbody>
 									{runs.length === 0 ? (
 										<tr>
-											<td
-												className="px-4 py-6 text-white/60"
-												colSpan={5}
-											>
+											<td className="px-4 py-6 text-white/60" colSpan={5}>
 												No running pipelines right now.
 											</td>
 										</tr>
 									) : (
 										runs.map((run) => (
 											<tr
+												className="border-white/10 border-t text-white/90"
 												key={run.id}
-												className="border-t border-white/10 text-white/90"
 											>
 												<td className="px-4 py-3 font-mono text-xs">
 													{run.id}
@@ -283,6 +289,8 @@ export function WorkflowsRunsContent() {
 							</table>
 						</div>
 					</section>
+
+					<GenerationProgressSection />
 				</div>
 			</div>
 		</div>

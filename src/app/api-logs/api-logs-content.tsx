@@ -27,7 +27,7 @@ export function ApiLogsContent() {
 
 	const { data: files = [] } = api.files.listFiles.useQuery(
 		{ pathId: apiPathId },
-		{ enabled: isValidPath }
+		{ enabled: isValidPath },
 	);
 
 	const handleFileSelect = (filename: string) => {
@@ -45,16 +45,16 @@ export function ApiLogsContent() {
 			<div className="shrink-0">
 				<FileExplorer
 					files={files}
-					selectedFile={null}
 					onFileSelect={handleFileSelect}
-					selectedPathId={selectedPathId}
 					onPathSelect={handlePathSelect}
+					selectedFile={null}
+					selectedPathId={selectedPathId}
 				/>
 			</div>
 			<div className="min-w-0 flex-1 overflow-y-auto p-8">
 				<div className="mx-auto max-w-7xl space-y-4">
 					<header className="space-y-2">
-						<h1 className="text-3xl font-bold">API Logs (Live)</h1>
+						<h1 className="font-bold text-3xl">API Logs (Live)</h1>
 						<p className="text-sm text-white/55">
 							Dedicated view for live `api.jsonl` streaming and filtering.
 						</p>

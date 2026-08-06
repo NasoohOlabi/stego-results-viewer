@@ -11,9 +11,7 @@ export function AdminApiTabsShell() {
 	const router = useRouter();
 	const pathname = usePathname();
 	const currentTab =
-		searchParams.get("tab") === "recent-updates"
-			? "recent-updates"
-			: "console";
+		searchParams.get("tab") === "recent-updates" ? "recent-updates" : "console";
 
 	const setTab = (tab: AdminApiTab) => {
 		const params = new URLSearchParams(searchParams.toString());
@@ -30,7 +28,7 @@ export function AdminApiTabsShell() {
 		return (
 			<div className="h-screen">
 				<div className="fixed top-4 right-6 z-20">
-					<div className="rounded-full border border-white/10 bg-black/60 p-1 text-xs text-white backdrop-blur">
+					<div className="rounded-full border border-white/10 bg-black/60 p-1 text-white text-xs backdrop-blur">
 						<button
 							className="rounded-full bg-white/10 px-3 py-1"
 							onClick={() => setTab("console")}

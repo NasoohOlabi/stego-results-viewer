@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { WorkflowsRunsContent } from "./workflows-runs-content";
 
 export const metadata: Metadata = {
-	title: "Workflow runs"
+	title: "Workflow runs",
 };
 
 export default function WorkflowsRunsPage() {

@@ -20,11 +20,7 @@ function JsonValue({ value, path = "" }: { value: unknown; path?: string }) {
 	}
 
 	if (typeof value === "string") {
-		return (
-			<span className="text-green-400">
-				"{value}"
-			</span>
-		);
+		return <span className="text-green-400">"{value}"</span>;
 	}
 
 	if (typeof value === "number") {
@@ -32,11 +28,7 @@ function JsonValue({ value, path = "" }: { value: unknown; path?: string }) {
 	}
 
 	if (typeof value === "boolean") {
-		return (
-			<span className="text-yellow-400">
-				{value ? "true" : "false"}
-			</span>
-		);
+		return <span className="text-yellow-400">{value ? "true" : "false"}</span>;
 	}
 
 	if (Array.isArray(value)) {
@@ -47,26 +39,19 @@ function JsonValue({ value, path = "" }: { value: unknown; path?: string }) {
 		return (
 			<div className="ml-4">
 				<button
-					type="button"
-					onClick={() => setIsExpanded(!isExpanded)}
 					className="flex items-center gap-1 text-white/70 hover:text-white"
+					onClick={() => setIsExpanded(!isExpanded)}
+					type="button"
 				>
 					<span>{isExpanded ? "▼" : "▶"}</span>
-					<span className="text-purple-400">
-						Array({value.length})
-					</span>
+					<span className="text-purple-400">Array({value.length})</span>
 				</button>
 				{isExpanded && (
-					<div className="ml-6 border-l border-white/10 pl-2">
+					<div className="ml-6 border-white/10 border-l pl-2">
 						{value.map((item, index) => (
-							<div key={index} className="py-1">
-								<span className="text-white/50">
-									[{index}]:
-								</span>{" "}
-								<JsonValue
-									value={item}
-									path={`${path}[${index}]`}
-								/>
+							<div className="py-1" key={index}>
+								<span className="text-white/50">[{index}]:</span>{" "}
+								<JsonValue path={`${path}[${index}]`} value={item} />
 							</div>
 						))}
 					</div>
@@ -84,24 +69,19 @@ function JsonValue({ value, path = "" }: { value: unknown; path?: string }) {
 		return (
 			<div className="ml-4">
 				<button
-					type="button"
-					onClick={() => setIsExpanded(!isExpanded)}
 					className="flex items-center gap-1 text-white/70 hover:text-white"
+					onClick={() => setIsExpanded(!isExpanded)}
+					type="button"
 				>
 					<span>{isExpanded ? "▼" : "▶"}</span>
 					<span className="text-purple-400">Object</span>
 				</button>
 				{isExpanded && (
-					<div className="ml-6 border-l border-white/10 pl-2">
+					<div className="ml-6 border-white/10 border-l pl-2">
 						{entries.map(([key, val]) => (
-							<div key={key} className="py-1">
-								<span className="text-white/90 font-medium">
-									{key}:
-								</span>{" "}
-								<JsonValue
-									value={val}
-									path={path ? `${path}.${key}` : key}
-								/>
+							<div className="py-1" key={key}>
+								<span className="font-medium text-white/90">{key}:</span>{" "}
+								<JsonValue path={path ? `${path}.${key}` : key} value={val} />
 							</div>
 						))}
 					</div>
@@ -121,7 +101,7 @@ export function JsonTreeRenderer({ data, hideMessage }: JsonTreeRendererProps) {
 	return (
 		<div className="rounded p-4">
 			{!hideMessage && (
-				<div className="mb-2 text-xs text-white/50">
+				<div className="mb-2 text-white/50 text-xs">
 					No matching schema found. Showing JSON tree view:
 				</div>
 			)}

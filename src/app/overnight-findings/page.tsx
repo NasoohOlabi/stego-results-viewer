@@ -47,57 +47,87 @@ export default async function OvernightFindingsPage() {
 						</p>
 						<h1 className="font-bold text-3xl">Current Progress</h1>
 						<p className="text-slate-400 text-sm">
-							Latest-run view only. Generated: {progress.generatedAtUtc || "n/a"}
+							Latest-run view only. Generated:{" "}
+							{progress.generatedAtUtc || "n/a"}
 						</p>
 						<p className="max-w-5xl text-slate-300 text-sm">
 							Number format: <span className="font-mono">x/y</span> means{" "}
 							<span className="font-medium">succeeded/requested samples</span>.{" "}
-							Percent next to cards is success rate from the same scope. KLD/JSD/PPL
-							come from side-wing metrics files. E2E top card is aggregated across mixed
-							run configs; use latest-run tables for strict comparisons.
+							Percent next to cards is success rate from the same scope.
+							KLD/JSD/PPL come from side-wing metrics files. E2E top card is
+							aggregated across mixed run configs; use latest-run tables for
+							strict comparisons.
 						</p>
 					</header>
 
+					<section className="rounded-lg border border-amber-300/30 bg-amber-300/[0.07] p-5">
+						<div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
+							<h2 className="font-semibold text-lg">Current research state</h2>
+							<p className="text-amber-200 text-xs">Verified 2026-08-03</p>
+						</div>
+						<p className="mt-2 text-slate-200 text-sm">
+							The active LUCID bulk lane requested <strong>500</strong> samples and is
+							blocked at <strong>381 succeeded / 119 failed (76.2%)</strong>. Those
+							attempts reuse 64 frozen source posts, so they are not 500 independent
+							observations or a completed paired ZLG result.
+						</p>
+						<p className="mt-2 text-slate-400 text-sm">
+							Run: <span className="font-mono">LUCID_context_weighted_v2_balanced_500</span>
+							. It uses schema v3 / <span className="font-mono">context_weighted_v2</span>
+							 artifacts. Its run metadata has no Git SHA or branch and declares a dirty
+							worktree; the nearest pre-run committed base is <span className="font-mono">0353848</span>
+							 on <span className="font-mono">fix/zlg-benchmark-overhaul</span>, which is
+							provenance context—not an exact reproducible code pin.
+						</p>
+						<p className="mt-2 text-slate-500 text-xs">
+							The latest recalibrated ZLG lane is 510/554, but it uses an older source
+							summary and must not be compared directly with this LUCID lane.
+						</p>
+					</section>
+
 					<section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
 						<Card
-							label="E2E"
-							value={ratio(progress.e2e.totalSucceeded, progress.e2e.totalRequested)}
 							detail={percent(progress.e2e.successRate)}
 							hint="All e2e rows under metrics/e2e_runs: succeeded/requested across mixed variants/configs/sample sizes."
+							label="E2E"
+							value={ratio(
+								progress.e2e.totalSucceeded,
+								progress.e2e.totalRequested,
+							)}
 						/>
 						<Card
+							detail={percent(progress.modelAblation.successRate)}
+							hint="Succeeded/requested across model lanes; requested is samples_per_model per lane, not only successful rows."
 							label="Model Ablation"
 							value={ratio(
 								progress.modelAblation.totalSucceeded,
 								progress.modelAblation.totalRequested,
 							)}
-							detail={percent(progress.modelAblation.successRate)}
-							hint="Succeeded/requested across model lanes; requested is samples_per_model per lane, not only successful rows."
 						/>
 						<Card
+							detail={percent(progress.naturalnessGate.successRate)}
+							hint="Succeeded/requested across naturalness-gate experiment rows."
 							label="Naturalness Gate"
+							labelTooltip="Naturalness gate = stricter acceptance filter for stego text. A sample is counted succeeded only if text passes the gate, decodes correctly, and metrics are produced."
 							value={ratio(
 								progress.naturalnessGate.totalSucceeded,
 								progress.naturalnessGate.totalRequested,
 							)}
-							detail={percent(progress.naturalnessGate.successRate)}
-							hint="Succeeded/requested across naturalness-gate experiment rows."
-							labelTooltip="Naturalness gate = stricter acceptance filter for stego text. A sample is counted succeeded only if text passes the gate, decodes correctly, and metrics are produced."
 						/>
 						<Card
+							detail={percent(progress.angleScan.successRate)}
+							hint="Angle decode pass count over total tested angles."
 							label="Angle Scan"
 							value={ratio(
 								progress.angleScan.totalSucceeded,
 								progress.angleScan.totalRequested,
 							)}
-							detail={percent(progress.angleScan.successRate)}
-							hint="Angle decode pass count over total tested angles."
 						/>
 						<Card
-							label="Supervisor"
-							value={supervisor.isActive ? "Active" : "Stopped"}
 							detail={supervisor.lastEventTimestamp || "n/a"}
 							hint="Runner monitor state from supervisor JSONL; timestamp is last emitted event."
+							label="Supervisor"
+							value={supervisor.isActive ? "Active" : "Stopped"}
 						/>
 					</section>
 
@@ -105,10 +135,12 @@ export default async function OvernightFindingsPage() {
 						<div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
 							<h2 className="mb-3 font-semibold text-lg">Latest E2E Run</h2>
 							<p className="mb-3 text-slate-400 text-xs">
-								Samples = succeeded/requested for that variant in this run. KLD/JSD are
-								divergence vs matched-post baseline. PPL is average perplexity.
+								Samples = succeeded/requested for that variant in this run.
+								KLD/JSD are divergence vs matched-post baseline. PPL is average
+								perplexity.
 							</p>
 							<DataTable
+								empty="No e2e data"
 								headers={["Variant", "Samples", "KLD", "JSD", "PPL"]}
 								rows={latestE2ERows.map((row) => [
 									row.variant,
@@ -117,17 +149,20 @@ export default async function OvernightFindingsPage() {
 									number(row.matchedPostJsd, 3),
 									number(row.perplexity, 2),
 								])}
-								empty="No e2e data"
 							/>
 						</div>
 
 						<div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-							<h2 className="mb-3 font-semibold text-lg">Latest Model Ablation</h2>
+							<h2 className="mb-3 font-semibold text-lg">
+								Latest Model Ablation
+							</h2>
 							<p className="mb-3 text-slate-400 text-xs">
-								Samples = succeeded/requested per model lane. Fail% = failed/requested.
-								KLD/JSD are quality metrics on successful outputs only.
+								Samples = succeeded/requested per model lane. Fail% =
+								failed/requested. KLD/JSD are quality metrics on successful
+								outputs only.
 							</p>
 							<DataTable
+								empty="No model-ablation data"
 								headers={["Model", "Samples", "Fail%", "KLD", "JSD"]}
 								rows={latestModelRows.map((row) => [
 									row.model,
@@ -136,19 +171,21 @@ export default async function OvernightFindingsPage() {
 									number(row.matchedPostKl, 3),
 									number(row.matchedPostJsd, 3),
 								])}
-								empty="No model-ablation data"
 							/>
 						</div>
 					</section>
 
 					<section className="grid gap-6 xl:grid-cols-3">
 						<div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-							<h2 className="mb-3 font-semibold text-lg">Latest Security Comparison</h2>
+							<h2 className="mb-3 font-semibold text-lg">
+								Latest Security Comparison
+							</h2>
 							<p className="mb-3 text-slate-400 text-xs">
-								Samples = succeeded/requested by variant. Lower KLD/JSD/PPL is generally
-								better naturalness similarity.
+								Samples = succeeded/requested by variant. Lower KLD/JSD/PPL is
+								generally better naturalness similarity.
 							</p>
 							<DataTable
+								empty="No security data"
 								headers={["Variant", "Samples", "KLD", "JSD", "PPL"]}
 								rows={securityMetrics.map((row) => [
 									row.variant,
@@ -157,17 +194,19 @@ export default async function OvernightFindingsPage() {
 									number(row.matchedPostJsd, 3),
 									number(row.perplexity, 2),
 								])}
-								empty="No security data"
 							/>
 						</div>
 
 						<div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-							<h2 className="mb-3 font-semibold text-lg">Latest Naturalness Gate Run</h2>
+							<h2 className="mb-3 font-semibold text-lg">
+								Latest Naturalness Gate Run
+							</h2>
 							<p className="mb-3 text-slate-400 text-xs">
-								Samples = succeeded/requested for each gate variant in the latest run.
-								KLD/JSD/PPL are computed on successful rows.
+								Samples = succeeded/requested for each gate variant in the
+								latest run. KLD/JSD/PPL are computed on successful rows.
 							</p>
 							<DataTable
+								empty="No naturalness-gate data"
 								headers={["Variant", "Samples", "KLD", "JSD", "PPL"]}
 								rows={latestGateRows.map((row) => [
 									row.variant,
@@ -176,16 +215,15 @@ export default async function OvernightFindingsPage() {
 									number(row.matchedPostJsd, 3),
 									number(row.perplexity, 2),
 								])}
-								empty="No naturalness-gate data"
 							/>
 						</div>
 
 						<div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
 							<h2 className="mb-3 font-semibold text-lg">Latest Diagnostics</h2>
 							<p className="mb-3 text-slate-400 text-xs">
-								Adaptive feedback line shows succeeded/requested and fail rate for the
-								latest feedback run. Angle scan line shows per-post scan success and JSON
-								format failure rate.
+								Adaptive feedback line shows succeeded/requested and fail rate
+								for the latest feedback run. Angle scan line shows per-post scan
+								success and JSON format failure rate.
 							</p>
 							<div className="space-y-3 text-sm">
 								<div>
@@ -246,7 +284,9 @@ function Card({
 			</p>
 			<p className="mt-2 font-bold text-2xl">{value}</p>
 			{detail ? <p className="mt-1 text-slate-400 text-xs">{detail}</p> : null}
-			{hint ? <p className="mt-2 text-slate-500 text-xs leading-5">{hint}</p> : null}
+			{hint ? (
+				<p className="mt-2 text-slate-500 text-xs leading-5">{hint}</p>
+			) : null}
 		</div>
 	);
 }
@@ -278,7 +318,10 @@ function DataTable({
 				</thead>
 				<tbody>
 					{rows.map((row, rowIndex) => (
-						<tr className="border-white/5 border-b" key={row.join("|") + rowIndex}>
+						<tr
+							className="border-white/5 border-b"
+							key={row.join("|") + rowIndex}
+						>
 							{row.map((cell, cellIndex) => (
 								<td
 									className={`py-2 pr-3 ${cellIndex === 0 ? "font-mono text-xs" : ""}`}

@@ -1,5 +1,5 @@
-import { parentPort } from "worker_threads";
 import { readFile } from "fs/promises";
+import { parentPort } from "worker_threads";
 
 parentPort?.on("message", async ({ filePath }) => {
 	try {
@@ -40,15 +40,20 @@ parentPort?.on("message", async ({ filePath }) => {
 							fileStats.dictUsage++;
 						}
 					}
-					if (Array.isArray(embedding.warnings) && embedding.warnings.length > 0) {
+					if (
+						Array.isArray(embedding.warnings) &&
+						embedding.warnings.length > 0
+					) {
 						fileStats.warnings += embedding.warnings.length;
 						fileStats.postsWithWarnings++;
 					}
 					if (embedding.angleEmbedding?.totalAnglesSelectedFirst) {
-						fileStats.angles += embedding.angleEmbedding.totalAnglesSelectedFirst.length;
+						fileStats.angles +=
+							embedding.angleEmbedding.totalAnglesSelectedFirst.length;
 					}
 					if (embedding.commentEmbedding?.pickedCommentChain) {
-						fileStats.commentChain += embedding.commentEmbedding.pickedCommentChain.length;
+						fileStats.commentChain +=
+							embedding.commentEmbedding.pickedCommentChain.length;
 					}
 				}
 			}

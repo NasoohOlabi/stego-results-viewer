@@ -19,6 +19,12 @@ export const perplexityMetricsSchema = z.object({
 		scored_texts: z.number(),
 	}),
 	perplexity_summary: z.object({
+		// Headline. The arithmetic mean is retained for continuity but is dominated by the
+		// heavy right tail of per-sample perplexity, so older reports lack these fields.
+		median_perplexity: z.number().optional(),
+		corpus_perplexity: z.number().optional(),
+		scored_tokens: z.number().optional(),
+		headline_statistic: z.string().optional(),
 		average_perplexity: z.number(),
 		min_perplexity: z.number(),
 		max_perplexity: z.number(),
@@ -27,7 +33,7 @@ export const perplexityMetricsSchema = z.object({
 		z.object({
 			file: z.string(),
 			perplexity: z.number(),
-		})
+		}),
 	),
 });
 

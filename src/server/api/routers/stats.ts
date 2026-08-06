@@ -1,19 +1,24 @@
-import { readdir, stat, readFile } from "fs/promises";
-import { join } from "path";
-import { z } from "zod";
-import { getResolvedPath } from "~/server/paths";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { Worker } from "worker_threads";
+import { readdir, readFile, stat } from "fs/promises";
 import { cpus } from "os";
-import { db } from "~/server/db/stats";
-import type { WorkerPostStat } from "./stats-worker";
+import { join } from "path";
+import { Worker } from "worker_threads";
+import { z } from "zod";
 import { divergenceMetricsSchema } from "~/schemas/divergence-metrics";
 import { perplexityMetricsSchema } from "~/schemas/perplexity-metrics";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { db } from "~/server/db/stats";
+import { getResolvedPath } from "~/server/paths";
+import type { WorkerPostStat } from "./stats-worker";
 
 const numCPUs = cpus().length;
-const workerPath = join(process.cwd(), "src/server/api/routers/stats-worker.ts");
+const workerPath = join(
+	process.cwd(),
+	"src/server/api/routers/stats-worker.ts",
+);
 
-async function processFileWithWorker(filePath: string): Promise<WorkerPostStat[] | null> {
+async function processFileWithWorker(
+	filePath: string,
+): Promise<WorkerPostStat[] | null> {
 	return new Promise((resolve) => {
 		const worker = new Worker(workerPath);
 		worker.postMessage({ filePath });
@@ -59,18 +64,20 @@ async function syncStats(pathId: string, directoryPath: string) {
 			} catch {
 				return { ...f, mtime: 0 };
 			}
-		})
+		}),
 	);
 
 	// Get existing files in DB
-	const existingRows = db.prepare(`SELECT file_path, mtime FROM file_stats WHERE path_id = ?`).all(pathId) as { file_path: string; mtime: number }[];
+	const existingRows = db
+		.prepare(`SELECT file_path, mtime FROM file_stats WHERE path_id = ?`)
+		.all(pathId) as { file_path: string; mtime: number }[];
 	const existingMap = new Map(existingRows.map((r) => [r.file_path, r.mtime]));
 
 	const currentPaths = new Set(mtimes.map((m) => m.path));
 
 	// Find deleted
 	const toDelete = existingRows.filter((r) => !currentPaths.has(r.file_path));
-	
+
 	// Find new or modified
 	const toProcess = mtimes.filter((m) => {
 		if (m.mtime === 0) return false;
@@ -90,9 +97,15 @@ async function syncStats(pathId: string, directoryPath: string) {
 
 	if (toProcess.length > 0) {
 		const CONCURRENCY_LIMIT = numCPUs;
-		const insertFileStmt = db.prepare(`INSERT OR REPLACE INTO file_stats (file_path, path_id, mtime, processed_at) VALUES (?, ?, ?, ?)`);
-		const insertPostStmt = db.prepare(`INSERT INTO post_stats (file_path, path_id, bits, ratio, angles, comment_chain, warnings, used_dict) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
-		const deleteFileStmt = db.prepare(`DELETE FROM file_stats WHERE file_path = ?`);
+		const insertFileStmt = db.prepare(
+			`INSERT OR REPLACE INTO file_stats (file_path, path_id, mtime, processed_at) VALUES (?, ?, ?, ?)`,
+		);
+		const insertPostStmt = db.prepare(
+			`INSERT INTO post_stats (file_path, path_id, bits, ratio, angles, comment_chain, warnings, used_dict) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		);
+		const deleteFileStmt = db.prepare(
+			`DELETE FROM file_stats WHERE file_path = ?`,
+		);
 
 		for (let i = 0; i < toProcess.length; i += CONCURRENCY_LIMIT) {
 			const chunk = toProcess.slice(i, i + CONCURRENCY_LIMIT);
@@ -100,7 +113,7 @@ async function syncStats(pathId: string, directoryPath: string) {
 				chunk.map(async (file) => {
 					const posts = await processFileWithWorker(file.path);
 					return { file, posts };
-				})
+				}),
 			);
 
 			const transaction = db.transaction((resultsBatch: typeof results) => {
@@ -117,7 +130,7 @@ async function syncStats(pathId: string, directoryPath: string) {
 								post.angles,
 								post.commentChain,
 								post.warnings,
-								post.usedDict ? 1 : 0
+								post.usedDict ? 1 : 0,
 							);
 						}
 					}
@@ -135,7 +148,8 @@ export const statsRouter = createTRPCRouter({
 			const path = getResolvedPath(input.pathId);
 			await syncStats(input.pathId, path);
 
-			const stats = db.prepare(`
+			const stats = db
+				.prepare(`
 				SELECT 
 					COUNT(DISTINCT file_path) as totalFiles,
 					COUNT(*) as totalPosts,
@@ -149,7 +163,8 @@ export const statsRouter = createTRPCRouter({
 					AVG(used_dict) as dictUsageRate
 				FROM post_stats
 				WHERE path_id = ?
-			`).get(input.pathId) as any;
+			`)
+				.get(input.pathId) as any;
 
 			return {
 				avgBitsPerPost: stats.avgBitsPerPost || 0,
@@ -171,73 +186,90 @@ export const statsRouter = createTRPCRouter({
 			const path = getResolvedPath(input.pathId);
 			await syncStats(input.pathId, path);
 
-			const getDynamicDist = (column: string, targetBuckets = 15, maxValLimit?: number) => {
+			const getDynamicDist = (
+				column: string,
+				targetBuckets = 15,
+				maxValLimit?: number,
+			) => {
 				const colExpr = maxValLimit ? `MIN(${column}, ${maxValLimit})` : column;
-				const stats = db.prepare(`SELECT MIN(${colExpr}) as min_val, MAX(${colExpr}) as max_val FROM post_stats WHERE path_id = ? AND ${column} IS NOT NULL`).get(input.pathId) as any;
+				const stats = db
+					.prepare(
+						`SELECT MIN(${colExpr}) as min_val, MAX(${colExpr}) as max_val FROM post_stats WHERE path_id = ? AND ${column} IS NOT NULL`,
+					)
+					.get(input.pathId) as any;
 				if (!stats || stats.min_val === null) return [];
-				
+
 				const diff = stats.max_val - stats.min_val;
 				let bucketSize = 1;
 				if (diff > targetBuckets) {
 					const rawSize = diff / targetBuckets;
-					const magnitude = Math.pow(10, Math.floor(Math.log10(rawSize)));
+					const magnitude = 10 ** Math.floor(Math.log10(rawSize));
 					const normalized = rawSize / magnitude;
-					
+
 					if (normalized <= 1.5) bucketSize = 1 * magnitude;
 					else if (normalized <= 3.5) bucketSize = 2 * magnitude;
 					else if (normalized <= 7.5) bucketSize = 5 * magnitude;
 					else bucketSize = 10 * magnitude;
-					
+
 					bucketSize = Math.max(1, Math.round(bucketSize));
 				}
 
-				const rows = db.prepare(`
+				const rows = db
+					.prepare(`
 					SELECT CAST(${colExpr} / ${bucketSize} AS INTEGER) * ${bucketSize} as bucket, COUNT(*) as count
 					FROM post_stats
 					WHERE path_id = ? AND ${column} IS NOT NULL
 					GROUP BY bucket
 					ORDER BY bucket
-				`).all(input.pathId) as any[];
+				`)
+					.all(input.pathId) as any[];
 
 				return rows.map((r) => {
-					let label = bucketSize === 1 ? String(r.bucket) : `${r.bucket} - ${r.bucket + bucketSize - 1}`;
+					let label =
+						bucketSize === 1
+							? String(r.bucket)
+							: `${r.bucket} - ${r.bucket + bucketSize - 1}`;
 					if (maxValLimit && r.bucket >= maxValLimit) {
 						label = `>= ${maxValLimit}`;
 					}
 					return {
 						...r,
-						label
+						label,
 					};
 				});
 			};
 
-			const bitsDist = getDynamicDist('bits', 15);
-			const anglesDist = getDynamicDist('angles', 15, 600);
+			const bitsDist = getDynamicDist("bits", 15);
+			const anglesDist = getDynamicDist("angles", 15, 600);
 
-			const ratioDistRows = db.prepare(`
+			const ratioDistRows = db
+				.prepare(`
 				SELECT CAST(ratio * 10 AS INTEGER) / 10.0 as bucket, COUNT(*) as count
 				FROM post_stats
 				WHERE path_id = ? AND ratio IS NOT NULL
 				GROUP BY bucket
 				ORDER BY bucket
-			`).all(input.pathId) as any[];
+			`)
+				.all(input.pathId) as any[];
 
 			const ratioDist = ratioDistRows.map((r) => ({
 				...r,
-				label: `${r.bucket.toFixed(1)} - ${(r.bucket + 0.09).toFixed(2)}`
+				label: `${r.bucket.toFixed(1)} - ${(r.bucket + 0.09).toFixed(2)}`,
 			}));
 
-			const commentChainDistRows = db.prepare(`
+			const commentChainDistRows = db
+				.prepare(`
 				SELECT comment_chain as bucket, COUNT(*) as count
 				FROM post_stats
 				WHERE path_id = ? AND comment_chain IS NOT NULL
 				GROUP BY bucket
 				ORDER BY bucket
-			`).all(input.pathId) as any[];
+			`)
+				.all(input.pathId) as any[];
 
 			const commentChainDist = commentChainDistRows.map((r) => ({
 				...r,
-				label: String(r.bucket)
+				label: String(r.bucket),
 			}));
 
 			return {
@@ -247,71 +279,71 @@ export const statsRouter = createTRPCRouter({
 				commentChain: commentChainDist,
 			};
 		}),
-	
-	getDivergenceMetrics: publicProcedure
-		.query(async () => {
-			const metricsDir = join(process.cwd(), "metrics");
-			try {
-				const entries = await readdir(metricsDir, { withFileTypes: true });
-				const files = entries
-					.filter((entry) =>
+
+	getDivergenceMetrics: publicProcedure.query(async () => {
+		const metricsDir = join(process.cwd(), "metrics");
+		try {
+			const entries = await readdir(metricsDir, { withFileTypes: true });
+			const files = entries
+				.filter(
+					(entry) =>
 						entry.isFile() &&
 						entry.name.endsWith(".json") &&
-						entry.name.startsWith("divergence_metrics_")
-					)
-					.map((entry) => entry.name);
+						entry.name.startsWith("divergence_metrics_"),
+				)
+				.map((entry) => entry.name);
 
-				if (files.length === 0) return null;
+			if (files.length === 0) return null;
 
-				// Get latest file by sorting filenames (they have timestamp)
-				const latestFile = files.sort().reverse()[0]!;
-				const filePath = join(metricsDir, latestFile);
-				const content = await readFile(filePath, "utf-8");
-				const data = JSON.parse(content);
-				
-				const parsed = divergenceMetricsSchema.safeParse(data);
-				if (!parsed.success) {
-					console.error("Failed to parse divergence metrics:", parsed.error);
-					return null;
-				}
-				
-				return parsed.data;
-			} catch (error) {
-				console.error("Error reading metrics directory:", error);
+			// Get latest file by sorting filenames (they have timestamp)
+			const latestFile = files.sort().reverse()[0]!;
+			const filePath = join(metricsDir, latestFile);
+			const content = await readFile(filePath, "utf-8");
+			const data = JSON.parse(content);
+
+			const parsed = divergenceMetricsSchema.safeParse(data);
+			if (!parsed.success) {
+				console.error("Failed to parse divergence metrics:", parsed.error);
 				return null;
 			}
-		}),
 
-	getPerplexityMetrics: publicProcedure
-		.query(async () => {
-			const metricsDir = join(process.cwd(), "metrics");
-			try {
-				const entries = await readdir(metricsDir, { withFileTypes: true });
-				const files = entries
-					.filter((entry) =>
+			return parsed.data;
+		} catch (error) {
+			console.error("Error reading metrics directory:", error);
+			return null;
+		}
+	}),
+
+	getPerplexityMetrics: publicProcedure.query(async () => {
+		const metricsDir = join(process.cwd(), "metrics");
+		try {
+			const entries = await readdir(metricsDir, { withFileTypes: true });
+			const files = entries
+				.filter(
+					(entry) =>
 						entry.isFile() &&
 						entry.name.endsWith(".json") &&
-						entry.name.startsWith("perplexity_metrics_")
-					)
-					.map((entry) => entry.name);
+						entry.name.startsWith("perplexity_metrics_"),
+				)
+				.map((entry) => entry.name);
 
-				if (files.length === 0) return null;
+			if (files.length === 0) return null;
 
-				const latestFile = files.sort().reverse()[0]!;
-				const filePath = join(metricsDir, latestFile);
-				const content = await readFile(filePath, "utf-8");
-				const data = JSON.parse(content);
+			const latestFile = files.sort().reverse()[0]!;
+			const filePath = join(metricsDir, latestFile);
+			const content = await readFile(filePath, "utf-8");
+			const data = JSON.parse(content);
 
-				const parsed = perplexityMetricsSchema.safeParse(data);
-				if (!parsed.success) {
-					console.error("Failed to parse perplexity metrics:", parsed.error);
-					return null;
-				}
-
-				return parsed.data;
-			} catch (error) {
-				console.error("Error reading metrics directory:", error);
+			const parsed = perplexityMetricsSchema.safeParse(data);
+			if (!parsed.success) {
+				console.error("Failed to parse perplexity metrics:", parsed.error);
 				return null;
 			}
-		}),
+
+			return parsed.data;
+		} catch (error) {
+			console.error("Error reading metrics directory:", error);
+			return null;
+		}
+	}),
 });

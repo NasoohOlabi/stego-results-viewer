@@ -51,5 +51,11 @@
 	},
 	"ct3aMetadata": {
 		"initVersion": "7.40.0"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"better-sqlite3",
+			"sharp"
+		]
 	}
 }

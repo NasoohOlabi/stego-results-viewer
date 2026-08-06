@@ -1,8 +1,8 @@
 import { readFile } from "fs/promises";
 import {
 	API_LOG_FILE_PATH,
+	type ApiLogEntry,
 	parseApiLogLine,
-	type ApiLogEntry
 } from "~/server/logs/api-log-utils";
 
 export const runtime = "nodejs";
@@ -11,7 +11,10 @@ function encodeSseEvent(event: string, data: unknown): string {
 	return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
-function parseEntriesFromLines(lines: string[], startAtLine = 1): ApiLogEntry[] {
+function parseEntriesFromLines(
+	lines: string[],
+	startAtLine = 1,
+): ApiLogEntry[] {
 	const entries: ApiLogEntry[] = [];
 	for (let index = 0; index < lines.length; index += 1) {
 		const entry = parseApiLogLine(lines[index] ?? "", startAtLine + index);
@@ -32,7 +35,7 @@ export async function GET(request: Request): Promise<Response> {
 	const url = new URL(request.url);
 	const backfill = Math.max(
 		1,
-		Math.min(Number(url.searchParams.get("backfill") ?? "200"), 1000)
+		Math.min(Number(url.searchParams.get("backfill") ?? "200"), 1000),
 	);
 
 	const stream = new ReadableStream({
@@ -61,13 +64,18 @@ export async function GET(request: Request): Promise<Response> {
 				const initialContent = await readFile(API_LOG_FILE_PATH, "utf-8");
 				const initialLines = splitLines(initialContent);
 				knownLines = initialLines.length;
-				const initialEntries = parseEntriesFromLines(initialLines).slice(-backfill);
+				const initialEntries = parseEntriesFromLines(initialLines).slice(
+					-backfill,
+				);
 				safeEnqueue(encodeSseEvent("init", { entries: initialEntries }));
 			} catch (error) {
 				safeEnqueue(
 					encodeSseEvent("error", {
-						message: error instanceof Error ? error.message : "Failed to read api.jsonl"
-					})
+						message:
+							error instanceof Error
+								? error.message
+								: "Failed to read api.jsonl",
+					}),
 				);
 			}
 
@@ -94,8 +102,10 @@ export async function GET(request: Request): Promise<Response> {
 					safeEnqueue(
 						encodeSseEvent("error", {
 							message:
-								error instanceof Error ? error.message : "Failed to stream api.jsonl"
-						})
+								error instanceof Error
+									? error.message
+									: "Failed to stream api.jsonl",
+						}),
 					);
 				}
 			}, 1500);
@@ -103,14 +113,14 @@ export async function GET(request: Request): Promise<Response> {
 			heartbeatTimer = setInterval(() => {
 				safeEnqueue(": keepalive\n\n");
 			}, 15000);
-		}
+		},
 	});
 
 	return new Response(stream, {
 		headers: {
 			"Content-Type": "text/event-stream",
 			"Cache-Control": "no-cache, no-transform",
-			Connection: "keep-alive"
-		}
+			Connection: "keep-alive",
+		},
 	});
 }

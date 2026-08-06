@@ -2,6 +2,7 @@ import { filesRouter } from "~/server/api/routers/files";
 import { overnightFindingsRouter } from "~/server/api/routers/overnight-findings";
 import { postRouter } from "~/server/api/routers/post";
 import { promptLogsRouter } from "~/server/api/routers/prompt-logs";
+import { runsRouter } from "~/server/api/routers/runs";
 import { showcaseRouter } from "~/server/api/routers/showcase";
 import { statsRouter } from "~/server/api/routers/stats";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
 	files: filesRouter,
 	stats: statsRouter,
 	promptLogs: promptLogsRouter,
+	runs: runsRouter,
 	showcase: showcaseRouter,
 	overnightFindings: overnightFindingsRouter,
 });

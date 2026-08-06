@@ -4,11 +4,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { FileExplorer } from "~/app/_components/file-explorer";
 import { renderInspectorValue } from "~/app/admin-api/inspector-response";
+import { PrepQuotaStructuredResponse } from "~/app/admin-api/prep-quota-structured-response";
 import {
 	ADMIN_API_STORAGE_KEY,
 	type StreamEventView,
 } from "~/app/admin-api/types";
-import { PrepQuotaStructuredResponse } from "~/app/admin-api/prep-quota-structured-response";
 import {
 	buildPrepQuotaStructuredModel,
 	extractPrepQuotaFromAdminResponse,
@@ -206,7 +206,8 @@ export function PrepUntilGoogleQuotaThenStegoContent() {
 			batchCount.trim() === "" ? 1 : Number.parseInt(batchCount.trim(), 10);
 		const parsedBatchSize =
 			batchSize.trim() === "" ? 5 : Number.parseInt(batchSize.trim(), 10);
-		if (!Number.isInteger(parsedBatchCount) || parsedBatchCount < 1) return null;
+		if (!Number.isInteger(parsedBatchCount) || parsedBatchCount < 1)
+			return null;
 		if (!Number.isInteger(parsedBatchSize) || parsedBatchSize < 1) return null;
 		const body: Record<string, unknown> = {
 			tag: trimmedTag,
@@ -225,11 +226,15 @@ export function PrepUntilGoogleQuotaThenStegoContent() {
 	);
 
 	const sseModel = useMemo(
-		() => (sseEvents.length > 0 ? buildPrepQuotaStructuredModel(sseEvents) : null),
+		() =>
+			sseEvents.length > 0 ? buildPrepQuotaStructuredModel(sseEvents) : null,
 		[sseEvents],
 	);
 	const syncModel = useMemo(
-		() => (jsonResult !== null ? extractPrepQuotaFromAdminResponse(jsonResult) : null),
+		() =>
+			jsonResult !== null
+				? extractPrepQuotaFromAdminResponse(jsonResult)
+				: null,
 		[jsonResult],
 	);
 
@@ -301,10 +306,7 @@ export function PrepUntilGoogleQuotaThenStegoContent() {
 				setStatus("error");
 				if (isRecord(parsed) && typeof parsed.error === "string") {
 					setErrorMessage(parsed.error);
-				} else if (
-					isRecord(parsed) &&
-					typeof parsed.message === "string"
-				) {
+				} else if (isRecord(parsed) && typeof parsed.message === "string") {
 					setErrorMessage(parsed.message);
 				} else {
 					setErrorMessage(`HTTP ${res.status}`);
@@ -350,9 +352,11 @@ export function PrepUntilGoogleQuotaThenStegoContent() {
 								POST {ENDPOINT_PATH}
 							</code>
 							. It runs prep batches of{" "}
-							<code className="text-white/80">data-load → research → gen-angles</code>,
-							treats Google quota as the handoff signal, and then switches into
-							recursive stego processing for a required{" "}
+							<code className="text-white/80">
+								data-load → research → gen-angles
+							</code>
+							, treats Google quota as the handoff signal, and then switches
+							into recursive stego processing for a required{" "}
 							<code className="text-white/80">tag</code>.
 						</p>
 					</div>
@@ -444,7 +448,7 @@ export function PrepUntilGoogleQuotaThenStegoContent() {
 									payload (optional)
 								</label>
 								<textarea
-									className="min-h-24 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-xs text-white/85 transition-colors focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+									className="min-h-24 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-white/85 text-xs transition-colors focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
 									id="prep-quota-payload"
 									onChange={(e) => setPayloadInput(e.target.value)}
 									placeholder='hello world or {"campaign":"sample"}'
@@ -473,7 +477,7 @@ export function PrepUntilGoogleQuotaThenStegoContent() {
 
 							<div className="flex items-center gap-3">
 								<button
-									className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-5 py-2.5 font-semibold text-sm text-white shadow-lg shadow-cyan-900/30 transition-all hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+									className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-5 py-2.5 font-semibold text-sm text-white shadow-cyan-900/30 shadow-lg transition-all hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:cursor-not-allowed disabled:opacity-50"
 									disabled={status === "loading"}
 									onClick={() => void run()}
 									type="button"

@@ -5,20 +5,20 @@ import {
 	Loader2,
 	MessageCircle,
 	MessageSquare,
-	Trash2
+	Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ADMIN_API_STORAGE_KEY } from "~/app/admin-api/types";
 import {
 	normalizeAdminApiBase,
-	postMetricsPost
+	postMetricsPost,
 } from "~/app/dashboard/_components/metrics-api-client";
 import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
-	AccordionTrigger
+	AccordionTrigger,
 } from "~/components/ui/accordion";
 import type { RedditComment, StegoResult } from "~/schemas/stego-result";
 import { api } from "~/trpc/react";
@@ -56,7 +56,7 @@ function metricsApiFilename(name: string | null | undefined): string | null {
 
 function CommentItem({
 	comment,
-	depth
+	depth,
 }: {
 	comment: RedditComment;
 	depth: number;
@@ -113,7 +113,7 @@ function CommentItem({
 
 function CommentTree({
 	comments,
-	depth = 0
+	depth = 0,
 }: {
 	comments: RedditComment[];
 	depth?: number;
@@ -136,7 +136,7 @@ function CommentTree({
 export function StegoResultRenderer({
 	data,
 	filename,
-	pathId
+	pathId,
 }: StegoResultRendererProps) {
 	const [results, setResults] = useState<StegoResult>(data);
 	const [deletingIndex, setDeletingIndex] = useState<number | null>(null);
@@ -165,7 +165,7 @@ export function StegoResultRenderer({
 			filename: apiFile,
 			output_dir: "output-results",
 			dataset_dir: "datasets/news_cleaned",
-			device: "cpu"
+			device: "cpu",
 		});
 		setMetricsLoading(false);
 		if (!res.ok) {
@@ -173,7 +173,7 @@ export function StegoResultRenderer({
 			setMetricsError(
 				res.httpStatus !== undefined
 					? `${res.error} (${res.httpStatus})`
-					: res.error
+					: res.error,
 			);
 			return;
 		}
@@ -264,10 +264,7 @@ export function StegoResultRenderer({
 				)}
 				{metricsResult && (
 					<Accordion className="w-full" collapsible type="single">
-						<AccordionItem
-							className="border-white/10"
-							value="api-metrics"
-						>
+						<AccordionItem className="border-white/10" value="api-metrics">
 							<AccordionTrigger className="py-3 hover:no-underline">
 								<span className="font-medium text-sm">
 									API metrics response
@@ -295,17 +292,13 @@ export function StegoResultRenderer({
 								.map(
 									(x: any) =>
 										x?.content_analysis ??
-										(x?.content_fetched
-											? x?.fetched_content
-											: null) ??
-										x?.snippet
+										(x?.content_fetched ? x?.fetched_content : null) ??
+										x?.snippet,
 								)
 								.filter((x): x is string => typeof x === "string");
 
 					// Helper to flatten comments for reference lookup
-					const flattenComments = (
-						comments: RedditComment[]
-					): string[] => {
+					const flattenComments = (comments: RedditComment[]): string[] => {
 						const flat: string[] = [];
 						for (const c of comments) {
 							if (c.body) flat.push(c.body);
@@ -318,12 +311,12 @@ export function StegoResultRenderer({
 					const allDocs = [
 						item.post?.selftext ?? "",
 						...searchResults,
-						...comments
+						...comments,
 					];
 
 					// Helper to check if a picked comment has body/permalink (V2/V3)
 					const isCommentItem = (
-						c: any
+						c: any,
 					): c is { body: string; permalink: string; id: string } =>
 						c && typeof c === "object" && "body" in c;
 
@@ -342,7 +335,7 @@ export function StegoResultRenderer({
 										>
 											{item.embedding?.commentEmbedding?.bitsUsed?.replace(
 												/(\d{3})(?=\d)/g,
-												"$1 "
+												"$1 ",
 											)}
 										</span>
 										<span
@@ -351,7 +344,7 @@ export function StegoResultRenderer({
 										>
 											{item.embedding?.angleEmbedding?.bitsUsed?.replace(
 												/(\d{3})(?=\d)/g,
-												"$1 "
+												"$1 ",
 											)}
 										</span>
 										<span className="text-white/60">
@@ -437,27 +430,20 @@ export function StegoResultRenderer({
 										<div className="space-y-2">
 											<label className="flex justify-between font-bold text-[10px] text-white/30 uppercase tracking-wider">
 												<span>
-													{item.embedding?.compression
-														?.usedDict !== undefined
+													{item.embedding?.compression?.usedDict !== undefined
 														? item.embedding.compression.usedDict
 															? "Dictionary"
 															: "Direct"
-														: (item.embedding?.compression
-																?.method ?? "Compression")}{" "}
+														: (item.embedding?.compression?.method ??
+															"Compression")}{" "}
 													Bits (
-													{
-														item.embedding?.compression
-															?.compressed?.length
-													}
-													)
+													{item.embedding?.compression?.compressed?.length})
 												</span>
-												{(item.embedding?.compression?.ratio ?? 0) >
-													0 && (
+												{(item.embedding?.compression?.ratio ?? 0) > 0 && (
 													<span className="text-green-400/80">
 														Ratio:{" "}
 														{(
-															(item.embedding?.compression
-																?.ratio ?? 0) * 100
+															(item.embedding?.compression?.ratio ?? 0) * 100
 														).toFixed(1)}
 														%
 													</span>
@@ -470,8 +456,8 @@ export function StegoResultRenderer({
 									</div>
 
 									<Accordion className="w-full" type="multiple">
-										{(item.embedding?.compression?.references
-											?.length ?? 0) > 0 && (
+										{(item.embedding?.compression?.references?.length ?? 0) >
+											0 && (
 											<AccordionItem
 												className="border-white/10"
 												value="references"
@@ -479,11 +465,7 @@ export function StegoResultRenderer({
 												<AccordionTrigger className="py-3 hover:no-underline">
 													<span className="font-medium text-sm">
 														Compression References (
-														{
-															item.embedding?.compression
-																?.references?.length
-														}
-														)
+														{item.embedding?.compression?.references?.length})
 													</span>
 												</AccordionTrigger>
 												<AccordionContent>
@@ -496,9 +478,7 @@ export function StegoResultRenderer({
 																>
 																	<div className="flex justify-between text-white/40">
 																		<span>REF #{i}</span>
-																		<span>
-																			LEN: {ref.len}
-																		</span>
+																		<span>LEN: {ref.len}</span>
 																	</div>
 																	<div className="flex justify-between">
 																		<span className="text-white/60">
@@ -512,18 +492,14 @@ export function StegoResultRenderer({
 																		{ref.doc !== null &&
 																		ref.doc !== undefined &&
 																		allDocs[ref.doc]
-																			? (
-																					allDocs[
-																						ref.doc
-																					] as string
-																				).slice(
+																			? (allDocs[ref.doc] as string).slice(
 																					ref.idx,
-																					ref.idx + ref.len
+																					ref.idx + ref.len,
 																				)
 																			: "N/A"}
 																	</div>
 																</div>
-															)
+															),
 														)}
 													</div>
 												</AccordionContent>
@@ -538,8 +514,8 @@ export function StegoResultRenderer({
 												<span className="flex items-center gap-2 font-medium text-sm">
 													<MessageSquare size={16} />
 													Picked Comment Chain (
-													{item.embedding?.commentEmbedding
-														?.pickedCommentChain?.length ?? 0}
+													{item.embedding?.commentEmbedding?.pickedCommentChain
+														?.length ?? 0}
 													)
 												</span>
 											</AccordionTrigger>
@@ -552,56 +528,44 @@ export function StegoResultRenderer({
 														</label>
 														<div className="space-y-1.5 text-sm">
 															<div>
-																<span className="text-white/40">
-																	Title:{" "}
-																</span>
+																<span className="text-white/40">Title: </span>
 																<span className="text-white/80">
 																	{item.post?.title ??
-																		item.embedding
-																			?.commentEmbedding
-																			?.context?.title ??
+																		item.embedding?.commentEmbedding?.context
+																			?.title ??
 																		"—"}
 																</span>
 															</div>
 															<div>
-																<span className="text-white/40">
-																	User:{" "}
-																</span>
+																<span className="text-white/40">User: </span>
 																<span className="text-white/80">
 																	{item.post?.author ??
-																		item.embedding
-																			?.commentEmbedding
-																			?.context?.author ??
+																		item.embedding?.commentEmbedding?.context
+																			?.author ??
 																		"—"}
 																</span>
 															</div>
 															<div>
-																<span className="text-white/40">
-																	URL:{" "}
-																</span>
+																<span className="text-white/40">URL: </span>
 																{(item.post?.url ??
-																item.embedding?.commentEmbedding
-																	?.context?.url) ? (
+																item.embedding?.commentEmbedding?.context
+																	?.url) ? (
 																	<a
 																		className="break-all text-blue-400 hover:underline"
 																		href={
 																			item.post?.url ??
-																			item.embedding
-																				?.commentEmbedding
-																				?.context?.url
+																			item.embedding?.commentEmbedding?.context
+																				?.url
 																		}
 																		rel="noopener noreferrer"
 																		target="_blank"
 																	>
 																		{item.post?.url ??
-																			item.embedding
-																				?.commentEmbedding
-																				?.context?.url}
+																			item.embedding?.commentEmbedding?.context
+																				?.url}
 																	</a>
 																) : (
-																	<span className="text-white/80">
-																		—
-																	</span>
+																	<span className="text-white/80">—</span>
 																)}
 															</div>
 															<div>
@@ -610,9 +574,8 @@ export function StegoResultRenderer({
 																</span>
 																<div className="mt-1 line-clamp-6 rounded bg-black/30 p-2 text-white/70 text-xs leading-relaxed">
 																	{item.post?.selftext ??
-																		item.embedding
-																			?.commentEmbedding
-																			?.context?.selftext ??
+																		item.embedding?.commentEmbedding?.context
+																			?.selftext ??
 																		"—"}
 																</div>
 															</div>
@@ -624,11 +587,7 @@ export function StegoResultRenderer({
 														(comment: any, i: number) => (
 															<div
 																className="relative border-white/10 border-l-2 py-1 pl-4"
-																key={
-																	isCommentItem(comment)
-																		? comment.id
-																		: i
-																}
+																key={isCommentItem(comment) ? comment.id : i}
 															>
 																<div className="mb-1 flex items-center gap-2">
 																	<span className="font-bold text-[10px] text-white/30 uppercase">
@@ -642,9 +601,7 @@ export function StegoResultRenderer({
 																			target="_blank"
 																			title="View comment on Reddit"
 																		>
-																			<ExternalLink
-																				size={12}
-																			/>
+																			<ExternalLink size={12} />
 																		</a>
 																	)}
 																</div>
@@ -654,7 +611,7 @@ export function StegoResultRenderer({
 																		: JSON.stringify(comment)}
 																</div>
 															</div>
-														)
+														),
 													)}
 
 													{/* Proposed Stegotext */}
@@ -670,31 +627,26 @@ export function StegoResultRenderer({
 											</AccordionContent>
 										</AccordionItem>
 
-										{item.post?.comments &&
-											item.post.comments.length > 0 && (
-												<AccordionItem
-													className="border-white/10"
-													value="all-comments"
-												>
-													<AccordionTrigger className="py-3 hover:no-underline">
-														<span className="flex items-center gap-2 font-medium text-sm">
-															<MessageCircle size={16} />
-															Full Comment Tree (
-															{item.post.num_comments})
-														</span>
-													</AccordionTrigger>
-													<AccordionContent>
-														<div className="px-1 py-2">
-															<CommentTree
-																comments={item.post.comments}
-															/>
-														</div>
-													</AccordionContent>
-												</AccordionItem>
-											)}
+										{item.post?.comments && item.post.comments.length > 0 && (
+											<AccordionItem
+												className="border-white/10"
+												value="all-comments"
+											>
+												<AccordionTrigger className="py-3 hover:no-underline">
+													<span className="flex items-center gap-2 font-medium text-sm">
+														<MessageCircle size={16} />
+														Full Comment Tree ({item.post.num_comments})
+													</span>
+												</AccordionTrigger>
+												<AccordionContent>
+													<div className="px-1 py-2">
+														<CommentTree comments={item.post.comments} />
+													</div>
+												</AccordionContent>
+											</AccordionItem>
+										)}
 
-										{item.embedding?.angleEmbedding
-											?.selectedAngle && (
+										{item.embedding?.angleEmbedding?.selectedAngle && (
 											<AccordionItem
 												className="border-white/10"
 												value="selected-angle"
@@ -707,24 +659,19 @@ export function StegoResultRenderer({
 												<AccordionContent>
 													<AngleTable
 														data={[
-															item.embedding!.angleEmbedding!
-																.selectedAngle!
+															item.embedding!.angleEmbedding!.selectedAngle!,
 														]}
 													/>
 												</AccordionContent>
 											</AccordionItem>
 										)}
 
-										<AccordionItem
-											className="border-white/10"
-											value="angles"
-										>
+										<AccordionItem className="border-white/10" value="angles">
 											<AccordionTrigger className="py-3 hover:no-underline">
 												<span className="font-medium text-sm">
 													Angle Selection (
 													{item.embedding?.angleEmbedding
-														?.totalAnglesSelectedFirst?.length ??
-														0}
+														?.totalAnglesSelectedFirst?.length ?? 0}
 													)
 												</span>
 											</AccordionTrigger>
@@ -738,20 +685,14 @@ export function StegoResultRenderer({
 											</AccordionContent>
 										</AccordionItem>
 
-										<AccordionItem
-											className="border-none"
-											value="search"
-										>
+										<AccordionItem className="border-none" value="search">
 											<AccordionTrigger className="py-3 hover:no-underline">
 												<span className="font-medium text-sm">
-													Search Context (
-													{searchResults?.length ?? 0})
+													Search Context ({searchResults?.length ?? 0})
 												</span>
 											</AccordionTrigger>
 											<AccordionContent>
-												<PaginatedTable
-													items={searchResults ?? []}
-												/>
+												<PaginatedTable items={searchResults ?? []} />
 											</AccordionContent>
 										</AccordionItem>
 									</Accordion>

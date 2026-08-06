@@ -241,12 +241,12 @@ export function getWorkflowTemplate(command: string): string {
 			return '{\n  "count": 3,\n  "offset": 0,\n  "batch_size": 10\n}';
 		case "research":
 			return '{\n  "count": 3,\n  "offset": 0,\n  "include_breakdown": false\n}';
-	case "gen-angles":
-		return '{\n  "count": 3,\n  "offset": 0\n}';
-	case "prep-until-google-quota-then-stego":
-		return '{\n  "tag": "version_42",\n  "batch_count": 1,\n  "batch_size": 5,\n  "stream": true\n}';
-	case "stego":
-		return '{\n  "post_id": "",\n  "list_offset": 0,\n  "run_all": false\n}';
+		case "gen-angles":
+			return '{\n  "count": 3,\n  "offset": 0\n}';
+		case "prep-until-google-quota-then-stego":
+			return '{\n  "tag": "version_42",\n  "batch_count": 1,\n  "batch_size": 5,\n  "stream": true\n}';
+		case "stego":
+			return '{\n  "post_id": "",\n  "list_offset": 0,\n  "run_all": false\n}';
 		case "decode":
 			return '{\n  "stego_text": "sample stego text",\n  "angles": [1, 2, 3],\n  "few_shots": []\n}';
 		case "gen-terms":
@@ -1041,8 +1041,7 @@ export function buildWorkflowRunStructuredModelFromSync(
 	});
 }
 
-export const PREP_QUOTA_WORKFLOW_COMMAND =
-	"prep-until-google-quota-then-stego";
+export const PREP_QUOTA_WORKFLOW_COMMAND = "prep-until-google-quota-then-stego";
 
 export interface PrepQuotaPrepSummary {
 	iterations: number;
@@ -1098,7 +1097,9 @@ export interface PrepQuotaStructuredModel {
 }
 
 function asFiniteNumber(value: unknown): number | undefined {
-	return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+	return typeof value === "number" && Number.isFinite(value)
+		? value
+		: undefined;
 }
 
 function asBoolean(value: unknown): boolean | undefined {
@@ -1315,7 +1316,9 @@ function buildPrepQuotaTimelineRow(
 				phase,
 				label: `${postId} ${succeeded ? "ok" : "failed"}`,
 				detail:
-					retryCount !== undefined ? `${retryCount} retr${retryCount === 1 ? "y" : "ies"}` : undefined,
+					retryCount !== undefined
+						? `${retryCount} retr${retryCount === 1 ? "y" : "ies"}`
+						: undefined,
 			};
 		}
 		case "stego_batch_summary":
@@ -1357,7 +1360,9 @@ function buildPrepQuotaModelFromResult(
 	const tag = asString(result.tag);
 	const prep = parsePrepQuotaPrepSummary(result.prep);
 	const stego = parsePrepQuotaStegoSummary(result.stego);
-	const phaseTransition = parsePrepQuotaPhaseTransition(result.phase_transition);
+	const phaseTransition = parsePrepQuotaPhaseTransition(
+		result.phase_transition,
+	);
 	if (succeeded === undefined || tag === undefined || !prep || !stego) {
 		return null;
 	}
@@ -1463,7 +1468,9 @@ export function buildPrepQuotaStructuredModel(
 		}
 		if (event.event === "result") {
 			const resultPayload = isRecord(event.data) ? event.data : null;
-			const resultCommand = resultPayload ? asString(resultPayload.command) : undefined;
+			const resultCommand = resultPayload
+				? asString(resultPayload.command)
+				: undefined;
 			const result =
 				resultPayload && "result" in resultPayload
 					? resultPayload.result

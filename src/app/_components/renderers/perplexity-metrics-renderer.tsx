@@ -100,17 +100,31 @@ export function PerplexityMetricsRenderer({
 			<p className="rounded-lg border border-amber-400/25 bg-amber-400/10 p-3 text-amber-100 text-sm">
 				Perplexity measures predictability to the scoring model, not
 				reader-facing naturalness or human authorship. Unusually low perplexity
-				can also characterize AI text.
+				can also characterize AI text. For multi-frame embedding, each carrier
+				comment is scored separately, and this value is the unweighted average
+				of scored frames—not one score for the reconstructed message.
 			</p>
 
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
 				<div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-6">
 					<h3 className="font-medium text-sm text-white/50 uppercase tracking-wider">
-						Average Perplexity
+						{data.perplexity_summary.median_perplexity !== undefined
+							? "Median Perplexity"
+							: "Average Perplexity"}
 					</h3>
 					<div className="font-bold text-4xl text-purple-400">
-						{data.perplexity_summary.average_perplexity.toFixed(2)}
+						{(
+							data.perplexity_summary.median_perplexity ??
+							data.perplexity_summary.average_perplexity
+						).toFixed(2)}
 					</div>
+					{data.perplexity_summary.median_perplexity !== undefined ? (
+						<p className="text-white/30 text-xs">
+							Mean {data.perplexity_summary.average_perplexity.toFixed(2)} — the
+							per-sample distribution is heavy-tailed, so the median is the
+							headline.
+						</p>
+					) : null}
 				</div>
 
 				<div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-6">
@@ -139,7 +153,8 @@ export function PerplexityMetricsRenderer({
 						{data.dataset_summary.scored_texts}
 					</div>
 					<p className="text-white/30 text-xs">
-						Out of {data.dataset_summary.total_output_files} output files.
+						Out of {data.dataset_summary.total_output_files} output files. A
+						multi-frame message contributes one scored text per frame.
 					</p>
 				</div>
 			</div>

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Prompt logs"
+	title: "Prompt logs",
 };
 
 export default function PromptLogsLayout({
-	children
+	children,
 }: Readonly<{ children: React.ReactNode }>) {
 	return children;
 }

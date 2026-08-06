@@ -351,7 +351,10 @@ function getNested(record: Record<string, unknown>, path: string[]): unknown {
 	return current;
 }
 
-function pickArtifactModel(data: StegoResult | undefined, filename: string | null | undefined): ProcessModel {
+function pickArtifactModel(
+	data: StegoResult | undefined,
+	filename: string | null | undefined,
+): ProcessModel {
 	const fallback = demoCases[0];
 	const first = data?.[0];
 	if (!first) {
@@ -378,15 +381,14 @@ function pickArtifactModel(data: StegoResult | undefined, filename: string | nul
 	const pickedChain = Array.isArray(commentEmbedding.pickedCommentChain)
 		? commentEmbedding.pickedCommentChain
 		: [];
-	const comments = pickedChain
-		.map((comment, index) => {
-			const c = asRecord(comment);
-			return {
-				id: asString(c.id) ?? `picked-${index}`,
-				author: asString(c.author) ?? "picked comment",
-				body: asString(c.body) ?? JSON.stringify(comment),
-			};
-		});
+	const comments = pickedChain.map((comment, index) => {
+		const c = asRecord(comment);
+		return {
+			id: asString(c.id) ?? `picked-${index}`,
+			author: asString(c.author) ?? "picked comment",
+			body: asString(c.body) ?? JSON.stringify(comment),
+		};
+	});
 	const targetType = asString(commentEmbedding.targetType);
 	if (comments.length === 0) {
 		comments.unshift({
@@ -410,11 +412,15 @@ function pickArtifactModel(data: StegoResult | undefined, filename: string | nul
 		return {
 			idx: asNumber(a.idx) ?? index,
 			category: asString(a.category) ?? `Angle ${index + 1}`,
-			tangent: asString(a.tangent) ?? asString(a.source_quote) ?? "No tangent in artifact.",
+			tangent:
+				asString(a.tangent) ??
+				asString(a.source_quote) ??
+				"No tangent in artifact.",
 		};
 	});
 
-	const commentBits = asString(commentEmbedding.bitsUsed) ?? fallback.commentBits;
+	const commentBits =
+		asString(commentEmbedding.bitsUsed) ?? fallback.commentBits;
 	const angleBits = asString(angleEmbedding.bitsUsed) ?? fallback.angleBits;
 	const compressed =
 		asString(compression.compressed) ??
@@ -448,7 +454,7 @@ function pickArtifactModel(data: StegoResult | undefined, filename: string | nul
 		commentTarget: targetType === "comment" ? "comment" : "post",
 		selectedCommentId:
 			targetType === "comment"
-				? comments.at(-1)?.id ?? fallback.selectedCommentId
+				? (comments.at(-1)?.id ?? fallback.selectedCommentId)
 				: null,
 		selectedAngleIndex: selectedIndex,
 		comments,
@@ -467,13 +473,32 @@ function splitBits(model: ProcessModel) {
 	const prefixLength = model.commentBits.length + model.angleBits.length;
 	const remaining = model.compressed.slice(prefixLength);
 	return [
-		{ id: "comment", label: "comment", bits: model.commentBits, color: "bg-cyan-500/25 text-cyan-100" },
-		{ id: "angle", label: "angle", bits: model.angleBits, color: "bg-emerald-500/25 text-emerald-100" },
-		{ id: "rest", label: "payload", bits: remaining, color: "bg-white/10 text-white/70" },
+		{
+			id: "comment",
+			label: "comment",
+			bits: model.commentBits,
+			color: "bg-cyan-500/25 text-cyan-100",
+		},
+		{
+			id: "angle",
+			label: "angle",
+			bits: model.angleBits,
+			color: "bg-emerald-500/25 text-emerald-100",
+		},
+		{
+			id: "rest",
+			label: "payload",
+			bits: remaining,
+			color: "bg-white/10 text-white/70",
+		},
 	];
 }
 
-function statusForStage(index: number, activeIndex: number, failures: Record<FailureKey, boolean>): StageStatus {
+function statusForStage(
+	index: number,
+	activeIndex: number,
+	failures: Record<FailureKey, boolean>,
+): StageStatus {
 	if (index === activeIndex) return "active";
 	if (index < activeIndex) return "done";
 	const id = stages[index]?.id;
@@ -485,8 +510,10 @@ function statusForStage(index: number, activeIndex: number, failures: Record<Fai
 }
 
 function groupTone(group: Stage["group"]) {
-	if (group === "sender") return "border-cyan-400/25 bg-cyan-500/10 text-cyan-100";
-	if (group === "visible") return "border-amber-400/25 bg-amber-500/10 text-amber-100";
+	if (group === "sender")
+		return "border-cyan-400/25 bg-cyan-500/10 text-cyan-100";
+	if (group === "visible")
+		return "border-amber-400/25 bg-amber-500/10 text-amber-100";
 	return "border-emerald-400/25 bg-emerald-500/10 text-emerald-100";
 }
 
@@ -495,7 +522,10 @@ function shortValue(value: string, max = 44) {
 	return `${value.slice(0, max - 1)}...`;
 }
 
-function buildFlowNodes(model: ProcessModel, failures: Record<FailureKey, boolean>): FlowNode[] {
+function buildFlowNodes(
+	model: ProcessModel,
+	failures: Record<FailureKey, boolean>,
+): FlowNode[] {
 	const commentTarget =
 		model.commentTarget === "post"
 			? "post context"
@@ -505,9 +535,10 @@ function buildFlowNodes(model: ProcessModel, failures: Record<FailureKey, boolea
 	const protectIncoming = model.rawPayloadAvailable
 		? shortValue(model.payload)
 		: "raw payload not present in artifact";
-	const protectOutgoing = model.payloadTransform === "plain"
-		? `${shortValue(model.protectedPayload)} (plain)`
-		: `${shortValue(model.protectedPayload)} (${model.payloadTransform ?? "transformed"})`;
+	const protectOutgoing =
+		model.payloadTransform === "plain"
+			? `${shortValue(model.protectedPayload)} (plain)`
+			: `${shortValue(model.protectedPayload)} (${model.payloadTransform ?? "transformed"})`;
 	return [
 		{
 			id: "payload",
@@ -586,7 +617,9 @@ function buildFlowNodes(model: ProcessModel, failures: Record<FailureKey, boolea
 			lane: "sender",
 			x: 865,
 			y: 38,
-			incoming: failures.missingAngles ? "no angles available" : `${model.angleBits || "missing"} from bitstream`,
+			incoming: failures.missingAngles
+				? "no angles available"
+				: `${model.angleBits || "missing"} from bitstream`,
 			outgoing: failures.missingAngles ? "blocked" : angleLabel,
 		},
 		{
@@ -617,7 +650,9 @@ function buildFlowNodes(model: ProcessModel, failures: Record<FailureKey, boolea
 			x: 865,
 			y: 340,
 			incoming: "visible text + selected angle",
-			outgoing: failures.decodeMismatch ? "decode mismatch risk" : "strict exact match",
+			outgoing: failures.decodeMismatch
+				? "decode mismatch risk"
+				: "strict exact match",
 		},
 		{
 			id: "locate",
@@ -647,7 +682,9 @@ function buildFlowNodes(model: ProcessModel, failures: Record<FailureKey, boolea
 			x: 370,
 			y: 560,
 			incoming: "pre-sender post",
-			outgoing: failures.contextDrift ? "drift risk" : "rebuilt dictionary + angles",
+			outgoing: failures.contextDrift
+				? "drift risk"
+				: "rebuilt dictionary + angles",
 		},
 		{
 			id: "drift",
@@ -687,23 +724,105 @@ function buildFlowNodes(model: ProcessModel, failures: Record<FailureKey, boolea
 const flowEdges: FlowEdge[] = [
 	{ id: "payload-protect", from: "payload", to: "protect", label: "payload" },
 	{ id: "prep-select", from: "prep", to: "select", label: "prepared post" },
-	{ id: "select-dictionary", from: "select", to: "dictionary", label: "selected post" },
-	{ id: "protect-compress", from: "protect", to: "compress", label: "protected payload", route: "protect-compress" },
-	{ id: "dictionary-compress", from: "dictionary", to: "compress", label: "dictionary" },
-	{ id: "compress-comment", from: "compress", to: "comment", label: "prefix bits" },
-	{ id: "comment-angle", from: "comment", to: "angle", label: "remaining bits" },
-	{ id: "angle-audit", from: "angle", to: "audit", label: "selection signature", route: "angle-audit" },
-	{ id: "angle-visible", from: "angle", to: "visible", label: "selected angle", route: "angle-visible" },
-	{ id: "comment-visible", from: "comment", to: "visible", label: "context", route: "comment-visible" },
-	{ id: "visible-validate", from: "visible", to: "validate", label: "candidate text" },
-	{ id: "validate-locate", from: "validate", to: "locate", label: "posted comment", route: "posted" },
-	{ id: "locate-rebuild", from: "locate", to: "rebuild", label: "pre-sender post" },
-	{ id: "rebuild-rebuild-data", from: "rebuild", to: "rebuild-data", label: "pre-sender post" },
-	{ id: "rebuild-data-drift", from: "rebuild-data", to: "drift", label: "hashes" },
+	{
+		id: "select-dictionary",
+		from: "select",
+		to: "dictionary",
+		label: "selected post",
+	},
+	{
+		id: "protect-compress",
+		from: "protect",
+		to: "compress",
+		label: "protected payload",
+		route: "protect-compress",
+	},
+	{
+		id: "dictionary-compress",
+		from: "dictionary",
+		to: "compress",
+		label: "dictionary",
+	},
+	{
+		id: "compress-comment",
+		from: "compress",
+		to: "comment",
+		label: "prefix bits",
+	},
+	{
+		id: "comment-angle",
+		from: "comment",
+		to: "angle",
+		label: "remaining bits",
+	},
+	{
+		id: "angle-audit",
+		from: "angle",
+		to: "audit",
+		label: "selection signature",
+		route: "angle-audit",
+	},
+	{
+		id: "angle-visible",
+		from: "angle",
+		to: "visible",
+		label: "selected angle",
+		route: "angle-visible",
+	},
+	{
+		id: "comment-visible",
+		from: "comment",
+		to: "visible",
+		label: "context",
+		route: "comment-visible",
+	},
+	{
+		id: "visible-validate",
+		from: "visible",
+		to: "validate",
+		label: "candidate text",
+	},
+	{
+		id: "validate-locate",
+		from: "validate",
+		to: "locate",
+		label: "posted comment",
+		route: "posted",
+	},
+	{
+		id: "locate-rebuild",
+		from: "locate",
+		to: "rebuild",
+		label: "pre-sender post",
+	},
+	{
+		id: "rebuild-rebuild-data",
+		from: "rebuild",
+		to: "rebuild-data",
+		label: "pre-sender post",
+	},
+	{
+		id: "rebuild-data-drift",
+		from: "rebuild-data",
+		to: "drift",
+		label: "hashes",
+	},
 	{ id: "drift-decode", from: "drift", to: "decode", label: "rebuilt angles" },
 	{ id: "decode-recover", from: "decode", to: "recover", label: "angle idx" },
-	{ id: "audit-drift", from: "audit", to: "drift", label: "audit hashes", route: "audit" },
-	{ id: "audit-recover", from: "audit", to: "recover", label: "compressed bitstream", route: "audit-recover" },
+	{
+		id: "audit-drift",
+		from: "audit",
+		to: "drift",
+		label: "audit hashes",
+		route: "audit",
+	},
+	{
+		id: "audit-recover",
+		from: "audit",
+		to: "recover",
+		label: "compressed bitstream",
+		route: "audit-recover",
+	},
 ];
 
 const FLOW_NODE_WIDTH = 148;
@@ -807,12 +926,18 @@ function edgePath(from: FlowNode, to: FlowNode, route: FlowEdge["route"]) {
 }
 
 function laneTone(lane: FlowNode["lane"]) {
-	if (lane === "sender") return "border-cyan-400/30 bg-cyan-500/10 text-cyan-50";
-	if (lane === "carrier") return "border-amber-400/30 bg-amber-500/10 text-amber-50";
+	if (lane === "sender")
+		return "border-cyan-400/30 bg-cyan-500/10 text-cyan-50";
+	if (lane === "carrier")
+		return "border-amber-400/30 bg-amber-500/10 text-amber-50";
 	return "border-emerald-400/30 bg-emerald-500/10 text-emerald-50";
 }
 
-export function StegoProcessVisual({ data, filename, chartOnly = false }: StegoProcessVisualProps) {
+export function StegoProcessVisual({
+	data,
+	filename,
+	chartOnly = false,
+}: StegoProcessVisualProps) {
 	const [demoId, setDemoId] = useState(demoCases[0]?.id ?? "meetup");
 	const [activeIndex, setActiveIndex] = useState(0);
 	const [hoveredFlowNode, setHoveredFlowNode] = useState<string | null>(null);
@@ -823,8 +948,12 @@ export function StegoProcessVisual({ data, filename, chartOnly = false }: StegoP
 		noAuditBitstream: false,
 	});
 
-	const artifactModel = useMemo(() => pickArtifactModel(data, filename), [data, filename]);
-	const demoModel = demoCases.find((item) => item.id === demoId) ?? demoCases[0]!;
+	const artifactModel = useMemo(
+		() => pickArtifactModel(data, filename),
+		[data, filename],
+	);
+	const demoModel =
+		demoCases.find((item) => item.id === demoId) ?? demoCases[0]!;
 	const model: ProcessModel = data
 		? artifactModel
 		: {
@@ -870,47 +999,68 @@ export function StegoProcessVisual({ data, filename, chartOnly = false }: StegoP
 	return (
 		<div className="space-y-6 text-white">
 			{chartOnly ? null : (
-			<header className="flex flex-col gap-4 rounded-lg border border-white/10 bg-white/[0.04] p-5 lg:flex-row lg:items-end lg:justify-between">
-				<div>
-					<div className="font-semibold text-cyan-200 text-xs uppercase tracking-[0.18em]">
-						Stego Process Visual
+				<header className="flex flex-col gap-4 rounded-lg border border-white/10 bg-white/[0.04] p-5 lg:flex-row lg:items-end lg:justify-between">
+					<div>
+						<div className="font-semibold text-cyan-200 text-xs uppercase tracking-[0.18em]">
+							Stego Process Visual
+						</div>
+						<h1 className="mt-2 font-semibold text-3xl tracking-tight">
+							Selection-channel sender to receiver
+						</h1>
+						<p className="mt-2 max-w-3xl text-sm text-white/60 leading-6">
+							Watch how payload bits choose a comment context and an angle, then
+							how ordinary visible text lets the receiver recover the original
+							payload.
+						</p>
 					</div>
-					<h1 className="mt-2 font-semibold text-3xl tracking-tight">
-						Selection-channel sender to receiver
-					</h1>
-					<p className="mt-2 max-w-3xl text-sm text-white/60 leading-6">
-						Watch how payload bits choose a comment context and an angle, then how ordinary visible text lets the receiver recover the original payload.
-					</p>
-				</div>
-				<div className="rounded-md border border-white/10 bg-black/25 px-3 py-2 text-sm text-white/65">
-					<div className="text-white/40 text-xs">Source</div>
-					<div className="max-w-xs truncate font-medium text-white">{model.sourceLabel}</div>
-				</div>
-			</header>
+					<div className="rounded-md border border-white/10 bg-black/25 px-3 py-2 text-sm text-white/65">
+						<div className="text-white/40 text-xs">Source</div>
+						<div className="max-w-xs truncate font-medium text-white">
+							{model.sourceLabel}
+						</div>
+					</div>
+				</header>
 			)}
 
-			<section className={`rounded-lg border border-white/10 bg-white/[0.04] ${chartOnly ? "min-h-[calc(100vh-48px)] p-6" : "p-4"}`}>
+			<section
+				className={`rounded-lg border border-white/10 bg-white/[0.04] ${chartOnly ? "min-h-[calc(100vh-48px)] p-6" : "p-4"}`}
+			>
 				<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 					<div>
-						<h2 className={chartOnly ? "font-semibold text-2xl" : "font-semibold"}>Process flow chart</h2>
+						<h2
+							className={chartOnly ? "font-semibold text-2xl" : "font-semibold"}
+						>
+							Process flow chart
+						</h2>
 						<p className="mt-1 text-sm text-white/50">
-							Hover or focus a node to see the data entering and leaving that process.
+							Hover or focus a node to see the data entering and leaving that
+							process.
 						</p>
 						{model.hasArtifact ? (
-							<p className="mt-1 text-xs text-white/40">
+							<p className="mt-1 text-white/40 text-xs">
 								Transform: {model.payloadTransform ?? "unknown"}
-								{model.rawPayloadAvailable ? "" : " - raw payload value is not stored in this artifact."}
+								{model.rawPayloadAvailable
+									? ""
+									: " - raw payload value is not stored in this artifact."}
 							</p>
 						) : null}
 					</div>
 					<div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.14em]">
-						<span className="rounded border border-cyan-400/25 bg-cyan-500/10 px-2 py-1 text-cyan-100">Sender</span>
-						<span className="rounded border border-amber-400/25 bg-amber-500/10 px-2 py-1 text-amber-100">Visible carrier</span>
-						<span className="rounded border border-emerald-400/25 bg-emerald-500/10 px-2 py-1 text-emerald-100">Receiver</span>
+						<span className="rounded border border-cyan-400/25 bg-cyan-500/10 px-2 py-1 text-cyan-100">
+							Sender
+						</span>
+						<span className="rounded border border-amber-400/25 bg-amber-500/10 px-2 py-1 text-amber-100">
+							Visible carrier
+						</span>
+						<span className="rounded border border-emerald-400/25 bg-emerald-500/10 px-2 py-1 text-emerald-100">
+							Receiver
+						</span>
 					</div>
 				</div>
 				<div className="mt-4 overflow-x-auto">
-					<div className={`relative w-[1190px] rounded-lg border border-white/10 bg-black/25 ${chartOnly ? "h-[720px] xl:mx-auto" : "h-[720px]"}`}>
+					<div
+						className={`relative w-[1190px] rounded-lg border border-white/10 bg-black/25 ${chartOnly ? "h-[720px] xl:mx-auto" : "h-[720px]"}`}
+					>
 						<svg
 							aria-hidden="true"
 							className="absolute inset-0 h-full w-full"
@@ -928,16 +1078,58 @@ export function StegoProcessVisual({ data, filename, chartOnly = false }: StegoP
 									<path d="M0,0 L8,4 L0,8 Z" fill="currentColor" />
 								</marker>
 							</defs>
-							<rect fill="rgba(34, 211, 238, 0.035)" height="250" rx="10" width="1150" x="20" y="20" />
-							<rect fill="rgba(245, 158, 11, 0.035)" height="170" rx="10" width="1150" x="20" y="300" />
-							<rect fill="rgba(16, 185, 129, 0.035)" height="190" rx="10" width="1150" x="20" y="510" />
-							<text fill="rgba(255,255,255,0.28)" fontSize="11" fontWeight="700" letterSpacing="2" x="34" y="42">
+							<rect
+								fill="rgba(34, 211, 238, 0.035)"
+								height="250"
+								rx="10"
+								width="1150"
+								x="20"
+								y="20"
+							/>
+							<rect
+								fill="rgba(245, 158, 11, 0.035)"
+								height="170"
+								rx="10"
+								width="1150"
+								x="20"
+								y="300"
+							/>
+							<rect
+								fill="rgba(16, 185, 129, 0.035)"
+								height="190"
+								rx="10"
+								width="1150"
+								x="20"
+								y="510"
+							/>
+							<text
+								fill="rgba(255,255,255,0.28)"
+								fontSize="11"
+								fontWeight="700"
+								letterSpacing="2"
+								x="34"
+								y="42"
+							>
 								SENDER
 							</text>
-							<text fill="rgba(255,255,255,0.28)" fontSize="11" fontWeight="700" letterSpacing="2" x="34" y="322">
+							<text
+								fill="rgba(255,255,255,0.28)"
+								fontSize="11"
+								fontWeight="700"
+								letterSpacing="2"
+								x="34"
+								y="322"
+							>
 								VISIBLE CARRIER
 							</text>
-							<text fill="rgba(255,255,255,0.28)" fontSize="11" fontWeight="700" letterSpacing="2" x="34" y="532">
+							<text
+								fill="rgba(255,255,255,0.28)"
+								fontSize="11"
+								fontWeight="700"
+								letterSpacing="2"
+								x="34"
+								y="532"
+							>
 								RECEIVER
 							</text>
 							{flowEdges.map((edge) => {
@@ -957,7 +1149,9 @@ export function StegoProcessVisual({ data, filename, chartOnly = false }: StegoP
 											fill="none"
 											markerEnd="url(#flow-arrow)"
 											stroke="currentColor"
-											strokeDasharray={edge.route?.startsWith("audit") ? "6 7" : undefined}
+											strokeDasharray={
+												edge.route?.startsWith("audit") ? "6 7" : undefined
+											}
 											strokeLinecap="round"
 											strokeLinejoin="round"
 											strokeWidth={active ? 2.4 : 1.2}
@@ -1008,240 +1202,300 @@ export function StegoProcessVisual({ data, filename, chartOnly = false }: StegoP
 				</div>
 				{selectedFlowNode ? (
 					<div className="mt-3 grid gap-3 md:grid-cols-2">
-						<Metric label={`${selectedFlowNode.label} receives`} value={selectedFlowNode.incoming} />
-						<Metric label={`${selectedFlowNode.label} emits`} value={selectedFlowNode.outgoing} />
+						<Metric
+							label={`${selectedFlowNode.label} receives`}
+							value={selectedFlowNode.incoming}
+						/>
+						<Metric
+							label={`${selectedFlowNode.label} emits`}
+							value={selectedFlowNode.outgoing}
+						/>
 					</div>
 				) : null}
 			</section>
 
 			{chartOnly ? null : (
-			<>
-			<section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-				<div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-					<div className="flex flex-wrap items-center justify-between gap-3">
-						<div className="flex items-center gap-2">
-							<button
-								className="inline-flex size-9 items-center justify-center rounded-md border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 disabled:opacity-40"
-								disabled={activeIndex === 0}
-								onClick={() => setActiveIndex((i) => Math.max(0, i - 1))}
-								title="Previous stage"
-								type="button"
-							>
-								<ChevronLeft className="size-4" />
-							</button>
-							<button
-								className="inline-flex items-center gap-2 rounded-md border border-cyan-400/30 bg-cyan-500/15 px-3 py-2 font-medium text-cyan-100 text-sm hover:bg-cyan-500/20"
-								onClick={() => setActiveIndex((i) => (i + 1) % stages.length)}
-								type="button"
-							>
-								<Play className="size-4" />
-								Step
-							</button>
-							<button
-								className="inline-flex size-9 items-center justify-center rounded-md border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 disabled:opacity-40"
-								disabled={activeIndex === stages.length - 1}
-								onClick={() => setActiveIndex((i) => Math.min(stages.length - 1, i + 1))}
-								title="Next stage"
-								type="button"
-							>
-								<ChevronRight className="size-4" />
-							</button>
-						</div>
-						{!data ? (
-							<div className="flex rounded-lg border border-white/10 bg-black/30 p-0.5 text-xs">
-								{demoCases.map((demo) => (
+				<>
+					<section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+						<div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+							<div className="flex flex-wrap items-center justify-between gap-3">
+								<div className="flex items-center gap-2">
 									<button
-										className={`rounded-md px-3 py-1.5 transition-colors ${
-											demo.id === demoId
-												? "bg-white/15 text-white"
-												: "text-white/45 hover:text-white/75"
-										}`}
-										key={demo.id}
-										onClick={() => setDemoId(demo.id)}
+										className="inline-flex size-9 items-center justify-center rounded-md border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 disabled:opacity-40"
+										disabled={activeIndex === 0}
+										onClick={() => setActiveIndex((i) => Math.max(0, i - 1))}
+										title="Previous stage"
 										type="button"
 									>
-										{demo.label}
+										<ChevronLeft className="size-4" />
+									</button>
+									<button
+										className="inline-flex items-center gap-2 rounded-md border border-cyan-400/30 bg-cyan-500/15 px-3 py-2 font-medium text-cyan-100 text-sm hover:bg-cyan-500/20"
+										onClick={() =>
+											setActiveIndex((i) => (i + 1) % stages.length)
+										}
+										type="button"
+									>
+										<Play className="size-4" />
+										Step
+									</button>
+									<button
+										className="inline-flex size-9 items-center justify-center rounded-md border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 disabled:opacity-40"
+										disabled={activeIndex === stages.length - 1}
+										onClick={() =>
+											setActiveIndex((i) => Math.min(stages.length - 1, i + 1))
+										}
+										title="Next stage"
+										type="button"
+									>
+										<ChevronRight className="size-4" />
+									</button>
+								</div>
+								{!data ? (
+									<div className="flex rounded-lg border border-white/10 bg-black/30 p-0.5 text-xs">
+										{demoCases.map((demo) => (
+											<button
+												className={`rounded-md px-3 py-1.5 transition-colors ${
+													demo.id === demoId
+														? "bg-white/15 text-white"
+														: "text-white/45 hover:text-white/75"
+												}`}
+												key={demo.id}
+												onClick={() => setDemoId(demo.id)}
+												type="button"
+											>
+												{demo.label}
+											</button>
+										))}
+									</div>
+								) : null}
+							</div>
+
+							<div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+								{stages.map((stage, index) => {
+									const Icon = stage.icon;
+									const status = statusForStage(index, activeIndex, failures);
+									return (
+										<button
+											className={`rounded-lg border p-3 text-left transition-colors ${
+												index === activeIndex
+													? groupTone(stage.group)
+													: status === "blocked"
+														? "border-red-400/35 bg-red-500/10 text-red-100"
+														: status === "done"
+															? "border-white/10 bg-white/10 text-white"
+															: "border-white/10 bg-black/20 text-white/55 hover:bg-white/5"
+											}`}
+											key={stage.id}
+											onClick={() => setActiveIndex(index)}
+											type="button"
+										>
+											<div className="flex items-center gap-2">
+												<Icon className="size-4 shrink-0" />
+												<span className="font-medium text-sm">
+													{stage.label}
+												</span>
+											</div>
+											<div className="mt-2 line-clamp-2 text-xs leading-5 opacity-70">
+												{stage.body}
+											</div>
+										</button>
+									);
+								})}
+							</div>
+						</div>
+
+						<div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+							<div className="flex items-center justify-between gap-3">
+								<h2 className="font-semibold">Failure modes</h2>
+								<span className="text-white/40 text-xs">
+									{blockedCount} active
+								</span>
+							</div>
+							<div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+								{(Object.keys(failureLabels) as FailureKey[]).map((key) => (
+									<button
+										className={`flex items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+											failures[key]
+												? "border-red-400/35 bg-red-500/10 text-red-100"
+												: "border-white/10 bg-black/25 text-white/60 hover:bg-white/5"
+										}`}
+										key={key}
+										onClick={() => setFailure(key)}
+										type="button"
+									>
+										<span>{failureLabels[key]}</span>
+										{failures[key] ? (
+											<AlertTriangle className="size-4" />
+										) : (
+											<Square className="size-4" />
+										)}
 									</button>
 								))}
 							</div>
-						) : null}
-					</div>
-
-					<div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-						{stages.map((stage, index) => {
-							const Icon = stage.icon;
-							const status = statusForStage(index, activeIndex, failures);
-							return (
-								<button
-									className={`rounded-lg border p-3 text-left transition-colors ${
-										index === activeIndex
-											? groupTone(stage.group)
-											: status === "blocked"
-												? "border-red-400/35 bg-red-500/10 text-red-100"
-												: status === "done"
-													? "border-white/10 bg-white/10 text-white"
-													: "border-white/10 bg-black/20 text-white/55 hover:bg-white/5"
-									}`}
-									key={stage.id}
-									onClick={() => setActiveIndex(index)}
-									type="button"
-								>
-									<div className="flex items-center gap-2">
-										<Icon className="size-4 shrink-0" />
-										<span className="font-medium text-sm">{stage.label}</span>
-									</div>
-									<div className="mt-2 line-clamp-2 text-xs leading-5 opacity-70">
-										{stage.body}
-									</div>
-								</button>
-							);
-						})}
-					</div>
-				</div>
-
-				<div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-					<div className="flex items-center justify-between gap-3">
-						<h2 className="font-semibold">Failure modes</h2>
-						<span className="text-white/40 text-xs">{blockedCount} active</span>
-					</div>
-					<div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-						{(Object.keys(failureLabels) as FailureKey[]).map((key) => (
-							<button
-								className={`flex items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition-colors ${
-									failures[key]
-										? "border-red-400/35 bg-red-500/10 text-red-100"
-										: "border-white/10 bg-black/25 text-white/60 hover:bg-white/5"
-								}`}
-								key={key}
-								onClick={() => setFailure(key)}
-								type="button"
-							>
-								<span>{failureLabels[key]}</span>
-								{failures[key] ? <AlertTriangle className="size-4" /> : <Square className="size-4" />}
-							</button>
-						))}
-					</div>
-					<div className="mt-4 rounded-md border border-white/10 bg-black/25 p-3">
-						<div className="font-medium text-sm">{activeStage.label}</div>
-						<p className="mt-1 text-sm text-white/60 leading-6">{activeStage.body}</p>
-					</div>
-				</div>
-			</section>
-
-			<section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-				<div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-					<h2 className="font-semibold">Bitstream split</h2>
-					<div className="mt-3 flex flex-wrap gap-2">
-						{bitParts.map((part) => (
-							<div className={`rounded-md px-3 py-2 font-mono text-xs ${part.color}`} key={part.id}>
-								<div className="mb-1 font-sans text-[10px] uppercase tracking-[0.14em] opacity-70">
-									{part.label}
-								</div>
-								<div className="max-w-full break-all">{part.bits || "not present"}</div>
+							<div className="mt-4 rounded-md border border-white/10 bg-black/25 p-3">
+								<div className="font-medium text-sm">{activeStage.label}</div>
+								<p className="mt-1 text-sm text-white/60 leading-6">
+									{activeStage.body}
+								</p>
 							</div>
-						))}
-					</div>
-					<div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-						<Metric label="Payload input" value={model.rawPayloadAvailable ? model.payload : "not stored in artifact"} />
-						<Metric label="Transform" value={model.payloadTransform ?? "unknown"} />
-						<Metric label="Protected payload" value={model.protectedPayload} />
-						<Metric label="Compressed bits" value={String(model.compressed.length)} />
-					</div>
-				</div>
+						</div>
+					</section>
 
-				<div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-					<h2 className="font-semibold">Recovery path cost</h2>
-					<div className="mt-3 h-56">
-						<ResponsiveContainer height="100%" width="100%">
-							<BarChart data={chartData}>
-								<CartesianGrid stroke="#ffffff18" vertical={false} />
-								<XAxis dataKey="name" stroke="#ffffff70" tick={{ fill: "#ffffff90", fontSize: 12 }} />
-								<YAxis stroke="#ffffff50" tick={{ fill: "#ffffff70", fontSize: 12 }} />
-								<Tooltip
-									contentStyle={{
-										backgroundColor: "#18181b",
-										border: "1px solid rgba(255,255,255,0.14)",
-										borderRadius: "0.5rem",
-									}}
+					<section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+						<div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+							<h2 className="font-semibold">Bitstream split</h2>
+							<div className="mt-3 flex flex-wrap gap-2">
+								{bitParts.map((part) => (
+									<div
+										className={`rounded-md px-3 py-2 font-mono text-xs ${part.color}`}
+										key={part.id}
+									>
+										<div className="mb-1 font-sans text-[10px] uppercase tracking-[0.14em] opacity-70">
+											{part.label}
+										</div>
+										<div className="max-w-full break-all">
+											{part.bits || "not present"}
+										</div>
+									</div>
+								))}
+							</div>
+							<div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+								<Metric
+									label="Payload input"
+									value={
+										model.rawPayloadAvailable
+											? model.payload
+											: "not stored in artifact"
+									}
 								/>
-								<Bar dataKey="steps" radius={[4, 4, 0, 0]}>
-									{chartData.map((entry) => (
-										<Cell fill={entry.fill} key={entry.name} />
-									))}
-								</Bar>
-							</BarChart>
-						</ResponsiveContainer>
-					</div>
-				</div>
-			</section>
-
-			<section className="grid gap-4 lg:grid-cols-3">
-				<Panel title="Comment target">
-					<div className="space-y-2">
-						{model.comments.map((comment) => {
-							const selected =
-								model.commentTarget === "post"
-									? comment.id === "post"
-									: comment.id === model.selectedCommentId;
-							return (
-								<div
-									className={`rounded-md border p-3 ${
-										selected
-											? "border-cyan-400/35 bg-cyan-500/10"
-											: "border-white/10 bg-black/20"
-									}`}
-									key={comment.id}
-								>
-									<div className="text-white/40 text-xs">u/{comment.author}</div>
-									<div className="mt-1 text-sm text-white/80 leading-5">{comment.body}</div>
-								</div>
-							);
-						})}
-					</div>
-				</Panel>
-
-				<Panel title="Selected angle">
-					<div className="space-y-2">
-						{model.angles.map((angle) => {
-							const selected = angle.idx === model.selectedAngleIndex;
-							return (
-								<div
-									className={`rounded-md border p-3 ${
-										selected
-											? "border-emerald-400/35 bg-emerald-500/10"
-											: "border-white/10 bg-black/20"
-									}`}
-									key={`${angle.idx}-${angle.category}`}
-								>
-									<div className="flex items-center justify-between gap-3">
-										<div className="font-medium text-sm">{angle.category}</div>
-										<div className="font-mono text-white/40 text-xs">idx {angle.idx}</div>
-									</div>
-									<div className="mt-1 text-sm text-white/65 leading-5">{angle.tangent}</div>
-								</div>
-							);
-						})}
-					</div>
-				</Panel>
-
-				<Panel title="Visible carrier">
-					<div className="rounded-md border border-amber-400/25 bg-amber-500/10 p-4 text-amber-50/90 text-sm leading-6">
-						{model.stegoText}
-					</div>
-					<div className="mt-3 rounded-md border border-white/10 bg-black/20 p-3 text-sm text-white/60">
-						Decodes to{" "}
-						<span className="font-mono text-white">
-							idx {failures.decodeMismatch ? "mismatch" : selectedAngle?.idx}
-						</span>
-						{model.hasArtifact && !model.receiverPayload ? (
-							<div className="mt-2 text-white/40 text-xs">
-								Receiver-only payload recovery is not present in this artifact.
+								<Metric
+									label="Transform"
+									value={model.payloadTransform ?? "unknown"}
+								/>
+								<Metric
+									label="Protected payload"
+									value={model.protectedPayload}
+								/>
+								<Metric
+									label="Compressed bits"
+									value={String(model.compressed.length)}
+								/>
 							</div>
-						) : null}
-					</div>
-				</Panel>
-			</section>
-			</>
+						</div>
+
+						<div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+							<h2 className="font-semibold">Recovery path cost</h2>
+							<div className="mt-3 h-56">
+								<ResponsiveContainer height="100%" width="100%">
+									<BarChart data={chartData}>
+										<CartesianGrid stroke="#ffffff18" vertical={false} />
+										<XAxis
+											dataKey="name"
+											stroke="#ffffff70"
+											tick={{ fill: "#ffffff90", fontSize: 12 }}
+										/>
+										<YAxis
+											stroke="#ffffff50"
+											tick={{ fill: "#ffffff70", fontSize: 12 }}
+										/>
+										<Tooltip
+											contentStyle={{
+												backgroundColor: "#18181b",
+												border: "1px solid rgba(255,255,255,0.14)",
+												borderRadius: "0.5rem",
+											}}
+										/>
+										<Bar dataKey="steps" radius={[4, 4, 0, 0]}>
+											{chartData.map((entry) => (
+												<Cell fill={entry.fill} key={entry.name} />
+											))}
+										</Bar>
+									</BarChart>
+								</ResponsiveContainer>
+							</div>
+						</div>
+					</section>
+
+					<section className="grid gap-4 lg:grid-cols-3">
+						<Panel title="Comment target">
+							<div className="space-y-2">
+								{model.comments.map((comment) => {
+									const selected =
+										model.commentTarget === "post"
+											? comment.id === "post"
+											: comment.id === model.selectedCommentId;
+									return (
+										<div
+											className={`rounded-md border p-3 ${
+												selected
+													? "border-cyan-400/35 bg-cyan-500/10"
+													: "border-white/10 bg-black/20"
+											}`}
+											key={comment.id}
+										>
+											<div className="text-white/40 text-xs">
+												u/{comment.author}
+											</div>
+											<div className="mt-1 text-sm text-white/80 leading-5">
+												{comment.body}
+											</div>
+										</div>
+									);
+								})}
+							</div>
+						</Panel>
+
+						<Panel title="Selected angle">
+							<div className="space-y-2">
+								{model.angles.map((angle) => {
+									const selected = angle.idx === model.selectedAngleIndex;
+									return (
+										<div
+											className={`rounded-md border p-3 ${
+												selected
+													? "border-emerald-400/35 bg-emerald-500/10"
+													: "border-white/10 bg-black/20"
+											}`}
+											key={`${angle.idx}-${angle.category}`}
+										>
+											<div className="flex items-center justify-between gap-3">
+												<div className="font-medium text-sm">
+													{angle.category}
+												</div>
+												<div className="font-mono text-white/40 text-xs">
+													idx {angle.idx}
+												</div>
+											</div>
+											<div className="mt-1 text-sm text-white/65 leading-5">
+												{angle.tangent}
+											</div>
+										</div>
+									);
+								})}
+							</div>
+						</Panel>
+
+						<Panel title="Visible carrier">
+							<div className="rounded-md border border-amber-400/25 bg-amber-500/10 p-4 text-amber-50/90 text-sm leading-6">
+								{model.stegoText}
+							</div>
+							<div className="mt-3 rounded-md border border-white/10 bg-black/20 p-3 text-sm text-white/60">
+								Decodes to{" "}
+								<span className="font-mono text-white">
+									idx{" "}
+									{failures.decodeMismatch ? "mismatch" : selectedAngle?.idx}
+								</span>
+								{model.hasArtifact && !model.receiverPayload ? (
+									<div className="mt-2 text-white/40 text-xs">
+										Receiver-only payload recovery is not present in this
+										artifact.
+									</div>
+								) : null}
+							</div>
+						</Panel>
+					</section>
+				</>
 			)}
 		</div>
 	);
@@ -1250,8 +1504,12 @@ export function StegoProcessVisual({ data, filename, chartOnly = false }: StegoP
 function Metric({ label, value }: { label: string; value: string }) {
 	return (
 		<div className="rounded-md border border-white/10 bg-black/20 p-3">
-			<div className="text-white/40 text-xs uppercase tracking-[0.14em]">{label}</div>
-			<div className="mt-1 break-all font-mono text-sm text-white/80">{value}</div>
+			<div className="text-white/40 text-xs uppercase tracking-[0.14em]">
+				{label}
+			</div>
+			<div className="mt-1 break-all font-mono text-sm text-white/80">
+				{value}
+			</div>
 		</div>
 	);
 }

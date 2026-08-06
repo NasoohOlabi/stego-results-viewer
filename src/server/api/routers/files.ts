@@ -1,5 +1,5 @@
-import { readdir, readFile, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { z } from "zod";
@@ -8,7 +8,11 @@ import { getResolvedPath, getResultSources } from "~/server/paths";
 
 const execFileAsync = promisify(execFile);
 const REPO_ROOT = join(process.cwd(), "..", "stego-side-wing");
-const SCRIPT_PATH = join(REPO_ROOT, "scripts", "run_single_post_twice_no_cache.py");
+const SCRIPT_PATH = join(
+	REPO_ROOT,
+	"scripts",
+	"run_single_post_twice_no_cache.py",
+);
 
 export const filesRouter = createTRPCRouter({
 	listSources: publicProcedure.query(async () => {
@@ -104,17 +108,21 @@ export const filesRouter = createTRPCRouter({
 				args.push("--overwrite");
 			}
 
-			const { stdout, stderr } = await execFileAsync("powershell.exe", [
-				"-NoProfile",
-				"-ExecutionPolicy",
-				"Bypass",
-				"-File",
-				args[0]!,
-				...args.slice(1),
-			], {
-				cwd: REPO_ROOT,
-				maxBuffer: 10 * 1024 * 1024,
-			});
+			const { stdout, stderr } = await execFileAsync(
+				"powershell.exe",
+				[
+					"-NoProfile",
+					"-ExecutionPolicy",
+					"Bypass",
+					"-File",
+					args[0]!,
+					...args.slice(1),
+				],
+				{
+					cwd: REPO_ROOT,
+					maxBuffer: 10 * 1024 * 1024,
+				},
+			);
 
 			const text = `${stdout}\n${stderr}`.trim();
 			const match = text.match(/\{[\s\S]*\}$/);

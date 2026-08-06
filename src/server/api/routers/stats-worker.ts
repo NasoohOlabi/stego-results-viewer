@@ -1,5 +1,5 @@
-import { parentPort } from "worker_threads";
 import { readFile } from "fs/promises";
+import { parentPort } from "worker_threads";
 
 export type WorkerPostStat = {
 	bits: number | null;
@@ -27,12 +27,29 @@ parentPort?.on("message", async ({ filePath }) => {
 				const embedding = item.embedding;
 				if (embedding) {
 					posts.push({
-						bits: typeof embedding.totalBitsEmbedded === "number" ? embedding.totalBitsEmbedded : null,
-						ratio: embedding.compression && typeof embedding.compression.ratio === "number" ? embedding.compression.ratio : null,
-						angles: embedding.angleEmbedding?.totalAnglesSelectedFirst ? embedding.angleEmbedding.totalAnglesSelectedFirst.length : null,
-						commentChain: embedding.commentEmbedding?.pickedCommentChain ? embedding.commentEmbedding.pickedCommentChain.length : null,
-						warnings: Array.isArray(embedding.warnings) ? embedding.warnings.length : 0,
-						usedDict: embedding.compression?.method === "dictionary" || embedding.compression?.usedDict ? true : false,
+						bits:
+							typeof embedding.totalBitsEmbedded === "number"
+								? embedding.totalBitsEmbedded
+								: null,
+						ratio:
+							embedding.compression &&
+							typeof embedding.compression.ratio === "number"
+								? embedding.compression.ratio
+								: null,
+						angles: embedding.angleEmbedding?.totalAnglesSelectedFirst
+							? embedding.angleEmbedding.totalAnglesSelectedFirst.length
+							: null,
+						commentChain: embedding.commentEmbedding?.pickedCommentChain
+							? embedding.commentEmbedding.pickedCommentChain.length
+							: null,
+						warnings: Array.isArray(embedding.warnings)
+							? embedding.warnings.length
+							: 0,
+						usedDict:
+							embedding.compression?.method === "dictionary" ||
+							embedding.compression?.usedDict
+								? true
+								: false,
 					});
 				}
 			}

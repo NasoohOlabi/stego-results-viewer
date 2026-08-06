@@ -2,7 +2,10 @@ import { readdir, readFile } from "fs/promises";
 import { join } from "path";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { API_LOG_FILE_PATH, readApiLogSnapshot } from "~/server/logs/api-log-utils";
+import {
+	API_LOG_FILE_PATH,
+	readApiLogSnapshot,
+} from "~/server/logs/api-log-utils";
 
 const PROMPT_LOG_DIR = "D:/Master/code/stego-side-wing/logs";
 const PROMPT_LOG_FILENAME_PATTERN = /^stego_prompts_(\d{8})_(\d{6})\.log$/;
@@ -17,7 +20,7 @@ const promptLogLineSchema = z.object({
 	system_message: z.string().optional(),
 	user_prompt: z.string().optional(),
 	thinking: z.string().optional(),
-	assistant_response: z.string().optional()
+	assistant_response: z.string().optional(),
 });
 
 function toPreview(text: string, max = 160): string {
@@ -93,19 +96,19 @@ export const promptLogsRouter = createTRPCRouter({
 						dateLabel: parsed.dateLabel,
 						dateIso: parsed.dateIso,
 						sortKey: parsed.sortKey,
-						path: join(PROMPT_LOG_DIR, fileName)
+						path: join(PROMPT_LOG_DIR, fileName),
 					};
 				})
 				.filter(
 					(
-						file
+						file,
 					): file is {
 						fileName: string;
 						dateLabel: string;
 						dateIso: string | null;
 						sortKey: string;
 						path: string;
-					} => !!file
+					} => !!file,
 				)
 				.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
 
@@ -119,7 +122,11 @@ export const promptLogsRouter = createTRPCRouter({
 			}
 
 			const entries: PromptLogEntry[] = [];
-			const warnings: Array<{ fileName: string; lineNumber: number; reason: string }> = [];
+			const warnings: Array<{
+				fileName: string;
+				lineNumber: number;
+				reason: string;
+			}> = [];
 
 			for (const file of selectedFiles) {
 				const content = await readFile(file.path, "utf-8");
@@ -134,7 +141,11 @@ export const promptLogsRouter = createTRPCRouter({
 					try {
 						parsedUnknown = JSON.parse(rawLine);
 					} catch {
-						warnings.push({ fileName: file.fileName, lineNumber, reason: "Invalid JSON" });
+						warnings.push({
+							fileName: file.fileName,
+							lineNumber,
+							reason: "Invalid JSON",
+						});
 						continue;
 					}
 
@@ -143,7 +154,7 @@ export const promptLogsRouter = createTRPCRouter({
 						warnings.push({
 							fileName: file.fileName,
 							lineNumber,
-							reason: "Missing expected prompt fields"
+							reason: "Missing expected prompt fields",
 						});
 						continue;
 					}
@@ -173,14 +184,15 @@ export const promptLogsRouter = createTRPCRouter({
 						systemMessage,
 						thinking,
 						assistantResponse,
-						raw: (parsedUnknown as Record<string, unknown>) ?? {}
+						raw: (parsedUnknown as Record<string, unknown>) ?? {},
 					});
 				}
 			}
 
 			entries.sort((a, b) => {
 				const byTimestamp =
-					toTimestampValue(b.timestamp ?? undefined) - toTimestampValue(a.timestamp ?? undefined);
+					toTimestampValue(b.timestamp ?? undefined) -
+					toTimestampValue(a.timestamp ?? undefined);
 				if (byTimestamp !== 0) return byTimestamp;
 				const bySourceDate =
 					toTimestampValue(b.sourceFileDate ?? undefined) -
@@ -195,11 +207,11 @@ export const promptLogsRouter = createTRPCRouter({
 				availableFiles: availableFiles.map((file) => ({
 					fileName: file.fileName,
 					dateLabel: file.dateLabel,
-					dateIso: file.dateIso
+					dateIso: file.dateIso,
 				})),
 				totalEntries: entries.length,
 				warnings,
-				entries
+				entries,
 			};
 		}),
 	getApiEntries: publicProcedure
@@ -211,7 +223,7 @@ export const promptLogsRouter = createTRPCRouter({
 				totalEntries: snapshot.totalEntries,
 				totalLines: snapshot.totalLines,
 				warnings: snapshot.warnings,
-				entries: snapshot.entries
+				entries: snapshot.entries,
 			};
-		})
+		}),
 });

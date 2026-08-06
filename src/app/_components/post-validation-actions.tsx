@@ -31,8 +31,8 @@ const ENDPOINTS: EndpointConfig[] = [
 			use_terms_cache: ctx.useTermsCache,
 			persist_terms_cache: ctx.persistTermsCache,
 			use_fetch_cache: ctx.useFetchCache,
-			allow_angles_fallback: ctx.allowAnglesFallback
-		})
+			allow_angles_fallback: ctx.allowAnglesFallback,
+		}),
 	},
 	{
 		id: "gen-terms",
@@ -41,8 +41,8 @@ const ENDPOINTS: EndpointConfig[] = [
 		buildBody: (ctx) => ({
 			post_id: ctx.postId,
 			use_cache: ctx.useCache,
-			persist_cache: ctx.persistCache
-		})
+			persist_cache: ctx.persistCache,
+		}),
 	},
 	{
 		id: "data-load-preview",
@@ -51,8 +51,8 @@ const ENDPOINTS: EndpointConfig[] = [
 		buildBody: (ctx) => ({
 			post_id: ctx.postId,
 			use_cache: ctx.useCache,
-			include_post: ctx.includePost
-		})
+			include_post: ctx.includePost,
+		}),
 	},
 	{
 		id: "research-preview",
@@ -63,8 +63,8 @@ const ENDPOINTS: EndpointConfig[] = [
 			use_terms_cache: ctx.useTermsCache,
 			persist_terms_cache: ctx.persistTermsCache,
 			use_fetch_cache: ctx.useFetchCache,
-			include_post: ctx.includePost
-		})
+			include_post: ctx.includePost,
+		}),
 	},
 	{
 		id: "angles-preview",
@@ -76,9 +76,9 @@ const ENDPOINTS: EndpointConfig[] = [
 			persist_terms_cache: ctx.persistTermsCache,
 			use_fetch_cache: ctx.useFetchCache,
 			allow_angles_fallback: ctx.allowAnglesFallback,
-			include_post: ctx.includePost
-		})
-	}
+			include_post: ctx.includePost,
+		}),
+	},
 ];
 
 function parseJsonOrText(raw: string): unknown {
@@ -138,7 +138,7 @@ export function PostValidationActions({ postId }: { postId?: string }) {
 			persistTermsCache,
 			useFetchCache,
 			allowAnglesFallback,
-			includePost
+			includePost,
 		});
 		const url = `${base}${endpoint.path}`;
 		setIsRunningId(endpoint.id);
@@ -146,14 +146,14 @@ export function PostValidationActions({ postId }: { postId?: string }) {
 			const res = await fetch(url, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(body)
+				body: JSON.stringify(body),
 			});
 			const text = await res.text();
 			setLastResponse({
 				endpoint: endpoint.path,
 				status: res.status,
 				ok: res.ok,
-				payload: parseJsonOrText(text)
+				payload: parseJsonOrText(text),
 			});
 		} catch (error) {
 			setLastResponse({
@@ -162,8 +162,8 @@ export function PostValidationActions({ postId }: { postId?: string }) {
 				ok: false,
 				payload: {
 					message: "Request failed",
-					error: error instanceof Error ? error.message : String(error)
-				}
+					error: error instanceof Error ? error.message : String(error),
+				},
 			});
 		} finally {
 			setIsRunningId(null);
@@ -171,84 +171,84 @@ export function PostValidationActions({ postId }: { postId?: string }) {
 	};
 
 	return (
-		<section className="rounded-lg border border-white/10 bg-black/20 p-3 space-y-3">
+		<section className="space-y-3 rounded-lg border border-white/10 bg-black/20 p-3">
 			<div className="flex items-center justify-between gap-2">
-				<h6 className="text-xs font-semibold uppercase tracking-wide text-white/70">
+				<h6 className="font-semibold text-white/70 text-xs uppercase tracking-wide">
 					Protocol Validation APIs
 				</h6>
 				<span className="text-[10px] text-white/40">{endpointHint}</span>
 			</div>
 			{normalizedPostId ? (
-				<div className="text-xs text-white/50">
+				<div className="text-white/50 text-xs">
 					post_id: <code className="text-white/80">{normalizedPostId}</code>
 				</div>
 			) : (
-				<div className="text-xs text-amber-300/90">
+				<div className="text-amber-300/90 text-xs">
 					No post id found on this item.
 				</div>
 			)}
 			<div className="grid grid-cols-2 gap-2 text-[11px] text-white/70 md:grid-cols-3">
 				<label className="flex items-center gap-2">
 					<input
-						type="checkbox"
 						checked={stream}
 						onChange={(e) => setStream(e.target.checked)}
+						type="checkbox"
 					/>
 					stream
 				</label>
 				<label className="flex items-center gap-2">
 					<input
-						type="checkbox"
 						checked={useCache}
 						onChange={(e) => setUseCache(e.target.checked)}
+						type="checkbox"
 					/>
 					use_cache
 				</label>
 				<label className="flex items-center gap-2">
 					<input
-						type="checkbox"
 						checked={persistCache}
 						onChange={(e) => setPersistCache(e.target.checked)}
+						type="checkbox"
 					/>
 					persist_cache
 				</label>
 				<label className="flex items-center gap-2">
 					<input
-						type="checkbox"
 						checked={useTermsCache}
 						onChange={(e) => setUseTermsCache(e.target.checked)}
+						type="checkbox"
 					/>
 					use_terms_cache
 				</label>
 				<label className="flex items-center gap-2">
 					<input
-						type="checkbox"
 						checked={persistTermsCache}
 						onChange={(e) => setPersistTermsCache(e.target.checked)}
+						type="checkbox"
 					/>
 					persist_terms_cache
 				</label>
 				<label className="flex items-center gap-2">
 					<input
-						type="checkbox"
 						checked={useFetchCache}
 						onChange={(e) => setUseFetchCache(e.target.checked)}
+						type="checkbox"
 					/>
 					use_fetch_cache
 				</label>
 				<label className="flex items-center gap-2">
 					<input
-						type="checkbox"
 						checked={allowAnglesFallback}
 						onChange={(e) => setAllowAnglesFallback(e.target.checked)}
+						type="checkbox"
 					/>
 					allow_angles_fallback
 				</label>
 				<label className="flex items-center gap-2">
 					<input
-						type="checkbox"
 						checked={includePost}
 						onChange={(e) => setIncludePost(e.target.checked)}
+						type="checkbox"
 					/>
 					include_post
 				</label>
@@ -256,11 +256,11 @@ export function PostValidationActions({ postId }: { postId?: string }) {
 			<div className="flex flex-wrap gap-2">
 				{ENDPOINTS.map((endpoint) => (
 					<button
-						key={endpoint.id}
-						type="button"
-						onClick={() => void runEndpoint(endpoint)}
-						disabled={!normalizedPostId || isRunningId !== null}
 						className="rounded-md bg-teal-500/20 px-2.5 py-1.5 text-xs hover:bg-teal-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+						disabled={!normalizedPostId || isRunningId !== null}
+						key={endpoint.id}
+						onClick={() => void runEndpoint(endpoint)}
+						type="button"
 					>
 						{isRunningId === endpoint.id ? "Running..." : endpoint.label}
 					</button>
@@ -268,7 +268,7 @@ export function PostValidationActions({ postId }: { postId?: string }) {
 			</div>
 			{lastResponse ? (
 				<details className="rounded-md border border-white/10 bg-black/20 p-2">
-					<summary className="cursor-pointer text-xs text-white/80">
+					<summary className="cursor-pointer text-white/80 text-xs">
 						Last response: {lastResponse.endpoint} -{" "}
 						{lastResponse.status ?? "network error"}{" "}
 						{lastResponse.ok ? "OK" : "Error"}

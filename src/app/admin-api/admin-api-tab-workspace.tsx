@@ -373,7 +373,7 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 					below. Keep advanced controls hidden unless you need custom request
 					bodies or debug details.
 				</p>
-				<div className="mt-3 flex flex-wrap gap-2 text-xs text-white/60">
+				<div className="mt-3 flex flex-wrap gap-2 text-white/60 text-xs">
 					<span className="rounded-full bg-white/10 px-3 py-1">
 						1. Choose API
 					</span>
@@ -447,9 +447,10 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 								}
 								type="checkbox"
 							/>
-							Show advanced request controls for {getApiToolLabel(activeTab.apiToolId)}
+							Show advanced request controls for{" "}
+							{getApiToolLabel(activeTab.apiToolId)}
 						</label>
-						<p className="mt-2 text-[11px] leading-5 text-white/45">
+						<p className="mt-2 text-[11px] text-white/45 leading-5">
 							Most workflow endpoints stream with SSE by default. The response
 							panel will show a summary when it can, with raw events still
 							available.
@@ -470,11 +471,6 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 							batchAnglesDeterminismPostIds={batchAnglesDeterminismPostIds}
 							batchAnglesDeterminismStep={batchAnglesDeterminismStep}
 							batchAnglesDeterminismStream={batchAnglesDeterminismStream}
-							prepQuotaBatchCount={prepQuotaBatchCount}
-							prepQuotaBatchSize={prepQuotaBatchSize}
-							prepQuotaPayload={prepQuotaPayload}
-							prepQuotaStream={prepQuotaStream}
-							prepQuotaTag={prepQuotaTag}
 							cacheTarget={cacheTarget}
 							callApi={callApi}
 							fsLimit={fsLimit}
@@ -496,6 +492,11 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 							metricsHistoryType={metricsHistoryType}
 							metricsPerplexityBodyJson={metricsPerplexityBodyJson}
 							metricsPostBodyJson={metricsPostBodyJson}
+							prepQuotaBatchCount={prepQuotaBatchCount}
+							prepQuotaBatchSize={prepQuotaBatchSize}
+							prepQuotaPayload={prepQuotaPayload}
+							prepQuotaStream={prepQuotaStream}
+							prepQuotaTag={prepQuotaTag}
 							protocolIncludePost={protocolIncludePost}
 							protocolPersistCache={protocolPersistCache}
 							protocolUseCache={protocolUseCache}
@@ -521,11 +522,6 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 							}
 							setBatchAnglesDeterminismStep={setBatchAnglesDeterminismStep}
 							setBatchAnglesDeterminismStream={setBatchAnglesDeterminismStream}
-							setPrepQuotaBatchCount={setPrepQuotaBatchCount}
-							setPrepQuotaBatchSize={setPrepQuotaBatchSize}
-							setPrepQuotaPayload={setPrepQuotaPayload}
-							setPrepQuotaStream={setPrepQuotaStream}
-							setPrepQuotaTag={setPrepQuotaTag}
 							setCacheTarget={setCacheTarget}
 							setFsLimit={setFsLimit}
 							setFsPath={setFsPath}
@@ -546,6 +542,11 @@ export function AdminApiTabWorkspace(props: AdminApiTabWorkspaceProps) {
 							setMetricsHistoryType={setMetricsHistoryType}
 							setMetricsPerplexityBodyJson={setMetricsPerplexityBodyJson}
 							setMetricsPostBodyJson={setMetricsPostBodyJson}
+							setPrepQuotaBatchCount={setPrepQuotaBatchCount}
+							setPrepQuotaBatchSize={setPrepQuotaBatchSize}
+							setPrepQuotaPayload={setPrepQuotaPayload}
+							setPrepQuotaStream={setPrepQuotaStream}
+							setPrepQuotaTag={setPrepQuotaTag}
 							setProtocolIncludePost={setProtocolIncludePost}
 							setProtocolPersistCache={setProtocolPersistCache}
 							setProtocolUseCache={setProtocolUseCache}

@@ -3,9 +3,18 @@ import { basename, join, relative, resolve } from "node:path";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
-const E2E_RUNS_DIR = resolve(process.cwd(), "../stego-side-wing/metrics/e2e_runs");
-const SIDE_WING_METRICS_DIR = resolve(process.cwd(), "../stego-side-wing/metrics");
-const MODEL_ABLATION_RUNS_DIR = join(SIDE_WING_METRICS_DIR, "model_ablation_runs");
+const E2E_RUNS_DIR = resolve(
+	process.cwd(),
+	"../stego-side-wing/metrics/e2e_runs",
+);
+const SIDE_WING_METRICS_DIR = resolve(
+	process.cwd(),
+	"../stego-side-wing/metrics",
+);
+const MODEL_ABLATION_RUNS_DIR = join(
+	SIDE_WING_METRICS_DIR,
+	"model_ablation_runs",
+);
 const ANGLE_SCAN_RUNS_DIR = join(SIDE_WING_METRICS_DIR, "angle_scan_runs");
 const FEEDBACK_RUNS_DIR = join(SIDE_WING_METRICS_DIR, "feedback_runs");
 const NATURALNESS_GATE_RUNS_DIR = join(
@@ -170,7 +179,10 @@ const getArray = (record: JsonRecord | null, key: string): unknown[] => {
 	return Array.isArray(value) ? value : [];
 };
 
-const getRecord = (record: JsonRecord | null, key: string): JsonRecord | null => {
+const getRecord = (
+	record: JsonRecord | null,
+	key: string,
+): JsonRecord | null => {
 	const value = record?.[key];
 	return value && typeof value === "object" && !Array.isArray(value)
 		? (value as JsonRecord)
@@ -195,11 +207,15 @@ const countFiles = async (path: string) => {
 };
 
 const listVariantDirs = async (runPath: string) => {
-	const entries = await readdir(runPath, { withFileTypes: true });
-	return entries
-		.filter((entry) => entry.isDirectory() && !entry.name.startsWith("_"))
-		.map((entry) => entry.name)
-		.sort();
+	try {
+		const entries = await readdir(runPath, { withFileTypes: true });
+		return entries
+			.filter((entry) => entry.isDirectory() && !entry.name.startsWith("_"))
+			.map((entry) => entry.name)
+			.sort();
+	} catch {
+		return [];
+	}
 };
 
 const normalizeFailureCode = (failure: JsonRecord) => {
@@ -219,7 +235,10 @@ const normalizeFailureCode = (failure: JsonRecord) => {
 	if (combined.includes("payload") && combined.includes("mismatch")) {
 		return "receiver_payload_mismatch";
 	}
-	if (combined.includes("no_valid_candidate") || combined.includes("candidate")) {
+	if (
+		combined.includes("no_valid_candidate") ||
+		combined.includes("candidate")
+	) {
 		return "stego_no_valid_candidate";
 	}
 	return "infra_or_unknown";
@@ -235,20 +254,28 @@ const getOutputStats = async (outputPath: string) => {
 		return { avgBitsEmbedded: null, avgStegoTextChars: null };
 	}
 
+	const parsedFiles = await Promise.all(
+		files
+			.sort()
+			.slice(0, 25)
+			.map(async (file) => {
+				try {
+					return getOutputItem(
+						JSON.parse(await readFile(join(outputPath, file), "utf-8")),
+					);
+				} catch {
+					return null;
+				}
+			}),
+	);
+
 	let bitsTotal = 0;
 	let bitsCount = 0;
 	let stegoCharsTotal = 0;
 	let stegoTextCount = 0;
 
-	for (const file of files.sort().slice(0, 25)) {
-		let parsed: JsonRecord | null = null;
-		try {
-			parsed = getOutputItem(
-				JSON.parse(await readFile(join(outputPath, file), "utf-8")),
-			);
-		} catch {
-			continue;
-		}
+	for (const parsed of parsedFiles) {
+		if (!parsed) continue;
 		const embedding = getRecord(parsed, "embedding");
 		const commentEmbedding = getRecord(embedding, "commentEmbedding");
 		const angleEmbedding = getRecord(embedding, "angleEmbedding");
@@ -303,7 +330,11 @@ const getRunOverview = async (name: string): Promise<RunOverview> => {
 	}
 
 	const totalRequested =
-		requested === null ? null : variants.length > 1 ? requested * variants.length : requested;
+		requested === null
+			? null
+			: variants.length > 1
+				? requested * variants.length
+				: requested;
 
 	return {
 		name,
@@ -381,62 +412,69 @@ const collectFailures = async (runNames: string[]) => {
 
 const getVariantMetrics = async (runName: string): Promise<VariantMetric[]> => {
 	const runPath = join(E2E_RUNS_DIR, runName);
-	const metrics: VariantMetric[] = [];
+	const variants = await listVariantDirs(runPath);
 
-	for (const variant of await listVariantDirs(runPath)) {
-		const variantPath = join(runPath, variant);
-		const summary = await readJson(join(variantPath, "summary.json"));
-		const metricsPath = join(variantPath, "metrics");
-		let files: string[] = [];
-		try {
-			files = (await readdir(metricsPath, { withFileTypes: true }))
-				.filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
-				.map((entry) => entry.name);
-		} catch {}
+	const metrics = await Promise.all(
+		variants.map(async (variant) => {
+			const variantPath = join(runPath, variant);
+			const summary = await readJson(join(variantPath, "summary.json"));
+			const metricsPath = join(variantPath, "metrics");
+			let files: string[] = [];
+			try {
+				files = (await readdir(metricsPath, { withFileTypes: true }))
+					.filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+					.map((entry) => entry.name);
+			} catch {}
 
-		const perplexityFile = files.find((file) => file.includes("perplexity"));
-		const divergenceFile = files.find((file) => file.includes("divergence"));
-		const perplexity = perplexityFile
-			? await readJson(join(metricsPath, perplexityFile))
-			: null;
-		const divergence = divergenceFile
-			? await readJson(join(metricsPath, divergenceFile))
-			: null;
-		const matched = getRecord(divergence, "primary_baseline_matched_post");
-		const global = getRecord(divergence, "secondary_baseline_global_corpus");
-		const outputStats = await getOutputStats(join(variantPath, "output-results"));
+			const perplexityFile = files.find((file) => file.includes("perplexity"));
+			const divergenceFile = files.find((file) => file.includes("divergence"));
+			const [perplexity, divergence, outputStats] = await Promise.all([
+				perplexityFile
+					? readJson(join(metricsPath, perplexityFile))
+					: Promise.resolve(null),
+				divergenceFile
+					? readJson(join(metricsPath, divergenceFile))
+					: Promise.resolve(null),
+				getOutputStats(join(variantPath, "output-results")),
+			]);
+			const matched = getRecord(divergence, "primary_baseline_matched_post");
+			const global = getRecord(divergence, "secondary_baseline_global_corpus");
 
-		metrics.push({
-			runName,
-			variant,
-			requested:
-				getNumber(summary, "requested_samples") ??
-				(await countFiles(join(variantPath, "output-results"))) +
-					(await countFiles(join(variantPath, "failures"))),
-			succeeded:
-				getNumber(summary, "samples_succeeded") ??
-				(await countFiles(join(variantPath, "output-results"))),
-			failed:
-				getNumber(summary, "samples_failed") ??
-				(await countFiles(join(variantPath, "failures"))),
-			receiverSuccessRate:
-				getNumber(summary, "receiver_success_rate") ??
-				(getNumber(summary, "samples_succeeded") && getNumber(summary, "requested_samples")
-					? getNumber(summary, "samples_succeeded")! /
-						getNumber(summary, "requested_samples")!
-					: null),
-			avgBitsEmbedded: outputStats.avgBitsEmbedded,
-			avgStegoTextChars: outputStats.avgStegoTextChars,
-			perplexity: getNumber(
-				getRecord(perplexity, "perplexity_summary"),
-				"average_perplexity",
-			),
-			matchedPostKl: getNumber(matched, "average_kl_stego_vs_matched_post"),
-			matchedPostJsd: getNumber(matched, "average_jsd_stego_vs_matched_post"),
-			globalKl: getNumber(global, "average_kl_stego_vs_global_corpus"),
-			globalJsd: getNumber(global, "average_jsd_stego_vs_global_corpus"),
-		});
-	}
+			const [outputCount, failureCount] =
+				getNumber(summary, "requested_samples") === null
+					? await Promise.all([
+							countFiles(join(variantPath, "output-results")),
+							countFiles(join(variantPath, "failures")),
+						])
+					: [0, 0];
+
+			return {
+				runName,
+				variant,
+				requested:
+					getNumber(summary, "requested_samples") ?? outputCount + failureCount,
+				succeeded: getNumber(summary, "samples_succeeded") ?? outputCount,
+				failed: getNumber(summary, "samples_failed") ?? failureCount,
+				receiverSuccessRate:
+					getNumber(summary, "receiver_success_rate") ??
+					(getNumber(summary, "samples_succeeded") &&
+					getNumber(summary, "requested_samples")
+						? getNumber(summary, "samples_succeeded")! /
+							getNumber(summary, "requested_samples")!
+						: null),
+				avgBitsEmbedded: outputStats.avgBitsEmbedded,
+				avgStegoTextChars: outputStats.avgStegoTextChars,
+				perplexity: getNumber(
+					getRecord(perplexity, "perplexity_summary"),
+					"average_perplexity",
+				),
+				matchedPostKl: getNumber(matched, "average_kl_stego_vs_matched_post"),
+				matchedPostJsd: getNumber(matched, "average_jsd_stego_vs_matched_post"),
+				globalKl: getNumber(global, "average_kl_stego_vs_global_corpus"),
+				globalJsd: getNumber(global, "average_jsd_stego_vs_global_corpus"),
+			} satisfies VariantMetric;
+		}),
+	);
 
 	return metrics.sort((a, b) => a.variant.localeCompare(b.variant));
 };
@@ -470,37 +508,41 @@ const collectE2EProgress = async (
 		return { rows: [], runCount: 0 };
 	}
 
-	const rows: E2EProgressRow[] = [];
-	for (const runName of runDirs) {
-		const runSummary = await readJson(join(baseDir, runName, "summary.json"));
-		if (!runSummary) continue;
-		const createdAt = getString(runSummary, "created_at_utc") ?? "";
-		const profileSummaries = getArray(runSummary, "profile_summaries");
-		for (const item of profileSummaries) {
-			const profile = item && typeof item === "object" ? (item as JsonRecord) : null;
-			if (!profile) continue;
-			const summaryMetrics = getRecord(profile, "summary_metrics");
-			const quality = getRecord(summaryMetrics, "quality_metrics");
-			const requested = getNumber(profile, "requested_samples") ?? 0;
-			const succeeded = getNumber(profile, "samples_succeeded") ?? 0;
-			const failed = getNumber(profile, "samples_failed") ?? 0;
-			const denom = succeeded + failed;
-			rows.push({
-				runName,
-				runCreatedAtUtc: createdAt,
-				variant: getString(profile, "variant") ?? "unknown",
-				requested,
-				succeeded,
-				failed,
-				successRate: denom > 0 ? succeeded / denom : null,
-				matchedPostKl: getNumber(quality, "matched_post_kl"),
-				matchedPostJsd: getNumber(quality, "matched_post_jsd"),
-				perplexity: getNumber(quality, "perplexity"),
-			});
-		}
-	}
+	const rowsPerRun = await Promise.all(
+		runDirs.map(async (runName) => {
+			const runSummary = await readJson(join(baseDir, runName, "summary.json"));
+			if (!runSummary) return [];
+			const createdAt = getString(runSummary, "created_at_utc") ?? "";
+			const profileSummaries = getArray(runSummary, "profile_summaries");
+			const rows: E2EProgressRow[] = [];
+			for (const item of profileSummaries) {
+				const profile =
+					item && typeof item === "object" ? (item as JsonRecord) : null;
+				if (!profile) continue;
+				const summaryMetrics = getRecord(profile, "summary_metrics");
+				const quality = getRecord(summaryMetrics, "quality_metrics");
+				const requested = getNumber(profile, "requested_samples") ?? 0;
+				const succeeded = getNumber(profile, "samples_succeeded") ?? 0;
+				const failed = getNumber(profile, "samples_failed") ?? 0;
+				const denom = succeeded + failed;
+				rows.push({
+					runName,
+					runCreatedAtUtc: createdAt,
+					variant: getString(profile, "variant") ?? "unknown",
+					requested,
+					succeeded,
+					failed,
+					successRate: denom > 0 ? succeeded / denom : null,
+					matchedPostKl: getNumber(quality, "matched_post_kl"),
+					matchedPostJsd: getNumber(quality, "matched_post_jsd"),
+					perplexity: getNumber(quality, "perplexity"),
+				});
+			}
+			return rows;
+		}),
+	);
 
-	return { rows, runCount: runDirs.length };
+	return { rows: rowsPerRun.flat(), runCount: runDirs.length };
 };
 
 const collectModelAblationProgress = async (): Promise<{
@@ -517,37 +559,41 @@ const collectModelAblationProgress = async (): Promise<{
 		return { rows: [], runCount: 0 };
 	}
 
-	const rows: ModelAblationProgressRow[] = [];
-	for (const runName of runDirs) {
-		const summary = await readJson(
-			join(MODEL_ABLATION_RUNS_DIR, runName, "summary.json"),
-		);
-		if (!summary) continue;
-		const createdAt = getString(summary, "created_at_utc") ?? "";
-		const requested = getNumber(summary, "samples_per_model") ?? 0;
-		const leaderboard = getRecord(summary, "leaderboard");
-		const leaderboardRows = getArray(leaderboard, "rows");
-		for (const item of leaderboardRows) {
-			const row = item && typeof item === "object" ? (item as JsonRecord) : null;
-			if (!row) continue;
-			rows.push({
-				runName,
-				runCreatedAtUtc: createdAt,
-				model: getString(row, "model") ?? "unknown",
-				laneId: getString(row, "lane_id") ?? "unknown",
-				requested,
-				succeeded: getNumber(row, "samples_succeeded") ?? 0,
-				failed: getNumber(row, "samples_failed") ?? 0,
-				failureRate: getNumber(row, "failure_rate"),
-				matchedPostKl: getNumber(row, "matched_post_kl"),
-				matchedPostJsd: getNumber(row, "matched_post_jsd"),
-				perplexity: getNumber(row, "perplexity"),
-				rank: getNumber(row, "rank"),
-			});
-		}
-	}
+	const rowsPerRun = await Promise.all(
+		runDirs.map(async (runName) => {
+			const summary = await readJson(
+				join(MODEL_ABLATION_RUNS_DIR, runName, "summary.json"),
+			);
+			if (!summary) return [];
+			const createdAt = getString(summary, "created_at_utc") ?? "";
+			const requested = getNumber(summary, "samples_per_model") ?? 0;
+			const leaderboard = getRecord(summary, "leaderboard");
+			const leaderboardRows = getArray(leaderboard, "rows");
+			const rows: ModelAblationProgressRow[] = [];
+			for (const item of leaderboardRows) {
+				const row =
+					item && typeof item === "object" ? (item as JsonRecord) : null;
+				if (!row) continue;
+				rows.push({
+					runName,
+					runCreatedAtUtc: createdAt,
+					model: getString(row, "model") ?? "unknown",
+					laneId: getString(row, "lane_id") ?? "unknown",
+					requested,
+					succeeded: getNumber(row, "samples_succeeded") ?? 0,
+					failed: getNumber(row, "samples_failed") ?? 0,
+					failureRate: getNumber(row, "failure_rate"),
+					matchedPostKl: getNumber(row, "matched_post_kl"),
+					matchedPostJsd: getNumber(row, "matched_post_jsd"),
+					perplexity: getNumber(row, "perplexity"),
+					rank: getNumber(row, "rank"),
+				});
+			}
+			return rows;
+		}),
+	);
 
-	return { rows, runCount: runDirs.length };
+	return { rows: rowsPerRun.flat(), runCount: runDirs.length };
 };
 
 const collectAngleScanProgress = async (): Promise<{
@@ -564,26 +610,30 @@ const collectAngleScanProgress = async (): Promise<{
 		return { rows: [], runCount: 0 };
 	}
 
-	const rows: AngleScanProgressRow[] = [];
-	for (const runName of runDirs) {
-		const summary = await readJson(
-			join(ANGLE_SCAN_RUNS_DIR, runName, "angle_scan_summary.json"),
-		);
-		if (!summary) continue;
-		rows.push({
-			runName,
-			createdAtUtc: getString(summary, "created_at_utc") ?? "",
-			postId: getString(summary, "post_id") ?? "unknown",
-			totalAngles: getNumber(summary, "total_angles") ?? 0,
-			succeeded: getNumber(summary, "succeeded") ?? 0,
-			failed: getNumber(summary, "failed") ?? 0,
-			successRate: getNumber(summary, "success_rate"),
-			jsonFailRate: getNumber(summary, "json_fail_rate"),
-			decodeMismatchRate: getNumber(summary, "decode_mismatch_rate"),
-		});
-	}
+	const maybeRows = await Promise.all(
+		runDirs.map(async (runName) => {
+			const summary = await readJson(
+				join(ANGLE_SCAN_RUNS_DIR, runName, "angle_scan_summary.json"),
+			);
+			if (!summary) return null;
+			return {
+				runName,
+				createdAtUtc: getString(summary, "created_at_utc") ?? "",
+				postId: getString(summary, "post_id") ?? "unknown",
+				totalAngles: getNumber(summary, "total_angles") ?? 0,
+				succeeded: getNumber(summary, "succeeded") ?? 0,
+				failed: getNumber(summary, "failed") ?? 0,
+				successRate: getNumber(summary, "success_rate"),
+				jsonFailRate: getNumber(summary, "json_fail_rate"),
+				decodeMismatchRate: getNumber(summary, "decode_mismatch_rate"),
+			} satisfies AngleScanProgressRow;
+		}),
+	);
 
-	return { rows, runCount: runDirs.length };
+	return {
+		rows: maybeRows.filter((r): r is AngleScanProgressRow => r !== null),
+		runCount: runDirs.length,
+	};
 };
 
 const collectFeedbackProgress = async (): Promise<{
@@ -600,33 +650,45 @@ const collectFeedbackProgress = async (): Promise<{
 		return { rows: [], runCount: 0 };
 	}
 
-	const rows: FeedbackProgressRow[] = [];
-	for (const runName of runDirs) {
-		const summary = await readJson(join(FEEDBACK_RUNS_DIR, runName, "latest_summary.json"));
-		if (!summary) continue;
-		const leaderboard = getRecord(summary, "leaderboard");
-		const topCluster = getRecord(summary, "top_failure_cluster");
-		const lbRows = getArray(leaderboard, "rows");
-		const firstRow = lbRows[0] && typeof lbRows[0] === "object" ? (lbRows[0] as JsonRecord) : null;
-		rows.push({
-			runName,
-			createdAtUtc: getString(leaderboard, "created_at_utc") ?? "",
-			requested: getNumber(leaderboard, "requested") ?? 0,
-			succeeded: getNumber(leaderboard, "succeeded") ?? 0,
-			failed: getNumber(leaderboard, "failed") ?? 0,
-			failureRate: getNumber(leaderboard, "failure_rate"),
-			baselineFailureRate: getNumber(leaderboard, "baseline_failure_rate"),
-			deltaVsBaseline: getNumber(leaderboard, "failure_rate_delta_vs_baseline"),
-			adaptiveActions: getNumber(leaderboard, "adaptive_actions") ?? 0,
-			matchedPostKl: getNumber(firstRow, "matched_post_kl"),
-			matchedPostJsd: getNumber(firstRow, "matched_post_jsd"),
-			perplexity: getNumber(firstRow, "perplexity"),
-			topFailureCode: getString(topCluster, "failure_code"),
-			topFailureCount: getNumber(topCluster, "count") ?? 0,
-		});
-	}
+	const maybeRows = await Promise.all(
+		runDirs.map(async (runName) => {
+			const summary = await readJson(
+				join(FEEDBACK_RUNS_DIR, runName, "latest_summary.json"),
+			);
+			if (!summary) return null;
+			const leaderboard = getRecord(summary, "leaderboard");
+			const topCluster = getRecord(summary, "top_failure_cluster");
+			const lbRows = getArray(leaderboard, "rows");
+			const firstRow =
+				lbRows[0] && typeof lbRows[0] === "object"
+					? (lbRows[0] as JsonRecord)
+					: null;
+			return {
+				runName,
+				createdAtUtc: getString(leaderboard, "created_at_utc") ?? "",
+				requested: getNumber(leaderboard, "requested") ?? 0,
+				succeeded: getNumber(leaderboard, "succeeded") ?? 0,
+				failed: getNumber(leaderboard, "failed") ?? 0,
+				failureRate: getNumber(leaderboard, "failure_rate"),
+				baselineFailureRate: getNumber(leaderboard, "baseline_failure_rate"),
+				deltaVsBaseline: getNumber(
+					leaderboard,
+					"failure_rate_delta_vs_baseline",
+				),
+				adaptiveActions: getNumber(leaderboard, "adaptive_actions") ?? 0,
+				matchedPostKl: getNumber(firstRow, "matched_post_kl"),
+				matchedPostJsd: getNumber(firstRow, "matched_post_jsd"),
+				perplexity: getNumber(firstRow, "perplexity"),
+				topFailureCode: getString(topCluster, "failure_code"),
+				topFailureCount: getNumber(topCluster, "count") ?? 0,
+			} satisfies FeedbackProgressRow;
+		}),
+	);
 
-	return { rows, runCount: runDirs.length };
+	return {
+		rows: maybeRows.filter((r): r is FeedbackProgressRow => r !== null),
+		runCount: runDirs.length,
+	};
 };
 
 const getProgressSnapshot = async (): Promise<ProgressSnapshot> => {
@@ -659,8 +721,16 @@ const getProgressSnapshot = async (): Promise<ProgressSnapshot> => {
 			runCount: modelAblation.runCount,
 			rows: modelAblation.rows,
 		},
-		angleScan: { ...angleTotals, runCount: angleScan.runCount, rows: angleScan.rows },
-		feedback: { ...feedbackTotals, runCount: feedback.runCount, rows: feedback.rows },
+		angleScan: {
+			...angleTotals,
+			runCount: angleScan.runCount,
+			rows: angleScan.rows,
+		},
+		feedback: {
+			...feedbackTotals,
+			runCount: feedback.runCount,
+			rows: feedback.rows,
+		},
 		naturalnessGate: {
 			...naturalnessTotals,
 			runCount: naturalnessGate.runCount,
@@ -675,7 +745,9 @@ export const overnightFindingsRouter = createTRPCRouter({
 		const runNames = entries
 			.filter((entry) => entry.isDirectory() && FEATURED_RUNS.has(entry.name))
 			.map((entry) => entry.name);
-		const runs = await Promise.all(runNames.map((name) => getRunOverview(name)));
+		const runs = await Promise.all(
+			runNames.map((name) => getRunOverview(name)),
+		);
 		return runs.sort((a, b) => a.name.localeCompare(b.name));
 	}),
 

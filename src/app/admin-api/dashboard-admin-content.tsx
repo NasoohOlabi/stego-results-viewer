@@ -917,11 +917,6 @@ export function DashboardAdminContent() {
 						batchAnglesDeterminismPostIds={batchAnglesDeterminismPostIds}
 						batchAnglesDeterminismStep={batchAnglesDeterminismStep}
 						batchAnglesDeterminismStream={batchAnglesDeterminismStream}
-						prepQuotaBatchCount={prepQuotaBatchCount}
-						prepQuotaBatchSize={prepQuotaBatchSize}
-						prepQuotaPayload={prepQuotaPayload}
-						prepQuotaStream={prepQuotaStream}
-						prepQuotaTag={prepQuotaTag}
 						cacheTarget={cacheTarget}
 						callApi={callApi}
 						fsLimit={fsLimit}
@@ -949,6 +944,11 @@ export function DashboardAdminContent() {
 						onSelectTab={setActiveTabId}
 						onShowAdvancedApiControlsChange={setShowAdvancedApiControls}
 						onUpdateTabApiAction={updateTabApiAction}
+						prepQuotaBatchCount={prepQuotaBatchCount}
+						prepQuotaBatchSize={prepQuotaBatchSize}
+						prepQuotaPayload={prepQuotaPayload}
+						prepQuotaStream={prepQuotaStream}
+						prepQuotaTag={prepQuotaTag}
 						protocolIncludePost={protocolIncludePost}
 						protocolPersistCache={protocolPersistCache}
 						protocolUseCache={protocolUseCache}
@@ -972,11 +972,6 @@ export function DashboardAdminContent() {
 						setBatchAnglesDeterminismPostIds={setBatchAnglesDeterminismPostIds}
 						setBatchAnglesDeterminismStep={setBatchAnglesDeterminismStep}
 						setBatchAnglesDeterminismStream={setBatchAnglesDeterminismStream}
-						setPrepQuotaBatchCount={setPrepQuotaBatchCount}
-						setPrepQuotaBatchSize={setPrepQuotaBatchSize}
-						setPrepQuotaPayload={setPrepQuotaPayload}
-						setPrepQuotaStream={setPrepQuotaStream}
-						setPrepQuotaTag={setPrepQuotaTag}
 						setCacheTarget={setCacheTarget}
 						setFsLimit={setFsLimit}
 						setFsPath={setFsPath}
@@ -997,6 +992,11 @@ export function DashboardAdminContent() {
 						setMetricsHistoryType={setMetricsHistoryType}
 						setMetricsPerplexityBodyJson={setMetricsPerplexityBodyJson}
 						setMetricsPostBodyJson={setMetricsPostBodyJson}
+						setPrepQuotaBatchCount={setPrepQuotaBatchCount}
+						setPrepQuotaBatchSize={setPrepQuotaBatchSize}
+						setPrepQuotaPayload={setPrepQuotaPayload}
+						setPrepQuotaStream={setPrepQuotaStream}
+						setPrepQuotaTag={setPrepQuotaTag}
 						setProtocolIncludePost={setProtocolIncludePost}
 						setProtocolPersistCache={setProtocolPersistCache}
 						setProtocolUseCache={setProtocolUseCache}

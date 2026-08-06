@@ -103,6 +103,20 @@ export function usePathConfig() {
 
 	const enabledPaths = entries.filter((e) => e.enabled);
 
+	// Default source when the URL has no ?folder=: prefer side-wing's root
+	// output-results if it actually has samples, otherwise the newest generated
+	// run that does — so the viewer never opens on an empty folder.
+	const defaultPathId = (() => {
+		const sideWing = enabledPaths.find((e) => e.id === "side-wing");
+		if ((sideWing?.fileCount ?? 0) > 0) return "side-wing";
+		const newestRun = enabledPaths.find(
+			(e) => e.isGenerated && (e.fileCount ?? 0) > 0,
+		);
+		if (newestRun) return newestRun.id;
+		const anyNonEmpty = enabledPaths.find((e) => (e.fileCount ?? 0) > 0);
+		return anyNonEmpty?.id ?? "side-wing";
+	})();
+
 	const togglePath = useCallback(
 		(id: string) => {
 			save(
@@ -150,6 +164,7 @@ export function usePathConfig() {
 	return {
 		pathEntries: entries,
 		enabledPaths,
+		defaultPathId,
 		togglePath,
 		addPath,
 		removePath,
