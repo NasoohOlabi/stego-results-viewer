@@ -8,7 +8,7 @@ Guidance for humans and coding agents working in this repository.
 
 - File browsing and structured rendering of result JSON (Zod + dedicated React renderers).
 - A **tRPC** backend that reads from the filesystem and a local **SQLite** stats database.
-- Pages that call the **external stego-side-wing HTTP API** (documented in `api-spec.md`) for admin/workflows, including SSE streaming.
+- Pages that call the **external stego-side-wing HTTP API** (documented in `../stego-side-wing/docs/reference/api-spec.md`) for admin/workflows, including SSE streaming.
 - Optional streaming of API JSONL logs via a Next.js route handler.
 
 The default README is still the generic Create T3 App template; treat **this file** and the code under `src/` as the source of truth for behavior.
@@ -53,7 +53,7 @@ pnpm check:write  # biome check --write .
 | `src/app/_components/renderers/` | Visualizations matched to schemas via the registry. |
 | `schemas/registry.ts` | Registers schema → renderer pairs (first matching `safeParse` wins). |
 | `src/trpc/` | Client provider, query client, server helpers. |
-| `api-spec.md` | **stego-side-wing** REST/SSE contract (base URL, envelopes, endpoints). |
+| `../stego-side-wing/docs/reference/api-spec.md` | Authoritative side-wing REST/SSE contract (base URL, envelopes, endpoints). |
 
 ## Data sources and configuration
 
@@ -110,7 +110,7 @@ Many UI surfaces let the user pick or pass a `pathId`; procedures default to `si
 
 ### Admin API / side-wing contract
 
-When adding or adjusting calls from `admin-api`, align with `api-spec.md` (envelopes, query params, SSE event types). The UI builds URLs from a user-supplied base (e.g. `http://host:5001/api/v1`).
+When adding or adjusting calls from `admin-api`, align with `../stego-side-wing/docs/reference/api-spec.md` (envelopes, query params, SSE event types). The UI builds URLs from a user-supplied base (e.g. `http://host:5001/api/v1`).
 
 ### SQLite and Node-only code
 
@@ -124,4 +124,4 @@ Keep `better-sqlite3` and filesystem access in server-only code paths (tRPC rout
 ## Related repositories
 
 - **stego-side-wing**: sibling directory expected for default `side-wing` results and for the HTTP API + JSONL logs this viewer integrates with.
-- **Backend docs (API spec):** `D:\Master\code\stego-side-wing\docs\api-spec.md` — authoritative REST/SSE contract for the side-wing HTTP API.
+- **Backend docs (API spec):** `../stego-side-wing/docs/reference/api-spec.md` — authoritative REST/SSE contract for the side-wing HTTP API.

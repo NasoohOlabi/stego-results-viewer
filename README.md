@@ -107,4 +107,5 @@ Next.js 15 (App Router, React 19), tRPC v11 + TanStack Query, Zod, Tailwind CSS
 ## More detail
 
 See [`AGENTS.md`](./AGENTS.md) for architecture, data-source resolution, the
-side-wing API contract (`api-spec.md`), and safe-extension guidance.
+side-wing API contract (`../stego-side-wing/docs/reference/api-spec.md`), and
+safe-extension guidance.

@@ -46,18 +46,19 @@ yarn-error.log*
 .idea
 
 output-results
-prompts.md
-1look5n_v9.json
 output-results-old
 stats.db
 stats.db-journal
 stats.db-wal
 stats.db-shm
-backend docs
 
-# dev run logs and temporary visualization files
+# Local symlink/junction to sibling side-wing docs (created on each machine)
+docs/backend
+
+# Dev run logs and temporary visualization files
+.next-dev*.log
 codex-next-dev.err.log
 codex-next-dev.log
-tmp-stego-process-2.png
-tmp-stego-process.png
+tmp-stego-process*.png
+1look5n_v9.json
 

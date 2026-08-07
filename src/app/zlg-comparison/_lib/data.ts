@@ -164,10 +164,15 @@ type PairedRow = {
  * Point at a different benchmark run without editing source. Re-runs land in a
  * new directory, so hardcoding one meant the dashboard silently kept rendering
  * the stale run after every rebuild.
+ *
+ * Contaminated default `zlg_batch_scale300` was deleted (synthetic-anchor
+ * incident: stock "keep coming back" carriers in paired_rows). Recalibrated
+ * has results/summary but no paired_rows — sample browser stays empty until a
+ * clean comparison rebuild. Override with ZLG_RUN_DIR.
  */
 export const RUN_DIR =
 	process.env.ZLG_RUN_DIR ??
-	"D:\\Master\\code\\stego\\stego-side-wing\\metrics\\zlg_comparison_runs\\zlg_batch_scale300";
+	"D:\\Master\\code\\stego\\stego-side-wing\\metrics\\zlg_comparison_runs\\zlg_batch_scale300_recalibrated";
 const RESULTS_JSONL = path.join(RUN_DIR, "results.jsonl");
 const PROGRESS_JSON = path.join(RUN_DIR, "progress.json");
 const SUMMARY_JSON = path.join(RUN_DIR, "summary.json");
