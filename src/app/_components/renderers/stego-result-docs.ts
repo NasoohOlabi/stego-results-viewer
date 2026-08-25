@@ -11,29 +11,34 @@ export function flattenCommentBodies(comments: RedditComment[]): string[] {
 	return flat;
 }
 
+type SearchResultLike = {
+	content_analysis?: string;
+	content_fetched?: boolean;
+	fetched_content?: string;
+	snippet?: string;
+};
+
+function searchResultItemToString(x: unknown): string | null {
+	if (typeof x === "string") return x;
+	if (!x || typeof x !== "object") return null;
+	const item = x as SearchResultLike;
+	const text =
+		item.content_analysis ??
+		(item.content_fetched ? item.fetched_content : null) ??
+		item.snippet;
+	return typeof text === "string" ? text : null;
+}
+
 /** Normalize `post.search_results` to plain strings (same idea as stego-result-renderer). */
 export function searchResultsAsStrings(
 	post: StegoResultItem["post"],
 ): string[] {
 	if (!post?.search_results) return [];
-	if (Array.isArray(post.search_results)) {
-		return post.search_results.filter(
-			(x): x is string => typeof x === "string",
-		);
-	}
-	return Object.values(post.search_results)
-		.flat()
-		.map(
-			(x: {
-				content_analysis?: string;
-				content_fetched?: boolean;
-				fetched_content?: string;
-				snippet?: string;
-			}) =>
-				x?.content_analysis ??
-				(x?.content_fetched ? x?.fetched_content : null) ??
-				x?.snippet,
-		)
+	const raw = Array.isArray(post.search_results)
+		? post.search_results
+		: Object.values(post.search_results).flat();
+	return raw
+		.map(searchResultItemToString)
 		.filter((x): x is string => typeof x === "string");
 }
 

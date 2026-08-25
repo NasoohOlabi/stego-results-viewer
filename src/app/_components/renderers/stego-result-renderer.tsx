@@ -26,6 +26,7 @@ import { AngleTable } from "../angle-table";
 import { PaginatedTable } from "../paginated-table";
 import { PostValidationActions } from "../post-validation-actions";
 import { JsonTreeRenderer } from "./json-tree-renderer";
+import { searchResultsAsStrings } from "./stego-result-docs";
 
 interface StegoResultRendererProps {
 	data: StegoResult;
@@ -285,17 +286,7 @@ export function StegoResultRenderer({
 
 			<div className="space-y-8">
 				{results.map((item, index) => {
-					const searchResults = Array.isArray(item.post?.search_results)
-						? item.post.search_results
-						: Object.values(item.post?.search_results ?? {})
-								.flat()
-								.map(
-									(x: any) =>
-										x?.content_analysis ??
-										(x?.content_fetched ? x?.fetched_content : null) ??
-										x?.snippet,
-								)
-								.filter((x): x is string => typeof x === "string");
+					const searchResults = searchResultsAsStrings(item.post);
 
 					// Helper to flatten comments for reference lookup
 					const flattenComments = (comments: RedditComment[]): string[] => {
@@ -313,6 +304,10 @@ export function StegoResultRenderer({
 						...searchResults,
 						...comments,
 					];
+
+					const angleSelection =
+						item.embedding?.angleEmbedding?.totalAnglesSelectedFirst ?? [];
+					const selectedAngle = item.embedding?.angleEmbedding?.selectedAngle;
 
 					// Helper to check if a picked comment has body/permalink (V2/V3)
 					const isCommentItem = (
@@ -646,7 +641,7 @@ export function StegoResultRenderer({
 											</AccordionItem>
 										)}
 
-										{item.embedding?.angleEmbedding?.selectedAngle && (
+										{selectedAngle && (
 											<AccordionItem
 												className="border-white/10"
 												value="selected-angle"
@@ -657,11 +652,7 @@ export function StegoResultRenderer({
 													</span>
 												</AccordionTrigger>
 												<AccordionContent>
-													<AngleTable
-														data={[
-															item.embedding!.angleEmbedding!.selectedAngle!,
-														]}
-													/>
+													<AngleTable data={[selectedAngle]} />
 												</AccordionContent>
 											</AccordionItem>
 										)}
@@ -669,30 +660,22 @@ export function StegoResultRenderer({
 										<AccordionItem className="border-white/10" value="angles">
 											<AccordionTrigger className="py-3 hover:no-underline">
 												<span className="font-medium text-sm">
-													Angle Selection (
-													{item.embedding?.angleEmbedding
-														?.totalAnglesSelectedFirst?.length ?? 0}
-													)
+													Angle Selection ({angleSelection.length})
 												</span>
 											</AccordionTrigger>
 											<AccordionContent>
-												<AngleTable
-													data={
-														item.embedding?.angleEmbedding
-															?.totalAnglesSelectedFirst ?? []
-													}
-												/>
+												<AngleTable data={angleSelection} />
 											</AccordionContent>
 										</AccordionItem>
 
 										<AccordionItem className="border-none" value="search">
 											<AccordionTrigger className="py-3 hover:no-underline">
 												<span className="font-medium text-sm">
-													Search Context ({searchResults?.length ?? 0})
+													Search Context ({searchResults.length})
 												</span>
 											</AccordionTrigger>
 											<AccordionContent>
-												<PaginatedTable items={searchResults ?? []} />
+												<PaginatedTable items={searchResults} />
 											</AccordionContent>
 										</AccordionItem>
 									</Accordion>

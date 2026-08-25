@@ -1,5 +1,6 @@
 import {
 	BookOpen,
+	Flame,
 	FlaskConical,
 	Gauge,
 	GitCompare,
@@ -110,6 +111,13 @@ export const NAV_GROUPS: NavGroup[] = [
 				icon: LayoutDashboard,
 			},
 			{
+				href: "/lucid",
+				label: "LUCID results",
+				description:
+					"Live clean-dataset counts, validation tests, workers, and generated samples.",
+				icon: FlaskConical,
+			},
+			{
 				href: "/overnight-findings",
 				label: "Overnight findings",
 				description: "Latest overnight metrics summary.",
@@ -120,6 +128,13 @@ export const NAV_GROUPS: NavGroup[] = [
 				label: "ZLG comparison",
 				description: "Compare samples against the ZLG baseline.",
 				icon: Scale,
+			},
+			{
+				href: "/barb-comparison",
+				label: "BARB comparison",
+				description:
+					"BARB vs balanced encode flavor: stance, specificity, anti-platitude.",
+				icon: Flame,
 			},
 			{
 				href: "/showcase",

@@ -224,7 +224,10 @@ const postSchema = z
 		saved: z.boolean().optional(),
 		score: z.number().int().optional(),
 		search_results: z
-			.union([z.record(z.array(searchResultItemSchema)), z.array(z.string())])
+			.union([
+				z.record(z.array(searchResultItemSchema)),
+				z.array(z.union([z.string(), searchResultItemSchema])),
+			])
 			.optional(),
 		selftext: z.string().optional(),
 		send_replies: z.boolean().optional(),
