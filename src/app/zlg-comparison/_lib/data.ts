@@ -172,7 +172,7 @@ type PairedRow = {
  */
 export const RUN_DIR =
 	process.env.ZLG_RUN_DIR ??
-	"D:\\Master\\code\\stego\\stego-side-wing\\metrics\\zlg_comparison_runs\\zlg_lucid_fresh_6x_20260815";
+	"D:\\Master\\code\\stego\\stego-side-wing\\metrics\\zlg_comparison_runs\\zlg_lucid_fresh_6x_20260815_independent_unique_judge";
 const RESULTS_JSONL = path.join(RUN_DIR, "results.jsonl");
 const PROGRESS_JSON = path.join(RUN_DIR, "progress.json");
 const SUMMARY_JSON = path.join(RUN_DIR, "summary.json");
