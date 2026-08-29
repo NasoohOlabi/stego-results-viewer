@@ -2,7 +2,18 @@ import type { Dirent } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import { basename, isAbsolute, join, relative, resolve } from "node:path";
 
-const SIDE_WING_REPO_PATH = resolve(process.cwd(), "..", "stego-side-wing");
+/**
+ * Root of the sibling stego-side-wing checkout. Derived from cwd rather than
+ * hard-coded so the workspace can move without stranding every consumer.
+ */
+export const SIDE_WING_REPO_PATH = resolve(
+	process.cwd(),
+	"..",
+	"stego-side-wing",
+);
+
+/** Where side-wing writes its JSONL API log and prompt logs. */
+export const SIDE_WING_LOGS_PATH = join(SIDE_WING_REPO_PATH, "logs");
 const SIDE_WING_PATH = join(SIDE_WING_REPO_PATH, "output-results");
 const LOCAL_PATH = join(process.cwd(), "output-results");
 const METRICS_PATH = join(SIDE_WING_REPO_PATH, "metrics");

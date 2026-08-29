@@ -6,8 +6,9 @@ import {
 	API_LOG_FILE_PATH,
 	readApiLogSnapshot,
 } from "~/server/logs/api-log-utils";
+import { SIDE_WING_LOGS_PATH } from "~/server/paths";
 
-const PROMPT_LOG_DIR = "D:/Master/code/stego-side-wing/logs";
+const PROMPT_LOG_DIR = SIDE_WING_LOGS_PATH;
 const PROMPT_LOG_FILENAME_PATTERN = /^stego_prompts_(\d{8})_(\d{6})\.log$/;
 
 const promptLogLineSchema = z.object({
@@ -82,7 +83,18 @@ type PromptLogEntry = {
 
 export const promptLogsRouter = createTRPCRouter({
 	getEntries: publicProcedure
-		.input(z.object({ fileName: z.string().default("all") }))
+		.input(
+			z.object({
+				/**
+				 * A specific log file, or "latest" for the newest one. "all" reads
+				 * every file, which across a full logs/ directory is hundreds of
+				 * megabytes — it exists for completeness, but pair it with `limit`.
+				 */
+				fileName: z.string().default("latest"),
+				/** Newest-first cap on returned entries. */
+				limit: z.number().int().min(1).max(5000).default(200),
+			}),
+		)
 		.query(async ({ input }) => {
 			const dirEntries = await readdir(PROMPT_LOG_DIR, { withFileTypes: true });
 			const availableFiles = dirEntries
@@ -115,9 +127,15 @@ export const promptLogsRouter = createTRPCRouter({
 			const selectedFiles =
 				input.fileName === "all"
 					? availableFiles
-					: availableFiles.filter((file) => file.fileName === input.fileName);
+					: input.fileName === "latest"
+						? availableFiles.slice(0, 1)
+						: availableFiles.filter((file) => file.fileName === input.fileName);
 
-			if (input.fileName !== "all" && selectedFiles.length === 0) {
+			if (
+				input.fileName !== "all" &&
+				input.fileName !== "latest" &&
+				selectedFiles.length === 0
+			) {
 				throw new Error(`Prompt log file not found: ${input.fileName}`);
 			}
 
@@ -201,9 +219,13 @@ export const promptLogsRouter = createTRPCRouter({
 				return b.lineNumber - a.lineNumber;
 			});
 
+			const capped = entries.slice(0, input.limit);
+
 			return {
 				logDirectory: PROMPT_LOG_DIR,
 				selectedFileName: input.fileName,
+				/** True when `entries` is a newest-first slice of a larger set. */
+				truncated: entries.length > capped.length,
 				availableFiles: availableFiles.map((file) => ({
 					fileName: file.fileName,
 					dateLabel: file.dateLabel,
@@ -211,7 +233,7 @@ export const promptLogsRouter = createTRPCRouter({
 				})),
 				totalEntries: entries.length,
 				warnings,
-				entries,
+				entries: capped,
 			};
 		}),
 	getApiEntries: publicProcedure

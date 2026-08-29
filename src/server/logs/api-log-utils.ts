@@ -1,7 +1,8 @@
-import { readFile } from "fs/promises";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { SIDE_WING_LOGS_PATH } from "~/server/paths";
 
-export const API_LOG_FILE_PATH =
-	"D:/Master/code/stego-side-wing/logs/api.jsonl";
+export const API_LOG_FILE_PATH = join(SIDE_WING_LOGS_PATH, "api.jsonl");
 
 export type ApiLogEntry = {
 	id: string;
