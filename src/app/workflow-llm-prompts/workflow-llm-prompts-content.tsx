@@ -6,8 +6,8 @@ import CodeMirror from "@uiw/react-codemirror";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FileExplorer } from "~/app/_components/file-explorer";
-import { ADMIN_API_STORAGE_KEY } from "~/app/admin-api/types";
 import { usePathConfig } from "~/hooks/use-path-config";
+import { readApiBase } from "~/lib/side-wing-api";
 import { api } from "~/trpc/react";
 
 const PROMPTS_PATH = "/prompts/workflow-llm";
@@ -139,18 +139,7 @@ export function WorkflowLlmPromptsContent() {
 	useEffect(() => {
 		let cancelled = false;
 		(async () => {
-			let resolvedBase = "http://localhost:5001/api/v1";
-			try {
-				const raw = localStorage.getItem(ADMIN_API_STORAGE_KEY);
-				if (raw) {
-					const parsed = JSON.parse(raw) as { baseUrl?: unknown };
-					if (typeof parsed.baseUrl === "string" && parsed.baseUrl.trim()) {
-						resolvedBase = parsed.baseUrl.trim();
-					}
-				}
-			} catch {
-				// ignore
-			}
+			const resolvedBase = readApiBase();
 			if (cancelled) return;
 			setBaseUrl(resolvedBase);
 			const b = resolvedBase.replace(/\/+$/, "");

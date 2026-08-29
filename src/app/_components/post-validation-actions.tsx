@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ADMIN_API_STORAGE_KEY } from "~/app/admin-api/types";
+import { readApiBase } from "~/lib/side-wing-api";
 
 type EndpointConfig = {
 	id: string;
@@ -109,16 +109,7 @@ export function PostValidationActions({ postId }: { postId?: string }) {
 	} | null>(null);
 
 	useEffect(() => {
-		try {
-			const raw = localStorage.getItem(ADMIN_API_STORAGE_KEY);
-			if (!raw) return;
-			const parsed = JSON.parse(raw) as { baseUrl?: unknown };
-			if (typeof parsed.baseUrl === "string" && parsed.baseUrl.trim()) {
-				setBaseUrl(parsed.baseUrl);
-			}
-		} catch {
-			// Keep default URL.
-		}
+		setBaseUrl(readApiBase());
 	}, []);
 
 	const endpointHint = useMemo(() => {

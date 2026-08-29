@@ -91,9 +91,6 @@ export function AppNav() {
 								title={route.label}
 							>
 								<Icon className="h-5 w-5" />
-								{route.e2e ? (
-									<span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-violet-400" />
-								) : null}
 								{active ? (
 									<span className="absolute left-0 h-6 w-0.5 rounded-r bg-white" />
 								) : null}
@@ -201,11 +198,9 @@ function NavHubItem({
 			>
 				<span
 					className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors ${
-						route.e2e
-							? "border-violet-500/40 bg-violet-500/10 text-violet-200"
-							: active
-								? "border-white/20 bg-white/10 text-white"
-								: "border-white/10 bg-white/5 text-white/60 group-hover:text-white"
+						active
+							? "border-white/20 bg-white/10 text-white"
+							: "border-white/10 bg-white/5 text-white/60 group-hover:text-white"
 					}`}
 				>
 					<Icon className="h-4 w-4" />
@@ -217,11 +212,6 @@ function NavHubItem({
 						>
 							{route.label}
 						</span>
-						{route.e2e ? (
-							<span className="rounded bg-violet-500/15 px-1 py-0.5 text-[9px] text-violet-300 uppercase tracking-wide">
-								e2e
-							</span>
-						) : null}
 					</span>
 					<span className="mt-0.5 block text-[11px] text-white/45 leading-snug">
 						{route.description}

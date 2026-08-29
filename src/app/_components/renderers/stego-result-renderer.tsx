@@ -9,17 +9,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ADMIN_API_STORAGE_KEY } from "~/app/admin-api/types";
-import {
-	normalizeAdminApiBase,
-	postMetricsPost,
-} from "~/app/dashboard/_components/metrics-api-client";
 import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
 } from "~/components/ui/accordion";
+import { postMetricsPost, readApiBase } from "~/lib/side-wing-api";
 import type { RedditComment, StegoResult } from "~/schemas/stego-result";
 import { api } from "~/trpc/react";
 import { AngleTable } from "../angle-table";
@@ -32,19 +28,6 @@ interface StegoResultRendererProps {
 	data: StegoResult;
 	filename?: string | null;
 	pathId?: string;
-}
-
-function readStoredBase(): string {
-	try {
-		const raw = localStorage.getItem(ADMIN_API_STORAGE_KEY);
-		if (!raw) return "http://localhost:5001/api/v1";
-		const parsed = JSON.parse(raw) as { baseUrl?: string };
-		return typeof parsed.baseUrl === "string"
-			? parsed.baseUrl
-			: "http://localhost:5001/api/v1";
-	} catch {
-		return "http://localhost:5001/api/v1";
-	}
 }
 
 /** Basename suitable for `POST /tools/metrics/post` (`.json`, no path segments). */
@@ -161,7 +144,7 @@ export function StegoResultRenderer({
 		if (!apiFile) return;
 		setMetricsLoading(true);
 		setMetricsError(null);
-		const base = normalizeAdminApiBase(readStoredBase());
+		const base = readApiBase();
 		const res = await postMetricsPost(base, {
 			filename: apiFile,
 			output_dir: "output-results",
@@ -232,14 +215,7 @@ export function StegoResultRenderer({
 							<code className="rounded bg-black/30 px-1 py-0.5 text-[10px] text-white/70">
 								POST /tools/metrics/post
 							</code>{" "}
-							on the side-wing host (base URL from{" "}
-							<Link
-								className="text-cyan-400/90 underline-offset-2 hover:underline"
-								href="/admin-api"
-							>
-								/admin-api
-							</Link>
-							). Uses this file as{" "}
+							on the side-wing API host. Uses this file as{" "}
 							<code className="text-white/60">{apiFile ?? "—"}</code>
 							{apiFile ? "" : " (select a .json file from the list)"}.
 						</p>

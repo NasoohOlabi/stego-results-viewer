@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FileExplorer } from "~/app/_components/file-explorer";
 import { GenerationProgressSection } from "~/app/workflows-runs/generation-progress-section";
 import { usePathConfig } from "~/hooks/use-path-config";
+import { readApiBase } from "~/lib/side-wing-api";
 import { api } from "~/trpc/react";
 
 interface WorkflowRunRow {
@@ -111,16 +112,7 @@ export function WorkflowsRunsContent() {
 	const base = useMemo(() => baseUrl.replace(/\/+$/, ""), [baseUrl]);
 
 	useEffect(() => {
-		try {
-			const raw = localStorage.getItem("admin-api-console:v1");
-			if (!raw) return;
-			const parsed = JSON.parse(raw) as { baseUrl?: unknown };
-			if (typeof parsed.baseUrl === "string" && parsed.baseUrl.trim()) {
-				setBaseUrl(parsed.baseUrl.trim());
-			}
-		} catch {
-			// Ignore malformed local storage payload.
-		}
+		setBaseUrl(readApiBase());
 	}, []);
 
 	const loadRuns = async () => {

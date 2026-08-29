@@ -7,10 +7,6 @@ const SIDE_WING_PATH = join(SIDE_WING_REPO_PATH, "output-results");
 const LOCAL_PATH = join(process.cwd(), "output-results");
 const METRICS_PATH = join(SIDE_WING_REPO_PATH, "metrics");
 const E2E_RUNS_PATH = join(METRICS_PATH, "e2e_runs");
-const SINGLE_POST_TWICE_RUNS_PATH = join(
-	METRICS_PATH,
-	"single_post_twice_no_cache_runs",
-);
 
 /** Every metrics subtree that may contain `output-results` sample dirs. */
 const GENERATED_SCAN_ROOTS = [
@@ -23,13 +19,11 @@ const GENERATED_SCAN_ROOTS = [
 const BUILT_IN_MAP: Record<string, string> = {
 	"side-wing": SIDE_WING_PATH,
 	local: LOCAL_PATH,
-	"single-post-twice-no-cache": SINGLE_POST_TWICE_RUNS_PATH,
 } as const;
 
 const BUILT_IN_LABELS: Record<string, string> = {
 	"side-wing": "Side Wing default",
 	local: "Local (this repo)",
-	"single-post-twice-no-cache": "Single-post-twice runs",
 } as const;
 
 export interface ResultSource {

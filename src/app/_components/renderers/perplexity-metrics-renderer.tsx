@@ -3,32 +3,14 @@
 import { Link2, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ADMIN_API_STORAGE_KEY } from "~/app/admin-api/types";
-import {
-	deleteMetricsSample,
-	normalizeAdminApiBase,
-} from "~/app/dashboard/_components/metrics-api-client";
+import { deleteMetricsSample, readApiBase } from "~/lib/side-wing-api";
 import type { PerplexityMetrics } from "~/schemas/perplexity-metrics";
 
 const TOP_OUTLIERS_COUNT = 5;
-const DEFAULT_ADMIN_API_BASE = "http://localhost:5001/api/v1";
 const DEFAULT_METRICS_OUTPUT_DIR = "output-results";
 
 function outputBasename(filePath: string): string {
 	return filePath.replace(/^.*[/\\]/, "");
-}
-
-function readStoredBase(): string {
-	try {
-		const raw = localStorage.getItem(ADMIN_API_STORAGE_KEY);
-		if (!raw) return DEFAULT_ADMIN_API_BASE;
-		const parsed = JSON.parse(raw) as { baseUrl?: string };
-		return typeof parsed.baseUrl === "string"
-			? parsed.baseUrl
-			: DEFAULT_ADMIN_API_BASE;
-	} catch {
-		return DEFAULT_ADMIN_API_BASE;
-	}
 }
 
 export function PerplexityMetricsRenderer({
@@ -65,7 +47,7 @@ export function PerplexityMetricsRenderer({
 		setDeleteError(null);
 		setDeleteMessage(null);
 
-		const base = normalizeAdminApiBase(readStoredBase());
+		const base = readApiBase();
 		const res = await deleteMetricsSample(base, {
 			filename,
 			output_dir: DEFAULT_METRICS_OUTPUT_DIR,
@@ -168,14 +150,7 @@ export function PerplexityMetricsRenderer({
 							<code className="text-white/70">
 								DELETE /tools/metrics/sample
 							</code>{" "}
-							against the Admin API base from{" "}
-							<Link
-								className="text-cyan-400/90 underline-offset-2 hover:underline"
-								href="/admin-api"
-							>
-								/admin-api
-							</Link>
-							.
+							against the side-wing API host.
 						</p>
 					</div>
 					{deleteMessage ? (
