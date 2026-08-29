@@ -56,25 +56,61 @@ export async function GET(request: Request) {
 		);
 	}
 	push();
+	const judgeTasks = data.codexJudgeProgress.reduce(
+		(total, item) => total + (item.total_tasks ?? 0),
+		0,
+	);
+	const judgeErrors = data.codexJudgeProgress.reduce(
+		(total, item) => total + (item.errors ?? 0),
+		0,
+	);
+	const uniqueOurTexts = new Set(data.samples.map((sample) => sample.ourText))
+		.size;
+	const uniqueZlgTexts = new Set(data.samples.map((sample) => sample.zlgText))
+		.size;
+	if (data.codexJudgeSummary) {
+		push("## Completed independent LLM judge evaluation");
+		push();
+		push(
+			`- **${data.samples.length}** independent source posts / paired comparisons`,
+		);
+		push(
+			`- **${uniqueOurTexts} + ${uniqueZlgTexts}** unique generated texts (ours + ZLG)`,
+		);
+		push(
+			`- **${judgeTasks}/${judgeTasks}** valid judge tasks; **${judgeErrors}** errors`,
+		);
+		if (data.judgeSubset) {
+			push(
+				`- Selection: ${data.judgeSubset.selectedPairs} one-per-post pairs from ${data.judgeSubset.sourcePairs} candidates across ${data.judgeSubset.sourcePosts} posts; pairs with repeated ZLG cover text were excluded before judging.`,
+			);
+		}
+		push(
+			"- The five judge criteria reuse fixed text pairs to measure different properties; they are not additional generated samples.",
+		);
+		push();
+	}
 
 	// ---- capacity ----
-	push("## Capacity");
-	push();
-	push(
-		"Shown as two separate figures, not a head-to-head comparison — the two sides use incompatible definitions and neither was verified the same way.",
-	);
-	push();
-	push(
-		`- **ZLG requested payload**: ${fmtNum(data.zlgBlock?.total_embedded_bits_mean, 2)} bits — harness-set constant, sized to our own budget, rounded up to whole bytes. Not a measured ZLG capacity.`,
-	);
-	push(
-		`- **Our selection-channel budget**: ${fmtNum(data.ourBlock?.total_embedded_bits_mean, 2)} bits — theoretical upper bound (sum of floor(log2(choices))); not blind-decoded in this run, recovery used the sender's own payload as an oracle.`,
-	);
-	if (data.metricsSummary?.capacity_fields_note) {
+	if (data.metricsSummary) {
+		push("## Capacity");
 		push();
-		push(`> **Note:** ${data.metricsSummary.capacity_fields_note}`);
+		push(
+			"Shown as two separate figures, not a head-to-head comparison — the two sides use incompatible definitions and neither was verified the same way.",
+		);
+		push();
+		push(
+			`- **ZLG requested payload**: ${fmtNum(data.zlgBlock?.total_embedded_bits_mean, 2)} bits — harness-set constant, sized to our own budget, rounded up to whole bytes. Not a measured ZLG capacity.`,
+		);
+		push(
+			`- **Our selection-channel budget**: ${fmtNum(data.ourBlock?.total_embedded_bits_mean, 2)} bits — theoretical upper bound (sum of floor(log2(choices))); not blind-decoded in this run, recovery used the sender's own payload as an oracle.`,
+		);
+		if (data.metricsSummary?.capacity_fields_note) {
+			push();
+			push(`> **Note:** ${data.metricsSummary.capacity_fields_note}`);
+		}
+		push();
 	}
-	push();
 
 	// ---- tradeoff paragraph ----
 	if (data.metricsSummary) {
@@ -87,30 +123,32 @@ export async function GET(request: Request) {
 	}
 
 	// ---- top-line stats ----
-	push("## Top-line stats");
-	push();
-	push(
-		mdTable(
-			["Stat", "Value"],
-			[
-				["Rows Parsed", String(data.rows.length)],
+	if (data.rows.length > 0) {
+		push("## Top-line stats");
+		push();
+		push(
+			mdTable(
+				["Stat", "Value"],
 				[
-					"ZLG Attempts",
-					`${data.attemptedRows.length}${data.skippedRows.length > 0 ? ` (${data.skippedRows.length} skipped before any request)` : ""}`,
+					["Rows Parsed", String(data.rows.length)],
+					[
+						"ZLG Attempts",
+						`${data.attemptedRows.length}${data.skippedRows.length > 0 ? ` (${data.skippedRows.length} skipped before any request)` : ""}`,
+					],
+					["Accepted", String(data.acceptedRows.length)],
+					[
+						"Failed (of attempts)",
+						String(data.failedRows.length - data.skippedRows.length),
+					],
+					[
+						"Paired Observations",
+						`${data.rowLevel.paired_n ?? data.pairedRows.length / 2} (${data.paired.paired_n ?? "n/a"} independent post clusters)`,
+					],
 				],
-				["Accepted", String(data.acceptedRows.length)],
-				[
-					"Failed (of attempts)",
-					String(data.failedRows.length - data.skippedRows.length),
-				],
-				[
-					"Paired Observations",
-					`${data.rowLevel.paired_n ?? data.pairedRows.length / 2} (${data.paired.paired_n ?? "n/a"} independent post clusters)`,
-				],
-			],
-		),
-	);
-	push();
+			),
+		);
+		push();
+	}
 
 	// ---- metric summary table ----
 	if (data.metricRows.length > 0) {
@@ -247,16 +285,28 @@ export async function GET(request: Request) {
 	push();
 	const standoutOurs = rate(
 		data.codexJudgments,
+		"standout",
 		"our_method",
 		"inserted_index",
 	);
-	const standoutZlg = rate(data.codexJudgments, "zlg", "inserted_index");
+	const standoutZlg = rate(
+		data.codexJudgments,
+		"standout",
+		"zlg",
+		"inserted_index",
+	);
 	const attributionOurs = rate(
 		data.codexJudgments,
+		"attribution",
 		"our_method",
 		"thread_index",
 	);
-	const attributionZlg = rate(data.codexJudgments, "zlg", "thread_index");
+	const attributionZlg = rate(
+		data.codexJudgments,
+		"attribution",
+		"zlg",
+		"thread_index",
+	);
 	const registerOurs = meanScore(data.codexJudgments, "our_method", "overall");
 	const registerZlg = meanScore(data.codexJudgments, "zlg", "overall");
 	const weakLinkOurs = pickedRate(data.codexJudgments, "our_method");

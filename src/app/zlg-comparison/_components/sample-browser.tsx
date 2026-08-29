@@ -99,6 +99,7 @@ function QualityLine({ quality }: { quality?: QualityDetails }) {
 export function SampleBrowser({ samples }: { samples: SampleCard[] }) {
 	const [filter, setFilter] = useState<FilterKey>("all");
 	const [limit, setLimit] = useState(12);
+	const [query, setQuery] = useState("");
 
 	// Sus-detection filters only make sense when at least one sample actually
 	// carries judge results; otherwise every non-"all" bucket is either always
@@ -106,14 +107,43 @@ export function SampleBrowser({ samples }: { samples: SampleCard[] }) {
 	// "this judge pass was never run".
 	const hasSusData = samples.some((s) => s.ourSus || s.zlgSus);
 
-	const filtered = useMemo(
-		() => samples.filter((s) => matches(s, filter)),
-		[samples, filter],
-	);
+	const filtered = useMemo(() => {
+		const needle = query.trim().toLocaleLowerCase();
+		return samples.filter((sample) => {
+			if (!matches(sample, filter)) return false;
+			if (!needle) return true;
+			return [
+				sample.key,
+				sample.postId,
+				sample.coverPreview,
+				sample.ourText,
+				sample.zlgText,
+			]
+				.filter((value): value is string => typeof value === "string")
+				.some((value) => value.toLocaleLowerCase().includes(needle));
+		});
+	}, [samples, filter, query]);
 	const visible = filtered.slice(0, limit);
 
 	return (
 		<div className="space-y-4">
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<p className="text-slate-400 text-xs">
+					Search the fixed paired corpus by post, topic, or either generated
+					text.
+				</p>
+				<input
+					aria-label="Search paired examples"
+					className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-slate-100 text-sm placeholder:text-slate-600 sm:w-80"
+					onChange={(event) => {
+						setQuery(event.target.value);
+						setLimit(12);
+					}}
+					placeholder="Search examples…"
+					type="search"
+					value={query}
+				/>
+			</div>
 			{hasSusData ? (
 				<div className="flex flex-wrap gap-2">
 					{FILTERS.map((f) => {

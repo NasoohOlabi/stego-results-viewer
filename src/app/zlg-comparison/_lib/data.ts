@@ -90,6 +90,14 @@ export type PairedStat = {
 	holm_adjusted_p?: number | null;
 };
 
+export type JudgeSubset = {
+	selection: string;
+	sourcePairs: number;
+	sourcePosts: number;
+	selectedPairs: number;
+	selectedPosts: number;
+};
+
 type DiversityGuard = {
 	minimum_unique_ratio?: number;
 	posts?: Array<{ post_id: string; samples: number; unique_ratio: number }>;
@@ -192,6 +200,10 @@ const CODEX_PILOT_AUDIT_JSON = path.join(
 	CODEX_JUDGMENTS_DIR,
 	"pilot_audit.json",
 );
+const JUDGE_SUBSET_MANIFEST_JSON = path.join(
+	COMPARISON_DIR,
+	"subset_manifest.json",
+);
 
 function readJson(pathname: string): Record<string, unknown> | null {
 	if (!existsSync(pathname)) return null;
@@ -218,6 +230,35 @@ function readJsonl<T>(pathname: string): T[] {
 				return {} as T;
 			}
 		});
+}
+
+function nonNegativeInteger(value: unknown): number | null {
+	return typeof value === "number" && Number.isInteger(value) && value >= 0
+		? value
+		: null;
+}
+
+function readJudgeSubset(pathname: string): JudgeSubset | null {
+	const manifest = readJson(pathname);
+	if (!manifest || typeof manifest.selection !== "string") return null;
+	const sourcePairs = nonNegativeInteger(manifest.source_pairs);
+	const sourcePosts = nonNegativeInteger(manifest.source_posts);
+	const selectedPairs = nonNegativeInteger(manifest.selected_pairs);
+	const selectedPosts = nonNegativeInteger(manifest.selected_posts);
+	if (
+		sourcePairs === null ||
+		sourcePosts === null ||
+		selectedPairs === null ||
+		selectedPosts === null
+	)
+		return null;
+	return {
+		selection: manifest.selection,
+		sourcePairs,
+		sourcePosts,
+		selectedPairs,
+		selectedPosts,
+	};
 }
 
 /**
@@ -372,6 +413,7 @@ export async function loadZlgComparisonData() {
 			: ("missing" as const);
 	const codexJudgeSummary = readJson(CODEX_JUDGE_SUMMARY_JSON);
 	const codexPilotAudit = readJson(CODEX_PILOT_AUDIT_JSON);
+	const judgeSubset = readJudgeSubset(JUDGE_SUBSET_MANIFEST_JSON);
 	const codexJudgments = [
 		"standout",
 		"weak_link",
@@ -789,6 +831,7 @@ export async function loadZlgComparisonData() {
 		pairedRowsSource,
 		codexJudgeSummary,
 		codexPilotAudit,
+		judgeSubset,
 		codexJudgments,
 		codexJudgeProgress,
 		bpwOursAllMean,

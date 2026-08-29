@@ -31,11 +31,16 @@ export function value(value: unknown): string {
 
 export function rate(
 	rows: Judgment[],
+	metric: string,
 	method: string,
 	key: string,
 ): number | null {
 	const subset = rows.filter(
-		(row) => row.method === method && row.result && row.answer,
+		(row) =>
+			row.metric === metric &&
+			row.method === method &&
+			row.result &&
+			row.answer,
 	);
 	if (!subset.length) return null;
 	return (

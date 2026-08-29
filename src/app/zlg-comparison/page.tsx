@@ -39,6 +39,7 @@ export default async function ZlgComparisonPage() {
 		pairedRows,
 		codexJudgeSummary,
 		codexPilotAudit,
+		judgeSubset,
 		codexJudgments,
 		codexJudgeProgress,
 		bpwOursAllMean,
@@ -51,6 +52,16 @@ export default async function ZlgComparisonPage() {
 		postsWithDuplicateText,
 		pairedRowsSource,
 	} = await loadZlgComparisonData();
+	const judgeTasks = codexJudgeProgress.reduce(
+		(total, item) => total + (item.total_tasks ?? 0),
+		0,
+	);
+	const judgeErrors = codexJudgeProgress.reduce(
+		(total, item) => total + (item.errors ?? 0),
+		0,
+	);
+	const uniqueOurTexts = new Set(samples.map((sample) => sample.ourText)).size;
+	const uniqueZlgTexts = new Set(samples.map((sample) => sample.zlgText)).size;
 
 	return (
 		<OvernightFindingsShell>
@@ -91,36 +102,88 @@ export default async function ZlgComparisonPage() {
 						) : null}
 					</header>
 
-					<section className="space-y-3 rounded-xl border border-amber-400/20 bg-amber-400/5 p-5">
-						<div>
-							<h2 className="font-semibold text-lg">Capacity</h2>
-							<p className="mt-1 text-slate-400 text-xs">
-								Shown as two separate figures, not a head-to-head comparison —
-								the two sides use incompatible definitions and neither was
-								verified the same way.
-							</p>
-						</div>
-						<div className="grid gap-3 sm:grid-cols-2">
-							<Stat
-								label="ZLG requested payload"
-								sub="Harness-set constant — sized to our own budget, rounded up to whole bytes. Not a measured ZLG capacity."
-								value={`${fmtNum(zlgBlock?.total_embedded_bits_mean, 2)} bits`}
-							/>
-							<Stat
-								label="Our selection-channel budget"
-								sub="Theoretical upper bound (sum of floor(log2(choices))); not blind-decoded in this run — recovery used the sender's own payload as an oracle."
-								value={`${fmtNum(ourBlock?.total_embedded_bits_mean, 2)} bits`}
-							/>
-						</div>
-						{metricsSummary?.capacity_fields_note ? (
-							<div className="rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-amber-100 text-xs leading-relaxed">
-								<span className="font-semibold uppercase tracking-wide">
-									Note:{" "}
+					{codexJudgeSummary ? (
+						<section className="space-y-4 rounded-xl border border-emerald-400/30 bg-gradient-to-br from-emerald-400/[0.13] via-cyan-400/[0.06] to-transparent p-5">
+							<div className="flex flex-wrap items-start justify-between gap-3">
+								<div>
+									<p className="font-medium text-emerald-300 text-xs uppercase tracking-widest">
+										Completed evaluation
+									</p>
+									<h2 className="mt-1 font-bold text-2xl">
+										Independent judge results, ready to review
+									</h2>
+								</div>
+								<span className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 font-medium text-emerald-200 text-xs">
+									{judgeTasks} / {judgeTasks} valid tasks
 								</span>
-								{metricsSummary.capacity_fields_note}
 							</div>
-						) : null}
-					</section>
+							<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+								<Stat
+									label="Independent posts"
+									value={String(samples.length)}
+								/>
+								<Stat
+									label="Unique generated texts"
+									sub="Our method + ZLG baseline"
+									value={`${uniqueOurTexts} + ${uniqueZlgTexts}`}
+								/>
+								<Stat
+									label="Completed judge tasks"
+									value={String(judgeTasks)}
+								/>
+								<Stat label="Judge errors" value={String(judgeErrors)} />
+							</div>
+							<p className="text-emerald-50/85 text-sm leading-relaxed">
+								This view reports one paired comparison per source post. Each
+								selected ZLG cover text is unique, so repeated baseline outputs
+								were removed before judging. The same pair is then assessed
+								under five different criteria; those are repeated measurements,
+								not additional generated texts.
+							</p>
+						</section>
+					) : null}
+
+					<LlmJudgePanel
+						audit={codexPilotAudit}
+						judgments={codexJudgments}
+						pairCount={samples.length}
+						progress={codexJudgeProgress}
+						subset={judgeSubset}
+						summary={codexJudgeSummary}
+					/>
+
+					{metricsSummary ? (
+						<section className="space-y-3 rounded-xl border border-amber-400/20 bg-amber-400/5 p-5">
+							<div>
+								<h2 className="font-semibold text-lg">Capacity</h2>
+								<p className="mt-1 text-slate-400 text-xs">
+									Shown as two separate figures, not a head-to-head comparison —
+									the two sides use incompatible definitions and neither was
+									verified the same way.
+								</p>
+							</div>
+							<div className="grid gap-3 sm:grid-cols-2">
+								<Stat
+									label="ZLG requested payload"
+									sub="Harness-set constant — sized to our own budget, rounded up to whole bytes. Not a measured ZLG capacity."
+									value={`${fmtNum(zlgBlock?.total_embedded_bits_mean, 2)} bits`}
+								/>
+								<Stat
+									label="Our selection-channel budget"
+									sub="Theoretical upper bound (sum of floor(log2(choices))); not blind-decoded in this run — recovery used the sender's own payload as an oracle."
+									value={`${fmtNum(ourBlock?.total_embedded_bits_mean, 2)} bits`}
+								/>
+							</div>
+							{metricsSummary?.capacity_fields_note ? (
+								<div className="rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-amber-100 text-xs leading-relaxed">
+									<span className="font-semibold uppercase tracking-wide">
+										Note:{" "}
+									</span>
+									{metricsSummary.capacity_fields_note}
+								</div>
+							) : null}
+						</section>
+					) : null}
 
 					{metricsSummary ? (
 						<section className="rounded-xl border border-cyan-400/20 bg-gradient-to-br from-cyan-400/5 via-transparent to-orange-400/5 p-5">
@@ -156,41 +219,43 @@ export default async function ZlgComparisonPage() {
 								{fmtNum(zlgBlock?.word_count_mean, 1)} words). The former
 								&quot;lexical quality index&quot; row is relabeled MATTR
 								(rescaled) because on this run it is exactly{" "}
-								<code className="rounded bg-black/30 px-1">55·MATTR + 45</code>
-								— not an independent finding beyond lexical diversity /
+								<code className="rounded bg-black/30 px-1">55·MATTR + 45</code>—
+								not an independent finding beyond lexical diversity /
 								repetition.
 							</p>
 						</section>
 					) : null}
 
-					<section className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-						<Stat label="Rows Parsed" value={String(rows.length)} />
-						<Stat
-							label="ZLG Attempts"
-							sub={
-								skippedRows.length > 0
-									? `${skippedRows.length} skipped before any request`
-									: undefined
-							}
-							value={String(attemptedRows.length)}
-						/>
-						<Stat label="Accepted" value={String(acceptedRows.length)} />
-						<Stat
-							label="Failed (of attempts)"
-							value={String(failedRows.length - skippedRows.length)}
-						/>
-						<Stat
-							label="Paired Observations"
-							sub={`${paired.paired_n ?? "n/a"} independent post clusters`}
-							value={String(rowLevel.paired_n ?? pairedRows.length / 2)}
-						/>
-						<Stat
-							label="Last Updated"
-							value={String(
-								summary?.updated_at_utc ?? progress?.updated_at_utc ?? "n/a",
-							).slice(0, 19)}
-						/>
-					</section>
+					{rows.length > 0 ? (
+						<section className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+							<Stat label="Rows Parsed" value={String(rows.length)} />
+							<Stat
+								label="ZLG Attempts"
+								sub={
+									skippedRows.length > 0
+										? `${skippedRows.length} skipped before any request`
+										: undefined
+								}
+								value={String(attemptedRows.length)}
+							/>
+							<Stat label="Accepted" value={String(acceptedRows.length)} />
+							<Stat
+								label="Failed (of attempts)"
+								value={String(failedRows.length - skippedRows.length)}
+							/>
+							<Stat
+								label="Paired Observations"
+								sub={`${paired.paired_n ?? "n/a"} independent post clusters`}
+								value={String(rowLevel.paired_n ?? pairedRows.length / 2)}
+							/>
+							<Stat
+								label="Last Updated"
+								value={String(
+									summary?.updated_at_utc ?? progress?.updated_at_utc ?? "n/a",
+								).slice(0, 19)}
+							/>
+						</section>
+					) : null}
 
 					{metricRows.length > 0 ? (
 						<section className="space-y-4 rounded-xl border border-white/10 bg-white/[0.04] p-5">
@@ -361,59 +426,54 @@ export default async function ZlgComparisonPage() {
 						</section>
 					) : null}
 
-					<LlmJudgePanel
-						audit={codexPilotAudit}
-						judgments={codexJudgments}
-						progress={codexJudgeProgress}
-						summary={codexJudgeSummary}
-					/>
-
-					<section className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
-						<h2 className="mb-1 font-semibold text-lg">
-							Failure Stages ({failedRows.length} total, fully accounted)
-						</h2>
-						<p className="mb-3 text-slate-400 text-xs">
-							Rows at the <span className="font-mono">harness_extract</span>{" "}
-							stage never reached the ZLG server — our own cover-sentence
-							extraction gave up first — so they are excluded from the
-							acceptance rate above.
-						</p>
-						<div className="overflow-x-auto">
-							<table className="w-full text-left text-sm">
-								<thead className="text-slate-400">
-									<tr className="border-white/10 border-b">
-										<th className="py-2 pr-3">Count</th>
-										<th className="py-2 pr-3">Stage</th>
-										<th className="py-2 pr-3">Charged to ZLG?</th>
-									</tr>
-								</thead>
-								<tbody>
-									{topStages.map(([stage, count]) => (
-										<tr className="border-white/5 border-b" key={stage}>
-											<td className="py-2 pr-3">{count}</td>
-											<td className="py-2 pr-3 font-mono text-xs">
-												{stage}
-												<span className="ml-2 text-slate-500">
-													{FAILURE_STAGE_LABELS[stage]}
-												</span>
-											</td>
-											<td className="py-2 pr-3 text-xs">
-												{stage === "harness_extract" ? (
-													<span className="text-amber-300">no</span>
-												) : (
-													"yes"
-												)}
-											</td>
+					{rows.length > 0 ? (
+						<section className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+							<h2 className="mb-1 font-semibold text-lg">
+								Failure Stages ({failedRows.length} total, fully accounted)
+							</h2>
+							<p className="mb-3 text-slate-400 text-xs">
+								Rows at the <span className="font-mono">harness_extract</span>{" "}
+								stage never reached the ZLG server — our own cover-sentence
+								extraction gave up first — so they are excluded from the
+								acceptance rate above.
+							</p>
+							<div className="overflow-x-auto">
+								<table className="w-full text-left text-sm">
+									<thead className="text-slate-400">
+										<tr className="border-white/10 border-b">
+											<th className="py-2 pr-3">Count</th>
+											<th className="py-2 pr-3">Stage</th>
+											<th className="py-2 pr-3">Charged to ZLG?</th>
 										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					</section>
+									</thead>
+									<tbody>
+										{topStages.map(([stage, count]) => (
+											<tr className="border-white/5 border-b" key={stage}>
+												<td className="py-2 pr-3">{count}</td>
+												<td className="py-2 pr-3 font-mono text-xs">
+													{stage}
+													<span className="ml-2 text-slate-500">
+														{FAILURE_STAGE_LABELS[stage]}
+													</span>
+												</td>
+												<td className="py-2 pr-3 text-xs">
+													{stage === "harness_extract" ? (
+														<span className="text-amber-300">no</span>
+													) : (
+														"yes"
+													)}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						</section>
+					) : null}
 
 					<section className="space-y-3">
 						<h2 className="font-semibold text-lg">
-							Side-by-Side Examples ({samples.length})
+							Auditable Side-by-Side Examples ({samples.length})
 						</h2>
 						<SampleBrowser samples={samples} />
 					</section>
