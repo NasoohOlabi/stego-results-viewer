@@ -691,6 +691,20 @@ const collectFeedbackProgress = async (): Promise<{
 	};
 };
 
+function latestRunName(rows: Array<{ runName: string }>): string | null {
+	return (
+		rows
+			.map((row) => row.runName)
+			.sort()
+			.at(-1) ?? null
+	);
+}
+
+function rowsForLatestRun<T extends { runName: string }>(rows: T[]): T[] {
+	const latest = latestRunName(rows);
+	return latest ? rows.filter((row) => row.runName === latest) : [];
+}
+
 const getProgressSnapshot = async (): Promise<ProgressSnapshot> => {
 	const [e2e, modelAblation, angleScan, feedback, naturalnessGate] =
 		await Promise.all([
@@ -715,26 +729,30 @@ const getProgressSnapshot = async (): Promise<ProgressSnapshot> => {
 
 	return {
 		generatedAtUtc: new Date().toISOString(),
-		e2e: { ...e2eTotals, runCount: e2e.runCount, rows: e2e.rows },
+		e2e: {
+			...e2eTotals,
+			runCount: e2e.runCount,
+			rows: rowsForLatestRun(e2e.rows),
+		},
 		modelAblation: {
 			...modelTotals,
 			runCount: modelAblation.runCount,
-			rows: modelAblation.rows,
+			rows: rowsForLatestRun(modelAblation.rows),
 		},
 		angleScan: {
 			...angleTotals,
 			runCount: angleScan.runCount,
-			rows: angleScan.rows,
+			rows: rowsForLatestRun(angleScan.rows),
 		},
 		feedback: {
 			...feedbackTotals,
 			runCount: feedback.runCount,
-			rows: feedback.rows,
+			rows: rowsForLatestRun(feedback.rows),
 		},
 		naturalnessGate: {
 			...naturalnessTotals,
 			runCount: naturalnessGate.runCount,
-			rows: naturalnessGate.rows,
+			rows: rowsForLatestRun(naturalnessGate.rows),
 		},
 	};
 };

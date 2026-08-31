@@ -51,6 +51,8 @@ export default async function ZlgComparisonPage() {
 		totalPostsInDataset,
 		postsWithDuplicateText,
 		pairedRowsSource,
+		metricsRunDir,
+		missingArtifacts,
 	} = await loadZlgComparisonData();
 	const judgeTasks = codexJudgeProgress.reduce(
 		(total, item) => total + (item.total_tasks ?? 0),
@@ -85,6 +87,33 @@ export default async function ZlgComparisonPage() {
 							</a>
 						</div>
 						<p className="font-mono text-slate-500 text-xs">{RUN_DIR}</p>
+						{metricsRunDir !== RUN_DIR ? (
+							<p className="rounded-lg border border-cyan-400/40 bg-cyan-400/10 px-3 py-2 text-cyan-100 text-xs leading-relaxed">
+								This directory is the independent-judge campaign. Generation
+								metrics (
+								<code className="rounded bg-black/30 px-1">results.jsonl</code>,{" "}
+								<code className="rounded bg-black/30 px-1">
+									comparison_dataset/summary.json
+								</code>
+								) are loaded from the parent run{" "}
+								<code className="rounded bg-black/30 px-1">
+									{metricsRunDir}
+								</code>
+								.
+							</p>
+						) : null}
+						{missingArtifacts.length > 0 ? (
+							<p className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-amber-100 text-xs leading-relaxed">
+								Missing artifacts:{" "}
+								{missingArtifacts.map((name) => (
+									<code className="mr-1 rounded bg-black/30 px-1" key={name}>
+										{name}
+									</code>
+								))}
+								. Tables that depend on those files stay empty instead of
+								inventing numbers.
+							</p>
+						) : null}
 						{pairedRowsSource !== "paired_rows.jsonl" ? (
 							<p className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-amber-100 text-xs leading-relaxed">
 								Paired rows source:{" "}

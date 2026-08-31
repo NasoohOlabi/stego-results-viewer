@@ -71,27 +71,16 @@ export const createCallerFactory = t.createCallerFactory;
 export const createTRPCRouter = t.router;
 
 /**
- * Middleware for timing procedure execution and adding an artificial delay in development.
- *
- * You can remove this if you don't like it, but it can help catch unwanted waterfalls by simulating
- * network latency that would occur in production but not in local development.
+ * Log procedure duration. The T3 scaffold used to sleep 100–500 ms in
+ * development "to catch waterfalls"; on a local filesystem viewer that just
+ * made every click feel broken.
  */
 const timingMiddleware = t.middleware(async ({ next, path }) => {
 	const start = Date.now();
-
-	if (t._config.isDev) {
-		// artificial delay in dev
-		const waitMs = Math.floor(Math.random() * 400) + 100;
-		await new Promise((resolve) => setTimeout(resolve, waitMs));
-	}
-
 	const result = await next();
-
-	const end = Date.now();
 	if (path !== "files.listFiles") {
-		console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
+		console.log(`[TRPC] ${path} took ${Date.now() - start}ms to execute`);
 	}
-
 	return result;
 });
 

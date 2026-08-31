@@ -1,9 +1,10 @@
-import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { readJsonCached, readJsonlCached } from "~/server/artifact-cache";
+import { SIDE_WING_REPO_PATH } from "~/server/paths";
 import type { SampleCard } from "../_components/sample-browser";
 import type { SummaryTableRow } from "../_components/summary-table";
 import { firstLine, fmtNum, fmtP, signTestP } from "./format";
-import type { JudgeProgress } from "./llm-judge";
+import type { JudgeProgress, Judgment } from "./llm-judge";
 
 /**
  * All data loading/derivation for the ZLG comparison dashboard, shared
@@ -13,15 +14,25 @@ import type { JudgeProgress } from "./llm-judge";
  */
 
 /** Mirrors FailureStage in services/zlg_comparison_service.py. */
-export type FailureStage =
-	| "none"
-	| "harness_extract"
-	| "hide_request"
-	| "quality_gate"
-	| "capacity"
-	| "leakage_check"
-	| "reveal"
-	| "unknown";
+export const FAILURE_STAGES = [
+	"none",
+	"harness_extract",
+	"hide_request",
+	"quality_gate",
+	"capacity",
+	"leakage_check",
+	"reveal",
+	"unknown",
+] as const;
+
+export type FailureStage = (typeof FAILURE_STAGES)[number];
+
+function isFailureStage(value: unknown): value is FailureStage {
+	return (
+		typeof value === "string" &&
+		(FAILURE_STAGES as readonly string[]).includes(value)
+	);
+}
 
 type ResultRow = {
 	post_id?: string;
@@ -157,8 +168,8 @@ type PairedRow = {
 	sample_index?: number;
 	method?: string;
 	stegotext?: string;
-	thread_context?: string;
-	reference_text?: string;
+	/** First line of `thread_context`; the rest is never rendered. */
+	coverPreview?: string;
 	word_count?: number;
 	total_embedded_bits?: number;
 	perplexity_gpt2?: number;
@@ -169,23 +180,29 @@ type PairedRow = {
 };
 
 /**
- * Point at a different benchmark run without editing source. Re-runs land in a
- * new directory, so hardcoding one meant the dashboard silently kept rendering
- * the stale run after every rebuild.
- *
- * Contaminated default `zlg_batch_scale300` was deleted (synthetic-anchor
- * incident: stock "keep coming back" carriers in paired_rows). Recalibrated
- * has results/summary but no paired_rows — sample browser stays empty until a
- * clean comparison rebuild. Override with ZLG_RUN_DIR.
+ * Default is the independent-judge campaign — that is the live evaluation.
+ * Generation metrics (`results.jsonl`, `comparison_dataset/summary.json`) live
+ * on the parent comparison run; loadZlgComparisonData falls back there and
+ * the page says so. Override both with ZLG_RUN_DIR.
  */
+const ZLG_RUNS_ROOT = path.join(
+	SIDE_WING_REPO_PATH,
+	"metrics",
+	"zlg_comparison_runs",
+);
+const DEFAULT_JUDGE_RUN =
+	"zlg_lucid_fresh_6x_20260815_independent_unique_judge";
+const JUDGE_RUN_SUFFIX = "_independent_unique_judge";
+
 export const RUN_DIR =
-	process.env.ZLG_RUN_DIR ??
-	"D:\\Master\\code\\stego\\stego-side-wing\\metrics\\zlg_comparison_runs\\zlg_lucid_fresh_6x_20260815_independent_unique_judge";
-const RESULTS_JSONL = path.join(RUN_DIR, "results.jsonl");
-const PROGRESS_JSON = path.join(RUN_DIR, "progress.json");
-const SUMMARY_JSON = path.join(RUN_DIR, "summary.json");
+	process.env.ZLG_RUN_DIR ?? path.join(ZLG_RUNS_ROOT, DEFAULT_JUDGE_RUN);
+
+function parentComparisonRunDir(runDir: string): string | null {
+	if (!runDir.endsWith(JUDGE_RUN_SUFFIX)) return null;
+	return runDir.slice(0, -JUDGE_RUN_SUFFIX.length);
+}
+
 const COMPARISON_DIR = path.join(RUN_DIR, "comparison_dataset");
-const METRICS_SUMMARY_JSON = path.join(COMPARISON_DIR, "summary.json");
 const PAIRED_ROWS_JSONL = path.join(COMPARISON_DIR, "paired_rows.jsonl");
 // Some judge passes preserve the source dataset under this name while they
 // write their per-sample results separately. Keep the comparison browsable
@@ -205,31 +222,88 @@ const JUDGE_SUBSET_MANIFEST_JSON = path.join(
 	"subset_manifest.json",
 );
 
-function readJson(pathname: string): Record<string, unknown> | null {
-	if (!existsSync(pathname)) return null;
-	try {
-		return JSON.parse(readFileSync(pathname, "utf-8")) as Record<
-			string,
-			unknown
-		>;
-	} catch {
-		return null;
-	}
+/** The five judge metrics, in the order the panel and export present them. */
+const JUDGE_METRICS = [
+	"standout",
+	"weak_link",
+	"suspicion",
+	"attribution",
+	"register",
+] as const;
+
+const readJson = readJsonCached;
+
+/**
+ * Keep only the paired-row fields this dashboard reads.
+ *
+ * `paired_rows.jsonl` carries 63 fields per row and runs to 40 MB, but the page
+ * renders a dozen of them plus the first line of `thread_context`. Narrowing
+ * has to happen on the value: a `readJsonl<PairedRow>` cast changes the type
+ * and keeps every byte alive at runtime.
+ */
+function projectPairedRow(row: Record<string, unknown>): PairedRow {
+	const num = (key: string) =>
+		typeof row[key] === "number" ? (row[key] as number) : undefined;
+	const str = (key: string) =>
+		typeof row[key] === "string" ? (row[key] as string) : undefined;
+	return {
+		pair_id: num("pair_id"),
+		post_id: str("post_id"),
+		sample_index: num("sample_index"),
+		method: str("method"),
+		stegotext: str("stegotext"),
+		coverPreview: firstLine(str("thread_context")) || undefined,
+		word_count: num("word_count"),
+		total_embedded_bits: num("total_embedded_bits"),
+		perplexity_gpt2: num("perplexity_gpt2"),
+		bleu: num("bleu"),
+		rougeL: num("rougeL"),
+		bertscore_f1: num("bertscore_f1"),
+		self_consistency: num("self_consistency"),
+	};
 }
 
-function readJsonl<T>(pathname: string): T[] {
-	if (!existsSync(pathname)) return [];
-	return readFileSync(pathname, "utf-8")
-		.split("\n")
-		.map((line) => line.trim())
-		.filter(Boolean)
-		.map((line) => {
-			try {
-				return JSON.parse(line) as T;
-			} catch {
-				return {} as T;
-			}
-		});
+/**
+ * Keep only the judgment fields the panel and the `.md` export read.
+ *
+ * The judgment files total 43 MB, dominated by `prompt_fields`, `raw_response`
+ * and `usage`. None of those are rendered, but handing whole rows to a client
+ * component serialized all of them into the RSC flight payload.
+ */
+function projectJudgment(row: Record<string, unknown>): Judgment {
+	const record = (key: string) => {
+		const value = row[key];
+		return typeof value === "object" && value !== null && !Array.isArray(value)
+			? (value as Record<string, unknown>)
+			: null;
+	};
+	const str = (key: string) =>
+		typeof row[key] === "string" ? (row[key] as string) : undefined;
+	return {
+		metric: str("metric"),
+		method: str("method"),
+		post_id: str("post_id"),
+		pair_id: str("pair_id"),
+		result: record("result"),
+		answer: record("answer"),
+		error: str("error") ?? null,
+	};
+}
+
+/** Result rows are small; keep the fields the failure taxonomy needs. */
+function projectResultRow(row: Record<string, unknown>): ResultRow {
+	const str = (key: string) =>
+		typeof row[key] === "string" ? (row[key] as string) : undefined;
+	return {
+		post_id: str("post_id"),
+		sample_index:
+			typeof row.sample_index === "number" ? row.sample_index : undefined,
+		accepted: row.accepted === true,
+		reason: str("reason") ?? null,
+		failure_stage: isFailureStage(row.failure_stage)
+			? row.failure_stage
+			: undefined,
+	};
 }
 
 function nonNegativeInteger(value: unknown): number | null {
@@ -238,8 +312,8 @@ function nonNegativeInteger(value: unknown): number | null {
 		: null;
 }
 
-function readJudgeSubset(pathname: string): JudgeSubset | null {
-	const manifest = readJson(pathname);
+async function readJudgeSubset(pathname: string): Promise<JudgeSubset | null> {
+	const manifest = await readJson(pathname);
 	if (!manifest || typeof manifest.selection !== "string") return null;
 	const sourcePairs = nonNegativeInteger(manifest.source_pairs);
 	const sourcePosts = nonNegativeInteger(manifest.source_posts);
@@ -339,9 +413,45 @@ export const FAILURE_STAGE_LABELS: Record<FailureStage, string> = {
 };
 
 export async function loadZlgComparisonData() {
-	const progress = readJson(PROGRESS_JSON);
-	const summary = readJson(SUMMARY_JSON);
-	const rows = readJsonl<ResultRow>(RESULTS_JSONL);
+	const parentDir = parentComparisonRunDir(RUN_DIR);
+	const localMetrics = await readJson(
+		path.join(COMPARISON_DIR, "summary.json"),
+	);
+	const metricsRunDir = localMetrics ? RUN_DIR : (parentDir ?? RUN_DIR);
+	const metricsSummary = (localMetrics ??
+		(metricsRunDir === RUN_DIR
+			? null
+			: await readJson(
+					path.join(metricsRunDir, "comparison_dataset", "summary.json"),
+				))) as MetricsSummary | null;
+
+	const localProgress = await readJson(path.join(RUN_DIR, "progress.json"));
+	const progress =
+		localProgress ??
+		(metricsRunDir === RUN_DIR
+			? null
+			: await readJson(path.join(metricsRunDir, "progress.json")));
+	const localSummary = await readJson(path.join(RUN_DIR, "summary.json"));
+	const summary =
+		localSummary ??
+		(metricsRunDir === RUN_DIR
+			? null
+			: await readJson(path.join(metricsRunDir, "summary.json")));
+	const localRows = await readJsonlCached(
+		path.join(RUN_DIR, "results.jsonl"),
+		"result",
+		projectResultRow,
+	);
+	const rows =
+		localRows.length > 0
+			? localRows
+			: metricsRunDir === RUN_DIR
+				? localRows
+				: await readJsonlCached(
+						path.join(metricsRunDir, "results.jsonl"),
+						"result",
+						projectResultRow,
+					);
 	const acceptedRows = rows.filter((r) => Boolean(r.accepted));
 	const failedRows = rows.filter((r) => !r.accepted);
 	// Rows where our own cover-sentence extraction gave up never reached the
@@ -360,9 +470,6 @@ export async function loadZlgComparisonData() {
 			? acceptedRows.length / attemptedRows.length
 			: null;
 
-	const metricsSummary = readJson(
-		METRICS_SUMMARY_JSON,
-	) as MetricsSummary | null;
 	// Descriptive values use every complete pair. Inference remains clustered by
 	// post below because repeated outputs from one post are not independent.
 	const ourBlock = metricsSummary?.methods?.our_method;
@@ -393,50 +500,49 @@ export async function loadZlgComparisonData() {
 		? (reliability?.harness_skipped ?? skippedRows.length)
 		: skippedRows.length;
 
-	const usingPairedRowsBackup =
-		!existsSync(PAIRED_ROWS_JSONL) && existsSync(PAIRED_ROWS_BACKUP_JSONL);
-	const pairedRowsPath = existsSync(PAIRED_ROWS_JSONL)
-		? PAIRED_ROWS_JSONL
-		: usingPairedRowsBackup
-			? PAIRED_ROWS_BACKUP_JSONL
-			: null;
-	if (usingPairedRowsBackup) {
-		console.warn(
-			`[zlg-comparison] paired_rows.jsonl missing; falling back to ${path.basename(PAIRED_ROWS_BACKUP_JSONL)}. A later judge pass that writes a different paired_rows.jsonl will not be picked up until that file exists.`,
-		);
-	}
-	const pairedRows = pairedRowsPath ? readJsonl<PairedRow>(pairedRowsPath) : [];
-	const pairedRowsSource = existsSync(PAIRED_ROWS_JSONL)
-		? ("paired_rows.jsonl" as const)
-		: usingPairedRowsBackup
-			? ("paired_rows.jsonl.bak_pre_codex_judge" as const)
-			: ("missing" as const);
-	const codexJudgeSummary = readJson(CODEX_JUDGE_SUMMARY_JSON);
-	const codexPilotAudit = readJson(CODEX_PILOT_AUDIT_JSON);
-	const judgeSubset = readJudgeSubset(JUDGE_SUBSET_MANIFEST_JSON);
-	const codexJudgments = [
-		"standout",
-		"weak_link",
-		"suspicion",
-		"attribution",
-		"register",
-	].flatMap((metric) =>
-		readJsonl<Record<string, unknown>>(
-			path.join(CODEX_JUDGMENTS_DIR, `${metric}_judgments.jsonl`),
-		),
+	const primaryPairedRows = await readJsonlCached(
+		PAIRED_ROWS_JSONL,
+		"paired",
+		projectPairedRow,
 	);
-	const codexJudgeProgress: JudgeProgress[] = [
-		"standout",
-		"weak_link",
-		"suspicion",
-		"attribution",
-		"register",
-	].flatMap((metric) => {
-		const item = readJson(
-			path.join(CODEX_JUDGMENTS_DIR, `${metric}_progress.json`),
-		) as JudgeProgress | null;
-		return item ? [item] : [];
-	});
+	const usingPairedRowsBackup = primaryPairedRows.length === 0;
+	const pairedRows = usingPairedRowsBackup
+		? await readJsonlCached(
+				PAIRED_ROWS_BACKUP_JSONL,
+				"paired",
+				projectPairedRow,
+			)
+		: primaryPairedRows;
+	const pairedRowsSource =
+		primaryPairedRows.length > 0
+			? ("paired_rows.jsonl" as const)
+			: pairedRows.length > 0
+				? ("paired_rows.jsonl.bak_pre_codex_judge" as const)
+				: ("missing" as const);
+	const codexJudgeSummary = await readJson(CODEX_JUDGE_SUMMARY_JSON);
+	const codexPilotAudit = await readJson(CODEX_PILOT_AUDIT_JSON);
+	const judgeSubset = await readJudgeSubset(JUDGE_SUBSET_MANIFEST_JSON);
+	const codexJudgments = (
+		await Promise.all(
+			JUDGE_METRICS.map((metric) =>
+				readJsonlCached(
+					path.join(CODEX_JUDGMENTS_DIR, `${metric}_judgments.jsonl`),
+					"judgment",
+					projectJudgment,
+				),
+			),
+		)
+	).flat();
+	const codexJudgeProgress: JudgeProgress[] = (
+		await Promise.all(
+			JUDGE_METRICS.map(
+				(metric) =>
+					readJson(
+						path.join(CODEX_JUDGMENTS_DIR, `${metric}_progress.json`),
+					) as Promise<JudgeProgress | null>,
+			),
+		)
+	).filter((item): item is JudgeProgress => item !== null);
 
 	// ---- bits-per-word: the efficiency metric the baseline paper reports.
 	// Computed directly from paired_rows.jsonl (post-clustered mean of the
@@ -773,10 +879,7 @@ export async function loadZlgComparisonData() {
 				sampleIndex: zlgRow?.sample_index,
 				ourBits: entry.our_method?.total_embedded_bits,
 				zlgBits: zlgRow?.total_embedded_bits,
-				coverPreview:
-					firstLine(
-						zlgRow?.thread_context ?? entry.our_method?.thread_context,
-					) || undefined,
+				coverPreview: zlgRow?.coverPreview ?? entry.our_method?.coverPreview,
 				ourText: entry.our_method?.stegotext ?? "n/a",
 				zlgText: zlgRow?.stegotext ?? "n/a",
 				ourQuality: entry.our_method
@@ -807,6 +910,14 @@ export async function loadZlgComparisonData() {
 	const reuseRows = [...reuseBuckets.entries()].sort((a, b) => a[0] - b[0]);
 	const totalPostsInDataset = diversityGuard?.posts?.length ?? 0;
 
+	const missingArtifacts: string[] = [];
+	if (!metricsSummary) missingArtifacts.push("comparison_dataset/summary.json");
+	if (rows.length === 0) missingArtifacts.push("results.jsonl");
+	if (!progress) missingArtifacts.push("progress.json");
+	if (pairedRows.length === 0) {
+		missingArtifacts.push("comparison_dataset/paired_rows.jsonl");
+	}
+
 	return {
 		progress,
 		summary,
@@ -817,6 +928,8 @@ export async function loadZlgComparisonData() {
 		attemptedRows,
 		topStages,
 		metricsSummary,
+		metricsRunDir,
+		missingArtifacts,
 		ourBlock,
 		zlgBlock,
 		paired,
