@@ -5,6 +5,10 @@ import {
 } from "../zlg-comparison/_lib/data";
 import { fmtNum, fmtPct } from "../zlg-comparison/_lib/format";
 import {
+	CRITERION_ORDER,
+	JUDGE_CRITERIA,
+} from "../zlg-comparison/_lib/judge-copy";
+import {
 	value as judgeValue,
 	meanScore,
 	pickedRate,
@@ -46,6 +50,16 @@ export async function GET(request: Request) {
 	push("# ZLG Comparison Dashboard — Our Method vs ZLG Baseline");
 	push();
 	push(`- Run directory: \`${RUN_DIR}\``);
+	if (data.metricsRunDir !== RUN_DIR) {
+		push(
+			`- Metrics loaded from parent run: \`${data.metricsRunDir}\` (this directory is the independent-judge campaign)`,
+		);
+	}
+	if (data.missingArtifacts.length > 0) {
+		push(
+			`- **Missing artifacts:** ${data.missingArtifacts.map((name) => `\`${name}\``).join(", ")}`,
+		);
+	}
 	push(
 		`- Last updated: ${String(data.summary?.updated_at_utc ?? data.progress?.updated_at_utc ?? "n/a").slice(0, 19)}`,
 	);
@@ -311,46 +325,109 @@ export async function GET(request: Request) {
 	const registerZlg = meanScore(data.codexJudgments, "zlg", "overall");
 	const weakLinkOurs = pickedRate(data.codexJudgments, "our_method");
 	const weakLinkZlg = pickedRate(data.codexJudgments, "zlg");
+	const weakLinkHuman = pickedRate(data.codexJudgments, "human");
+	const attributionHuman = rate(
+		data.codexJudgments,
+		"attribution",
+		"human",
+		"thread_index",
+	);
+	const registerHuman = meanScore(data.codexJudgments, "human", "overall");
+	const suspicion = data.codexJudgeSummary?.suspicion as
+		| { auroc?: Record<string, number> }
+		| undefined;
+
+	// Prose, numbers and row order all come from judge-copy.ts, the same module
+	// the interactive panel reads. This export is not a summary of the pages; it
+	// is the same content, flat. A weaker export is a bug.
+	// Precision matches the interactive panel exactly. The export carrying
+	// different digits from the page is the divergence the docket calls a bug.
+	const asPercent = (score: number | null) =>
+		score === null ? "n/a" : `${(score * 100).toFixed(1)}%`;
+	const cells: Record<string, { ours: string; zlg: string; human: string }> = {
+		standout: {
+			ours: asPercent(standoutOurs),
+			zlg: asPercent(standoutZlg),
+			human: "n/a - humans are the lineup",
+		},
+		"weak-link": {
+			ours: asPercent(weakLinkOurs),
+			zlg: asPercent(weakLinkZlg),
+			human: asPercent(weakLinkHuman),
+		},
+		suspicion: {
+			// Two decimals: the gap is smaller than the tie-breaking noise, so a
+			// third decimal would imply a ranking. Docket tickets 06 and 11.
+			ours: suspicion?.auroc?.our_method?.toFixed(2) ?? "n/a",
+			zlg: suspicion?.auroc?.zlg?.toFixed(2) ?? "n/a",
+			human: "reference distribution",
+		},
+		attribution: {
+			ours: asPercent(attributionOurs),
+			zlg: asPercent(attributionZlg),
+			human: asPercent(attributionHuman),
+		},
+		register: {
+			ours: judgeValue(registerOurs),
+			zlg: judgeValue(registerZlg),
+			human: judgeValue(registerHuman),
+		},
+	};
+
 	push("### Full-run results");
 	push();
 	push(
 		mdTable(
-			["Result", "Our Method", "ZLG", "Interpretation"],
-			[
-				[
-					"J1 standout detection",
-					`${judgeValue(standoutOurs === null ? null : standoutOurs * 100)}%`,
-					`${judgeValue(standoutZlg === null ? null : standoutZlg * 100)}%`,
-					"Lower is better; chance is 10%.",
-				],
-				[
-					"J2 weak-link picked",
-					`${judgeValue(weakLinkOurs === null ? null : weakLinkOurs * 100)}%`,
-					`${judgeValue(weakLinkZlg === null ? null : weakLinkZlg * 100)}%`,
-					"Lower is better; chance is 33%.",
-				],
-				[
-					"J3 suspicion",
-					"See scored summary",
-					"See scored summary",
-					"AUROC against held-out human; lower is better.",
-				],
-				[
-					"J4 thread attribution",
-					`${judgeValue(attributionOurs === null ? null : attributionOurs * 100)}%`,
-					`${judgeValue(attributionZlg === null ? null : attributionZlg * 100)}%`,
-					"Higher is better; chance is 25%.",
-				],
-				[
-					"J5 register overall",
-					judgeValue(registerOurs),
-					judgeValue(registerZlg),
-					"1-5 score; human-anchor comparison follows below.",
-				],
-			],
+			["Result", "Our Method", "ZLG", "Human arm (control)", "Interpretation"],
+			CRITERION_ORDER.map((slug) => {
+				const copy = JUDGE_CRITERIA[slug];
+				const cell = cells[slug];
+				return [
+					copy.label,
+					cell?.ours ?? "n/a",
+					cell?.zlg ?? "n/a",
+					cell?.human ?? "n/a",
+					copy.shortInterpretation,
+				];
+			}),
 		),
 	);
 	push();
+	push(
+		"The human arm is a real comment drawn from the same thread and scored on the same task. It is not a human rating anything; it is the same model judging genuine comments, which is what makes it a yardstick.",
+	);
+	push();
+
+	for (const slug of CRITERION_ORDER) {
+		const copy = JUDGE_CRITERIA[slug];
+		push(`### ${copy.label}`);
+		push();
+		push(`**What was measured.** ${copy.explanation.panel}`);
+		push();
+		push(copy.explanation.long);
+		push();
+		push(`**Easy to misread.** ${copy.misread}`);
+		push();
+		push(`**What we think happened.** ${copy.justification.opinion}`);
+		push();
+		for (const paragraph of copy.justification.body) {
+			push(paragraph);
+			push();
+		}
+		push("**Worked examples.**");
+		push();
+		for (const example of copy.examples) {
+			push(
+				`- \`${example.postId}\` (${example.arms.join(", ")}): ${example.caption}`,
+			);
+		}
+		push();
+		push("**What this does not show.**");
+		push();
+		for (const limit of copy.limits) push(`- ${limit}`);
+		push();
+	}
+
 	push("### Per-metric summary");
 	push();
 	push(

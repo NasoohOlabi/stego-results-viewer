@@ -1,7 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import type { JudgeSubset } from "../_lib/data";
+import {
+	type CRITERION_ORDER,
+	criterionHref,
+	JUDGE_CRITERIA,
+} from "../_lib/judge-copy";
 import {
 	type JudgeProgress,
 	type Judgment,
@@ -20,6 +26,9 @@ type Props = {
 	pairCount: number;
 	subset: JudgeSubset | null;
 };
+
+/** Rows rendered per page in the raw-judgments table. */
+const PAGE_SIZE = 100;
 
 const METRICS = [
 	"standout",
@@ -158,6 +167,11 @@ function percent(score: number | null): string {
 	return score === null ? "n/a" : `${(score * 100).toFixed(1)}%`;
 }
 
+/** AUROC to two decimals. See the suspicion row for why not three. */
+function auroc(score: number | null): string {
+	return score === null ? "n/a" : score.toFixed(2);
+}
+
 function nestedNumber(
 	source: Record<string, unknown> | null,
 	...keys: string[]
@@ -196,6 +210,9 @@ function FullResults({
 	const registerZlg = meanScore(rows, "zlg", "overall");
 	const weakLinkOurs = pickedRate(rows, "our_method");
 	const weakLinkZlg = pickedRate(rows, "zlg");
+	const weakLinkHuman = pickedRate(rows, "human");
+	const attributionHuman = rate(rows, "attribution", "human", "thread_index");
+	const registerHuman = meanScore(rows, "human", "overall");
 	const suspicionOurs = nestedNumber(
 		summary,
 		"suspicion",
@@ -215,6 +232,70 @@ function FullResults({
 		"post_cluster",
 		"two_sided_sign_test_p",
 	);
+	// One entry per criterion. `rank: false` suppresses winner highlighting where
+	// ranking the two methods would misrepresent the measurement: J3's published
+	// gap is smaller than its own tie-breaking noise (docket ticket 06).
+	const tableRows: {
+		slug: (typeof CRITERION_ORDER)[number];
+		ours: number | null;
+		zlg: number | null;
+		human: number | null;
+		humanNote: string;
+		format: (score: number | null) => string;
+		rank: boolean;
+		pNote?: string;
+	}[] = [
+		{
+			slug: "standout",
+			ours: standoutOurs,
+			zlg: standoutZlg,
+			human: null,
+			humanNote: "n/a — humans are the lineup",
+			format: percent,
+			rank: true,
+		},
+		{
+			slug: "weak-link",
+			ours: weakLinkOurs,
+			zlg: weakLinkZlg,
+			human: weakLinkHuman,
+			humanNote: "",
+			format: percent,
+			rank: true,
+		},
+		{
+			slug: "suspicion",
+			ours: suspicionOurs,
+			zlg: suspicionZlg,
+			human: null,
+			humanNote: "reference distribution",
+			pNote: `Sign test on raw scores p ${value(suspicionP)}.`,
+			// Two decimals, not three. The published gap (0.011) is smaller than
+			// this criterion's own tie-breaking noise (0.089), so a third decimal
+			// would render a ranking the measurement cannot support. Docket 06/11.
+			format: auroc,
+			rank: false,
+		},
+		{
+			slug: "attribution",
+			ours: attributionOurs,
+			zlg: attributionZlg,
+			human: attributionHuman,
+			humanNote: "",
+			format: percent,
+			rank: true,
+		},
+		{
+			slug: "register",
+			ours: registerOurs,
+			zlg: registerZlg,
+			human: registerHuman,
+			humanNote: "",
+			format: value,
+			rank: true,
+			pNote: `Post-cluster p ${value(registerP)}.`,
+		},
+	];
 	return (
 		<div className="space-y-4">
 			<div>
@@ -226,126 +307,97 @@ function FullResults({
 					an evaluation instrument, not a replacement for human-subject testing.
 				</p>
 			</div>
-			<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-				<ResultCard
-					label="Standout detection"
-					note="Lower is better; 10% is chance."
-					ours={percent(standoutOurs)}
-					zlg={percent(standoutZlg)}
-				/>
-				<ResultCard
-					label="Weakest text picked"
-					note="Lower is better; a human control was also shown."
-					ours={percent(weakLinkOurs)}
-					zlg={percent(weakLinkZlg)}
-				/>
-				<ResultCard
-					label="Suspicion separation"
-					note={`Lower AUROC is closer to human; p ${value(suspicionP)}.`}
-					ours={value(suspicionOurs)}
-					zlg={value(suspicionZlg)}
-				/>
-				<ResultCard
-					highlight="ours"
-					label="Register fit"
-					note={`Higher is better; post-cluster p ${value(registerP)}.`}
-					ours={value(registerOurs)}
-					zlg={value(registerZlg)}
-				/>
+			<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+				{tableRows.map((row) => {
+					const copy = JUDGE_CRITERIA[row.slug];
+					const lower = copy.direction === "lower-better";
+					const better =
+						row.rank &&
+						row.ours !== null &&
+						row.zlg !== null &&
+						(lower ? row.ours < row.zlg : row.ours > row.zlg);
+					return (
+						<ResultCard
+							highlight={better ? "ours" : undefined}
+							key={row.slug}
+							label={copy.label}
+							note={row.pNote ? `${copy.cardNote} ${row.pNote}` : copy.cardNote}
+							ours={row.format(row.ours)}
+							zlg={row.format(row.zlg)}
+						/>
+					);
+				})}
 			</div>
 			<div className="overflow-x-auto">
 				<table className="w-full text-left text-sm">
+					<caption className="sr-only">
+						Full-run judge results. Each row links to that criterion&apos;s
+						justification page.
+					</caption>
 					<thead className="text-slate-400">
 						<tr className="border-white/10 border-b">
 							<th className="py-2 pr-3">Full-run result</th>
 							<th className="py-2 pr-3">Our method</th>
 							<th className="py-2 pr-3">ZLG</th>
+							<th className="py-2 pr-3">
+								Human arm
+								<span className="ml-1 font-normal text-slate-500 text-xs">
+									(control)
+								</span>
+							</th>
 							<th className="py-2 pr-3">Interpretation</th>
+							<th className="py-2 pr-3">
+								<span className="sr-only">Justification</span>
+							</th>
 						</tr>
 					</thead>
 					<tbody>
-						<tr className="border-white/5 border-b">
-							<td className="py-2 pr-3 font-medium text-violet-200">
-								J1 standout detection
-							</td>
-							<td
-								className={`py-2 pr-3 ${winnerClass(standoutOurs, standoutZlg, true, "ours")}`}
-							>
-								{percent(standoutOurs)}
-							</td>
-							<td
-								className={`py-2 pr-3 ${winnerClass(standoutZlg, standoutOurs, true, "zlg")}`}
-							>
-								{percent(standoutZlg)}
-							</td>
-							<td className="py-2 pr-3 text-slate-400">
-								Lower is better; chance is 10%.
-							</td>
-						</tr>
-						<tr className="border-white/5 border-b">
-							<td className="py-2 pr-3 font-medium text-violet-200">
-								J2 weak-link picked
-							</td>
-							<td
-								className={`py-2 pr-3 ${winnerClass(weakLinkOurs, weakLinkZlg, true, "ours")}`}
-							>
-								{percent(weakLinkOurs)}
-							</td>
-							<td
-								className={`py-2 pr-3 ${winnerClass(weakLinkZlg, weakLinkOurs, true, "zlg")}`}
-							>
-								{percent(weakLinkZlg)}
-							</td>
-							<td className="py-2 pr-3 text-slate-400">
-								Lower is better; chance is 33%.
-							</td>
-						</tr>
-						<tr className="border-white/5 border-b">
-							<td className="py-2 pr-3 font-medium text-violet-200">
-								J3 suspicion
-							</td>
-							<td className="py-2 pr-3">{value(suspicionOurs)}</td>
-							<td className="py-2 pr-3">{value(suspicionZlg)}</td>
-							<td className="py-2 pr-3 text-slate-400">
-								AUROC against held-out human; lower is better.
-							</td>
-						</tr>
-						<tr className="border-white/5 border-b">
-							<td className="py-2 pr-3 font-medium text-violet-200">
-								J4 thread attribution
-							</td>
-							<td
-								className={`py-2 pr-3 ${winnerClass(attributionOurs, attributionZlg, false, "ours")}`}
-							>
-								{percent(attributionOurs)}
-							</td>
-							<td
-								className={`py-2 pr-3 ${winnerClass(attributionZlg, attributionOurs, false, "zlg")}`}
-							>
-								{percent(attributionZlg)}
-							</td>
-							<td className="py-2 pr-3 text-slate-400">
-								Higher is better; chance is 25%.
-							</td>
-						</tr>
-						<tr>
-							<td className="py-2 pr-3 font-medium text-violet-200">
-								J5 register overall
-							</td>
-							<td
-								className={`py-2 pr-3 ${winnerClass(registerOurs, registerZlg, false, "ours")}`}
-							>
-								{value(registerOurs)}
-							</td>
-							<td
-								className={`py-2 pr-3 ${winnerClass(registerZlg, registerOurs, false, "zlg")}`}
-							>
-								{value(registerZlg)}
-							</td>
-							<td className="py-2 pr-3 text-slate-400">
-								1–5 score; human-anchor comparison follows below.
-							</td>
-						</tr>
+						{tableRows.map((row, index) => {
+							const copy = JUDGE_CRITERIA[row.slug];
+							const lower = copy.direction === "lower-better";
+							return (
+								<tr
+									className={
+										index === tableRows.length - 1
+											? undefined
+											: "border-white/5 border-b"
+									}
+									key={row.slug}
+								>
+									<td className="py-2 pr-3 font-medium text-violet-200">
+										{copy.label}
+									</td>
+									<td
+										className={`py-2 pr-3 ${row.rank ? winnerClass(row.ours, row.zlg, lower, "ours") : ""}`}
+									>
+										{row.format(row.ours)}
+									</td>
+									<td
+										className={`py-2 pr-3 ${row.rank ? winnerClass(row.zlg, row.ours, lower, "zlg") : ""}`}
+									>
+										{row.format(row.zlg)}
+									</td>
+									<td className="py-2 pr-3 text-slate-300">
+										{row.human === null ? (
+											<span className="text-slate-500">{row.humanNote}</span>
+										) : (
+											row.format(row.human)
+										)}
+									</td>
+									<td className="py-2 pr-3 text-slate-400">
+										{copy.shortInterpretation}
+									</td>
+									<td className="py-2 pr-3">
+										<Link
+											className="whitespace-nowrap text-violet-300 text-xs hover:text-violet-100 hover:underline"
+											href={criterionHref(row.slug)}
+										>
+											Why? →
+										</Link>
+									</td>
+								</tr>
+							);
+						})}
 					</tbody>
 				</table>
 			</div>
@@ -447,35 +499,56 @@ function Summary({ summary, judgments }: Pick<Props, "summary" | "judgments">) {
 }
 
 function Judgments({ rows }: { rows: Judgment[] }) {
+	const [shown, setShown] = useState(PAGE_SIZE);
+	const page = rows.slice(0, shown);
+
 	return (
-		<div className="max-h-[32rem] overflow-auto">
-			<table className="w-full text-left text-xs">
-				<thead className="sticky top-0 bg-[#171226] text-slate-400">
-					<tr>
-						<th className="p-2">Metric</th>
-						<th className="p-2">Method</th>
-						<th className="p-2">Pair</th>
-						<th className="p-2">Result</th>
-					</tr>
-				</thead>
-				<tbody>
-					{rows.map((row, index) => (
-						<tr
-							className="border-white/5 border-b align-top"
-							key={`${row.metric}-${row.method}-${row.pair_id}-${index}`}
-						>
-							<td className="p-2">{row.metric}</td>
-							<td className="p-2">{row.method}</td>
-							<td className="p-2">{row.pair_id}</td>
-							<td className="max-w-xl whitespace-pre-wrap p-2 font-mono text-slate-300">
-								{row.error ?? JSON.stringify(row.result)}
-							</td>
+		<div className="space-y-2">
+			<div className="max-h-[32rem] overflow-auto">
+				<table className="w-full text-left text-xs">
+					<thead className="sticky top-0 bg-[#171226] text-slate-400">
+						<tr>
+							<th className="p-2">Metric</th>
+							<th className="p-2">Method</th>
+							<th className="p-2">Pair</th>
+							<th className="p-2">Result</th>
 						</tr>
-					))}
-				</tbody>
-			</table>
-			{rows.length === 0 ? (
-				<p className="p-3 text-slate-400 text-sm">No judgments written yet.</p>
+					</thead>
+					<tbody>
+						{page.map((row, index) => (
+							<tr
+								className="border-white/5 border-b align-top"
+								key={`${row.metric}-${row.method}-${row.pair_id}-${index}`}
+							>
+								<td className="p-2">{row.metric}</td>
+								<td className="p-2">{row.method}</td>
+								<td className="p-2">{row.pair_id}</td>
+								<td className="max-w-xl whitespace-pre-wrap p-2 font-mono text-slate-300">
+									{row.error ?? JSON.stringify(row.result)}
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+				{rows.length === 0 ? (
+					<p className="p-3 text-slate-400 text-sm">
+						No judgments written yet.
+					</p>
+				) : null}
+			</div>
+			{shown < rows.length ? (
+				<div className="flex items-center gap-3">
+					<button
+						className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-1.5 text-slate-200 text-xs hover:bg-white/[0.08]"
+						onClick={() => setShown((current) => current + PAGE_SIZE)}
+						type="button"
+					>
+						Show {Math.min(PAGE_SIZE, rows.length - shown)} more
+					</button>
+					<p className="text-slate-500 text-xs">
+						Showing {page.length} of {rows.length} judgments.
+					</p>
+				</div>
 			) : null}
 		</div>
 	);
