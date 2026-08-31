@@ -23,16 +23,19 @@ for the authoritative pipeline description; `/method` in this app summarizes it.
 
 | Route | What it shows |
 |-------|---------------|
-| `/method` | **Start here.** Plain-language explanation of the method, the result-file fields, and which page shows what. |
-| `/` | Results explorer — browse every sample JSON by post/artifact id, structured or raw view. |
-| `/stego-process` | Step-by-step visualization of one sample through the sender → carrier → receiver stages. |
-| `/workflows-runs` | Live pipelines (`GET /workflows/runs`) **and** on-disk sample-generation progress per run (done / failed / attempted). |
-| `/dashboard` | Charts and distributions over synced stats. |
-| `/zlg-comparison` | Compare samples against the NAACL'24 ZLG baseline. |
-| `/showcase` | Curated highlight view of selected results. |
-| `/overnight-findings` | Latest overnight metrics summary plus the current research-state/provenance notice. |
-| `/admin-api`, `/double-process-new-post`, `/prep-until-google-quota-then-stego` | Drive the side-wing HTTP API end-to-end with live SSE progress. |
-| `/api-logs`, `/prompt-logs`, `/workflow-llm-prompts` | Inspect API logs, prompt logs, and prompt templates. |
+| `/method` | **Start here.** Plain-language explanation of the method, LUCID, BARB, and which page shows what. |
+| `/` | Results explorer — browse every sample JSON (always in the left sidebar). |
+| `/zlg-comparison` | Our method vs the NAACL'24 ZLG baseline, plus independent LLM-judge results. |
+| `/barb-comparison` | BARB encode flavor vs the balanced control on the same posts. |
+| `/lucid` | Project LUCID: clean-dataset prep, workers, historical 500-run. |
+| `/overnight-findings` | Metrics dashboard — latest-run e2e / ablation / gate / feedback / angle-scan. |
+| `/stego-process` | Step-by-step visualization of one sample through sender → carrier → receiver. |
+| `/workflows-runs` | Live pipelines and on-disk sample-generation progress per run. |
+| `/workflow-llm-prompts` | Workflow LLM prompt templates. |
+
+Benchmarks (double-process, prep-until-quota, repeat-determinism) are CLIs under
+`stego-side-wing/scripts/`, not pages. API and prompt logs:
+`GET /api/agent/logs?source=api|prompt`.
 
 Use **⌘K / Ctrl+K** or the left rail to move between views.
 

@@ -43,7 +43,7 @@ export default async function OvernightFindingsPage() {
 				<div className="mx-auto max-w-7xl space-y-6">
 					<header className="space-y-2">
 						<p className="font-medium text-emerald-300 text-sm uppercase tracking-wider">
-							Overnight Dashboard
+							Metrics dashboard
 						</p>
 						<h1 className="font-bold text-3xl">Current Progress</h1>
 						<p className="text-slate-400 text-sm">
@@ -63,25 +63,39 @@ export default async function OvernightFindingsPage() {
 					<section className="rounded-lg border border-amber-300/30 bg-amber-300/[0.07] p-5">
 						<div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
 							<h2 className="font-semibold text-lg">Current research state</h2>
-							<p className="text-amber-200 text-xs">Verified 2026-08-03</p>
+							<p className="text-amber-200 text-xs">Verified 2026-08-29</p>
 						</div>
 						<p className="mt-2 text-slate-200 text-sm">
-							The active LUCID bulk lane requested <strong>500</strong> samples and is
-							blocked at <strong>381 succeeded / 119 failed (76.2%)</strong>. Those
-							attempts reuse 64 frozen source posts, so they are not 500 independent
-							observations or a completed paired ZLG result.
+							The independent LLM-judge evaluation on the fresh LUCID/ZLG
+							comparison is complete: 244 posts, one unique-cover pair each,
+							2,928 tasks. Open{" "}
+							<a className="text-cyan-300 underline" href="/zlg-comparison">
+								ZLG comparison
+							</a>{" "}
+							for those numbers. It supplements, not replaces, a frozen
+							capacity-matched ITT benchmark.
 						</p>
 						<p className="mt-2 text-slate-400 text-sm">
-							Run: <span className="font-mono">LUCID_context_weighted_v2_balanced_500</span>
-							. It uses schema v3 / <span className="font-mono">context_weighted_v2</span>
-							 artifacts. Its run metadata has no Git SHA or branch and declares a dirty
-							worktree; the nearest pre-run committed base is <span className="font-mono">0353848</span>
-							 on <span className="font-mono">fix/zlg-benchmark-overhaul</span>, which is
-							provenance context—not an exact reproducible code pin.
+							LUCID implementation is frozen. The historical 500-attempt sampler
+							baseline is{" "}
+							<span className="font-mono">
+								LUCID_context_weighted_v2_balanced_500
+							</span>{" "}
+							at <strong>381 / 500</strong> (76.2%) on 64 reused posts — not 500
+							independent observations. The first TangentsDB-v1 bulk run reused
+							a contaminated research cache and is not decision-grade. Live
+							clean prep is on{" "}
+							<a className="text-cyan-300 underline" href="/lucid">
+								LUCID results
+							</a>
+							.
 						</p>
 						<p className="mt-2 text-slate-500 text-xs">
-							The latest recalibrated ZLG lane is 510/554, but it uses an older source
-							summary and must not be compared directly with this LUCID lane.
+							Do not pair unpaired ZLG lanes with either LUCID 500-run. Source:{" "}
+							<span className="font-mono">
+								stego-side-wing/docs/reports/2026-08-08-current-research-state.md
+							</span>
+							.
 						</p>
 					</section>
 

@@ -4,14 +4,19 @@ Guidance for humans and coding agents working in this repository.
 
 ## What this project is
 
-**StegoTest Results Viewer** is a local Next.js application for inspecting JSON artifacts produced by the **stego-side-wing** pipeline (and related metrics). It combines:
+**StegoTest Results Viewer** is a local Next.js application for inspecting JSON
+artifacts produced by the **stego-side-wing** pipeline. It is a *results*
+surface for the two evaluations under active research — the ZLG baseline
+comparison and the independent LLM-judge campaign — plus LUCID/BARB and the
+method explainer. Benchmarks are CLIs in `stego-side-wing/scripts/`. API and
+prompt logs are agent-facing (`GET /api/agent/logs`), not pages.
 
-- File browsing and structured rendering of result JSON (Zod + dedicated React renderers).
-- A **tRPC** backend that reads from the filesystem and a local **SQLite** stats database.
-- Pages that call the **external stego-side-wing HTTP API** (documented in `../stego-side-wing/docs/reference/api-spec.md`) for admin/workflows, including SSE streaming.
-- Optional streaming of API JSONL logs via a Next.js route handler.
+The default README is still partly a T3 template leftover; treat **this file**,
+`docs/revamp-plan.md`, and the code under `src/` as the source of truth.
 
-The default README is still the generic Create T3 App template; treat **this file** and the code under `src/` as the source of truth for behavior.
+**Docket** (`docs/docket/map.md`): wayfinder map for explaining and justifying
+the five LLM-judge criteria (J1–J5) on `/zlg-comparison`. Pick it up when those
+numbers, their copy, or their justifications are in play.
 
 ## Tech stack
 
@@ -42,18 +47,19 @@ pnpm check:write  # biome check --write .
 
 | Path | Role |
 |------|------|
-| `src/app/` | App Router pages and route-specific UI. Shared UI often under `_components/`. |
-| `src/app/admin-api/` | Dashboard for the **external** side-wing API: tabs, tool panels, `fetch-admin-api.ts`, SSE handling, types. |
-| `src/app/api/` | Next.js Route Handlers (e.g. prompt-log SSE proxy). |
-| `src/server/api/` | tRPC setup (`trpc.ts`), `root.ts` router composition, `routers/*.ts` procedures. |
+| `src/app/` | App Router pages. Shared UI under `_components/`. |
+| `src/app/api/agent/logs/` | Agent-facing JSON of side-wing API/prompt logs. |
+| `src/app/api/` | Next.js Route Handlers (tRPC, agent logs, `.md` exports). |
+| `src/server/api/` | tRPC setup (`trpc.ts`), `root.ts` router composition, `routers/*.ts`. |
+| `src/server/artifact-cache.ts` | mtime-keyed read-through cache for benchmark artifacts. |
 | `src/server/db/stats.ts` | SQLite (`stats.db` at repo root) schema and connection. |
-| `src/server/paths.ts` | Resolves which directory holds result JSON (`side-wing`, `local`, or an absolute path). |
-| `src/server/logs/api-log-utils.ts` | Parses side-wing API JSONL lines; defines log file path constant. |
+| `src/server/paths.ts` | Resolves which directory holds result JSON. |
+| `src/server/logs/api-log-utils.ts` | Parses side-wing API JSONL lines. |
 | `src/schemas/` | Zod schemas for result/metric shapes. |
 | `src/app/_components/renderers/` | Visualizations matched to schemas via the registry. |
 | `schemas/registry.ts` | Registers schema → renderer pairs (first matching `safeParse` wins). |
 | `src/trpc/` | Client provider, query client, server helpers. |
-| `../stego-side-wing/docs/reference/api-spec.md` | Authoritative side-wing REST/SSE contract (base URL, envelopes, endpoints). |
+| `../stego-side-wing/docs/reference/api-spec.md` | Authoritative side-wing REST/SSE contract. |
 
 ## Data sources and configuration
 
@@ -84,13 +90,18 @@ Many UI surfaces let the user pick or pass a `pathId`; procedures default to `si
 
 | Route | Purpose |
 |-------|---------|
-| `/` | File list + viewer for JSON under a resolved results path (`FileViewer` and related components). |
-| `/dashboard` | Charts / distribution views over synced stats. |
-| `/admin-api` | Explorer for the external side-wing HTTP API (configurable base URL in UI). |
-| `/api-logs` | View streamed API JSONL log entries (depends on log path / route implementation). |
-| `/prompt-logs` | Prompt log browsing (layout/page under `prompt-logs/`). |
-| `/workflows-runs` | Workflow run listing / monitoring UI. |
-| `/double-process-new-post` | Focused tool page for that workflow. |
+| `/` | Results explorer (persistent left sidebar). No separate nav entry. |
+| `/zlg-comparison` | Our method vs ZLG, plus the independent LLM-judge panel. |
+| `/barb-comparison` | BARB encode flavor vs balanced control. |
+| `/lucid` | Project LUCID clean-prep + historical 500-run. |
+| `/overnight-findings` | Metrics dashboard (latest-run e2e/ablation/gate/feedback/angle-scan). |
+| `/stego-process` | Step-by-step visualization of a saved stego result. |
+| `/method` | Plain-language method walkthrough, including what LUCID and BARB are. |
+| `/workflows-runs` | Live workflow runs in the side-wing API process. |
+| `/workflow-llm-prompts` | Workflow LLM prompt templates (read-only). |
+
+Agent-only (no page): `GET /api/agent/logs?source=api\|prompt`. Repeat-determinism
+benchmark: `stego-side-wing/scripts/run_single_post_twice_no_cache.py --repeats N`.
 
 ## How to extend the codebase safely
 
@@ -100,17 +111,17 @@ Many UI surfaces let the user pick or pass a `pathId`; procedures default to `si
 2. Register the router in `src/server/api/root.ts`.
 3. Call from the client with `api.<router>.<procedure>.useQuery/useMutation` from `~/trpc/react` (types flow from `AppRouter`).
 
-**Note:** `publicProcedure` uses a dev-only timing middleware with artificial delay; keep that in mind when profiling.
-
 ### New JSON result types
 
 1. Define or extend a Zod schema in `src/schemas/`.
 2. Add a renderer component under `src/app/_components/renderers/`.
 3. Register in `src/schemas/registry.ts` — **order matters** (first successful parse wins).
 
-### Admin API / side-wing contract
+### Side-wing HTTP contract
 
-When adding or adjusting calls from `admin-api`, align with `../stego-side-wing/docs/reference/api-spec.md` (envelopes, query params, SSE event types). The UI builds URLs from a user-supplied base (e.g. `http://host:5001/api/v1`).
+When calling the side-wing API from remaining pages (`workflows-runs`, process
+visualizer actions), align with `../stego-side-wing/docs/reference/api-spec.md`.
+Base URL helper: `src/lib/side-wing-api.ts`.
 
 ### SQLite and Node-only code
 

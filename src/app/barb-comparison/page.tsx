@@ -1,3 +1,4 @@
+import { BarbExplainer } from "~/app/_components/research-explainers";
 import { OvernightFindingsShell } from "../overnight-findings/overnight-findings-shell";
 import { SampleBrowser } from "./_components/sample-browser";
 import {
@@ -32,51 +33,13 @@ export default async function BarbComparisonPage() {
 								View as Markdown ↗
 							</a>
 						</div>
-						<p className="max-w-3xl text-slate-400 text-sm leading-relaxed">
-							Bit-bearing Argumentative Reddit Bite — thread-specific carriers
-							with strong emotion and opinion, pointed implication, and
-							anti-platitude wording. Register may be sarcasm, frustration,
-							enthusiasm, skepticism, or another felt reaction —{" "}
-							<span className="text-slate-200">not always sarcastic</span>.
-						</p>
 						<p className="font-mono text-slate-500 text-xs">
 							{data.runDir || "(no run directory)"} · resolved via{" "}
 							{data.resolution}
 						</p>
 					</header>
 
-					<section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-						{[
-							{
-								title: "Thread specificity",
-								body: "Name one concrete entity, event, number, or policy visible in the thread.",
-							},
-							{
-								title: "Strong emotion / opinion",
-								body: "Commit to a felt register that fits the thread — sarcasm optional, bland/neutral forbidden.",
-							},
-							{
-								title: "Pointed argument",
-								body: "One-beat implication, not a soft hedge or conciliatory shrug.",
-							},
-							{
-								title: "Anti-platitude",
-								body: "Reject slogan fillers (“we could all just…”, affectless agreement).",
-							},
-						].map((item) => (
-							<div
-								className="rounded-xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4"
-								key={item.title}
-							>
-								<p className="font-medium text-cyan-200 text-sm">
-									{item.title}
-								</p>
-								<p className="mt-1 text-slate-400 text-xs leading-relaxed">
-									{item.body}
-								</p>
-							</div>
-						))}
-					</section>
+					<BarbExplainer here="barb" />
 
 					{data.empty ? (
 						<section className="space-y-3 rounded-xl border border-amber-400/30 bg-amber-400/10 p-5 text-amber-100 text-sm leading-relaxed">

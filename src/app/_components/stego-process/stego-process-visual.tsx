@@ -106,7 +106,7 @@ interface StegoProcessVisualProps {
 	chartOnly?: boolean;
 }
 
-const stages: Stage[] = [
+const stages: [Stage, ...Stage[]] = [
 	{
 		id: "prep",
 		label: "Prepare Post",
@@ -221,7 +221,7 @@ const stages: Stage[] = [
 	},
 ];
 
-const demoCases: DemoCase[] = [
+const demoCases: [DemoCase, ...DemoCase[]] = [
 	{
 		id: "meetup",
 		label: "Meetup payload",
@@ -370,10 +370,14 @@ function pickArtifactModel(
 		};
 	}
 
-	const item = first as Record<string, unknown>;
-	const senderAudit = asRecord(item.sender_audit);
+	const item = asRecord(first);
 	const embedding = asRecord(item.embedding);
-	const compression = asRecord(embedding.compression);
+	const senderAudit = asRecord(
+		embedding.senderAudit ?? item.senderAudit ?? item.sender_audit,
+	);
+	const compression = asRecord(
+		embedding.compression ?? senderAudit.compression,
+	);
 	const commentEmbedding = asRecord(embedding.commentEmbedding);
 	const angleEmbedding = asRecord(embedding.angleEmbedding);
 	const post = asRecord(item.post);
@@ -420,19 +424,27 @@ function pickArtifactModel(
 	});
 
 	const commentBits =
-		asString(commentEmbedding.bitsUsed) ?? fallback.commentBits;
-	const angleBits = asString(angleEmbedding.bitsUsed) ?? fallback.angleBits;
+		asString(commentEmbedding.bitsUsed) ??
+		asString(embedding.commentBits) ??
+		fallback.commentBits;
+	const angleBits =
+		asString(angleEmbedding.bitsUsed) ??
+		asString(embedding.angleBits) ??
+		fallback.angleBits;
 	const compressed =
 		asString(compression.compressed) ??
+		asString(getNested(senderAudit, ["compression", "compressed"])) ??
 		asString(embedding.fullEncodedBits) ??
 		`${commentBits}${angleBits}${fallback.compressed.slice(commentBits.length + angleBits.length)}`;
 	const selectedIndex =
 		asNumber(selectedAngle.idx) ??
 		asNumber(angleEmbedding.selectedAngleIndex) ??
+		asNumber(senderAudit.selected_angle_index) ??
 		fallback.selectedAngleIndex;
 	const payloadTransform =
 		asString(senderAudit.payload_transform) ??
 		asString(getNested(senderAudit, ["encoding", "payload_transform"])) ??
+		asString(embedding.payloadTransform) ??
 		null;
 	const protectedPayload =
 		asString(senderAudit.embedded_payload) ??
@@ -830,12 +842,10 @@ const FLOW_NODE_HEIGHT = 78;
 
 function edgePath(from: FlowNode, to: FlowNode, route: FlowEdge["route"]) {
 	const fromRight = from.x + FLOW_NODE_WIDTH;
-	const fromLeft = from.x;
 	const fromMidX = from.x + FLOW_NODE_WIDTH / 2;
 	const fromMidY = from.y + FLOW_NODE_HEIGHT / 2;
 	const fromBottom = from.y + FLOW_NODE_HEIGHT;
 	const toLeft = to.x;
-	const toRight = to.x + FLOW_NODE_WIDTH;
 	const toMidX = to.x + FLOW_NODE_WIDTH / 2;
 	const toMidY = to.y + FLOW_NODE_HEIGHT / 2;
 	const toTop = to.y;
@@ -938,7 +948,7 @@ export function StegoProcessVisual({
 	filename,
 	chartOnly = false,
 }: StegoProcessVisualProps) {
-	const [demoId, setDemoId] = useState(demoCases[0]?.id ?? "meetup");
+	const [demoId, setDemoId] = useState(demoCases[0].id);
 	const [activeIndex, setActiveIndex] = useState(0);
 	const [hoveredFlowNode, setHoveredFlowNode] = useState<string | null>(null);
 	const [failures, setFailures] = useState<Record<FailureKey, boolean>>({
@@ -953,7 +963,7 @@ export function StegoProcessVisual({
 		[data, filename],
 	);
 	const demoModel =
-		demoCases.find((item) => item.id === demoId) ?? demoCases[0]!;
+		demoCases.find((item) => item.id === demoId) ?? demoCases[0];
 	const model: ProcessModel = data
 		? artifactModel
 		: {
@@ -966,7 +976,7 @@ export function StegoProcessVisual({
 				rawPayloadAvailable: true,
 				payloadTransform: "plain",
 			};
-	const activeStage = stages[activeIndex] ?? stages[0]!;
+	const activeStage = stages[activeIndex] ?? stages[0];
 	const blockedCount = Object.values(failures).filter(Boolean).length;
 	const bitParts = splitBits(model);
 	const flowNodes = buildFlowNodes(model, failures);

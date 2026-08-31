@@ -2,16 +2,22 @@ import {
 	ArrowRight,
 	Binary,
 	FileText,
+	Flame,
+	FlaskConical,
+	Gauge,
 	KeyRound,
 	LayoutDashboard,
 	MessagesSquare,
 	RadioTower,
-	Search,
-	ShieldCheck,
-	Sparkles,
+	Scale,
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import {
+	BarbExplainer,
+	LucidExplainer,
+	MethodMap,
+} from "~/app/_components/research-explainers";
 
 /**
  * Static explainer for the zero-shot generative linguistic steganography
@@ -25,6 +31,11 @@ export function MethodContent() {
 				<Hero />
 				<CoreIdea />
 				<PipelineStages />
+				<Section icon={Scale} id="map" title="LUCID, BARB, and ZLG">
+					<MethodMap />
+				</Section>
+				<LucidTrack />
+				<BarbFlavor />
 				<ArtifactAnatomy />
 				<WhereToLook />
 				<Glossary />
@@ -251,6 +262,22 @@ function PipelineStages() {
 	);
 }
 
+function LucidTrack() {
+	return (
+		<Section icon={FlaskConical} id="lucid" title="What LUCID is">
+			<LucidExplainer />
+		</Section>
+	);
+}
+
+function BarbFlavor() {
+	return (
+		<Section icon={Flame} id="barb" title="What BARB is">
+			<BarbExplainer />
+		</Section>
+	);
+}
+
 function ArtifactAnatomy() {
 	return (
 		<Section icon={FileText} id="artifact" title="What's inside a result file">
@@ -280,6 +307,10 @@ function ArtifactAnatomy() {
 					field="embedding.totalBitsEmbedded"
 				/>
 				<FieldRow
+					desc="Sender audit nested on the embedding: dictionary hashes, selected angle index, payload transform, compressed bits. The receiver uses this to detect context drift."
+					field="embedding.senderAudit"
+				/>
+				<FieldRow
 					desc="The full source post: title, selftext, comment tree, search results, and generated angles."
 					field="post"
 				/>
@@ -295,10 +326,28 @@ const PAGE_MAP: {
 	desc: string;
 }[] = [
 	{
-		href: "/",
-		icon: Search,
-		label: "Results explorer",
-		desc: "Browse every sample JSON by post/artifact id and render it with a structured view.",
+		href: "/zlg-comparison",
+		icon: Scale,
+		label: "ZLG comparison",
+		desc: "Our method vs the NAACL'24 ZLG baseline, plus the independent LLM-judge panel.",
+	},
+	{
+		href: "/barb-comparison",
+		icon: Flame,
+		label: "BARB comparison",
+		desc: "BARB encode flavor vs the balanced control on the same posts.",
+	},
+	{
+		href: "/lucid",
+		icon: FlaskConical,
+		label: "LUCID results",
+		desc: "Clean-dataset prep, workers, and the historical 500-attempt evaluation.",
+	},
+	{
+		href: "/overnight-findings",
+		icon: Gauge,
+		label: "Metrics dashboard",
+		desc: "Latest-run e2e / ablation / gate / feedback / angle-scan totals. Same page as overnight findings.",
 	},
 	{
 		href: "/stego-process",
@@ -309,20 +358,8 @@ const PAGE_MAP: {
 	{
 		href: "/workflows-runs",
 		icon: LayoutDashboard,
-		label: "Workflow runs & progress",
+		label: "Workflow runs",
 		desc: "Live pipelines plus per-run sample generation progress (done / failed / attempted).",
-	},
-	{
-		href: "/dashboard",
-		icon: Sparkles,
-		label: "Metrics dashboard",
-		desc: "Distributions and quality metrics aggregated across synced samples.",
-	},
-	{
-		href: "/zlg-comparison",
-		icon: ShieldCheck,
-		label: "ZLG comparison",
-		desc: "Compare these samples against the NAACL'24 zero-shot GLS baseline.",
 	},
 ];
 
@@ -385,7 +422,15 @@ const TERMS: { term: string; def: string }[] = [
 	},
 	{
 		term: "Sender audit",
-		def: "Recorded hashes, the exact compressed bitstring, and settings that let the receiver detect context drift and recover reliably.",
+		def: "Recorded hashes, the exact compressed bitstring, and settings nested at embedding.senderAudit so the receiver can detect context drift and recover.",
+	},
+	{
+		term: "LUCID",
+		def: "The tangent-generation track: thread-grounded intents (TangentsDB) feeding the angle sampler. Not a second codec. Dashboard: /lucid.",
+	},
+	{
+		term: "BARB",
+		def: "Bit-bearing Argumentative Reddit Bite — an encode flavor of our method (pointed, thread-specific replies) compared against the balanced control. Not ZLG.",
 	},
 ];
 

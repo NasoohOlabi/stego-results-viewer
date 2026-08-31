@@ -1,8 +1,17 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Metadata } from "next";
+import { LucidExplainer } from "~/app/_components/research-explainers";
+import {
+	deriveFromDirectories,
+	deriveFromFile,
+	mapWithConcurrency,
+} from "~/server/artifact-cache";
 import { FreshDatasetSection } from "./_components/fresh-dataset-section";
 import { loadFreshDataset } from "./_lib/fresh-dataset";
+
+/** Open file handles to keep in flight while scanning failure artifacts. */
+const SCAN_CONCURRENCY = 32;
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +76,33 @@ async function readJson<T>(path: string): Promise<T | null> {
 	}
 }
 
+/**
+ * Narrow the run summary to what this page renders.
+ *
+ * `summary.json` is 4.9 MB, 2.7 MB of which is `profile_summaries` — per-sample
+ * detail the page never shows. Parsing it whole put every byte in reach of the
+ * RSC payload; keeping the seven fields below costs under a kilobyte.
+ */
+function projectLucidSummary(text: string): LucidSummary | null {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(text);
+	} catch {
+		return null;
+	}
+	if (typeof parsed !== "object" || parsed === null) return null;
+	const full = parsed as LucidSummary;
+	return {
+		run_id: full.run_id,
+		created_at_utc: full.created_at_utc,
+		total_requested_samples: full.total_requested_samples,
+		total_succeeded_samples: full.total_succeeded_samples,
+		total_failed_samples: full.total_failed_samples,
+		unique_selected_post_ids: full.unique_selected_post_ids,
+		source: full.source,
+	};
+}
+
 function emptyTaxonomy(): TaxonomyCounts {
 	return {
 		no_decode: 0,
@@ -104,7 +140,7 @@ function kindFromReasons(reasons: unknown): keyof TaxonomyCounts {
 	return "quality_gate_violation";
 }
 
-async function aggregateFailureTaxonomy(): Promise<{
+async function scanFailureTaxonomy(): Promise<{
 	codes: Record<string, number>;
 	taxonomy: TaxonomyCounts;
 	failuresScanned: number;
@@ -113,12 +149,13 @@ async function aggregateFailureTaxonomy(): Promise<{
 	const taxonomy = emptyTaxonomy();
 	let failuresScanned = 0;
 	try {
-		const names = await readdir(LUCID_FAILURES_DIR);
-		for (const name of names) {
-			if (!name.endsWith(".json")) continue;
-			const raw = await readJson<Record<string, unknown>>(
-				join(LUCID_FAILURES_DIR, name),
-			);
+		const names = (await readdir(LUCID_FAILURES_DIR)).filter((name) =>
+			name.endsWith(".json"),
+		);
+		const raws = await mapWithConcurrency(names, SCAN_CONCURRENCY, (name) =>
+			readJson<Record<string, unknown>>(join(LUCID_FAILURES_DIR, name)),
+		);
+		for (const raw of raws) {
 			if (!raw) continue;
 			failuresScanned += 1;
 			const code = String(raw.failure_code ?? "unknown");
@@ -161,9 +198,32 @@ function formatPercent(numerator: number, denominator: number): string {
 
 export default async function LucidResultsPage() {
 	const [summary, progress, failureAgg, freshDataset] = await Promise.all([
-		readJson<LucidSummary>(LUCID_SUMMARY_PATH),
-		readJson<LucidProgress>(LUCID_PROGRESS_PATH),
-		aggregateFailureTaxonomy(),
+		deriveFromFile<LucidSummary | null>({
+			path: LUCID_SUMMARY_PATH,
+			as: "lucid-run-summary",
+			fallback: null,
+			derive: projectLucidSummary,
+		}),
+		deriveFromFile<LucidProgress | null>({
+			path: LUCID_PROGRESS_PATH,
+			as: "lucid-run-progress",
+			fallback: null,
+			derive: (text) => {
+				try {
+					const parsed: unknown = JSON.parse(text);
+					return typeof parsed === "object" && parsed !== null
+						? (parsed as LucidProgress)
+						: null;
+				} catch {
+					return null;
+				}
+			},
+		}),
+		deriveFromDirectories({
+			as: "lucid-failure-taxonomy",
+			dirs: [LUCID_FAILURES_DIR],
+			derive: scanFailureTaxonomy,
+		}),
 		loadFreshDataset(),
 	]);
 
@@ -171,6 +231,7 @@ export default async function LucidResultsPage() {
 		return (
 			<main className="mx-auto max-w-6xl space-y-6 p-8 text-white">
 				<h1 className="font-bold text-3xl">LUCID results</h1>
+				<LucidExplainer here="lucid" />
 				{freshDataset && <FreshDatasetSection data={freshDataset} />}
 				<p className="mt-4 text-white/60">
 					The historical LUCID run summary has not been written yet.
@@ -202,6 +263,8 @@ export default async function LucidResultsPage() {
 					the historical 500-attempt evaluation.
 				</p>
 			</header>
+
+			<LucidExplainer here="lucid" />
 
 			{freshDataset && <FreshDatasetSection data={freshDataset} />}
 

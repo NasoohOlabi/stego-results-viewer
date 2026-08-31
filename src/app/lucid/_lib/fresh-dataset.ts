@@ -1,5 +1,15 @@
 import { open, readdir, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
+import {
+	deriveFromDirectories,
+	mapWithConcurrency,
+} from "~/server/artifact-cache";
+
+/** Open file handles to keep in flight while scanning the corpus. */
+const SCAN_CONCURRENCY = 32;
+
+/** Newest angle artifacts rendered as sample cards. */
+const SAMPLE_COUNT = 12;
 
 const FRESH_ROOT = join(
 	process.cwd(),
@@ -307,7 +317,7 @@ function compactSample(
 	};
 }
 
-export async function loadFreshDataset(): Promise<FreshDataset | null> {
+async function scanFreshDataset(): Promise<FreshDataset | null> {
 	const fetchedDir = join(FRESH_ROOT, "news_url_fetched");
 	const researchedDir = join(FRESH_ROOT, "news_researched");
 	const anglesDir = join(FRESH_ROOT, "news_angles");
@@ -336,24 +346,26 @@ export async function loadFreshDataset(): Promise<FreshDataset | null> {
 		return null;
 	}
 
-	let emptyResearch = 0;
-	for (const name of researchedNames) {
-		if (await hasEmptyTrailingSearchResults(join(researchedDir, name))) {
-			emptyResearch += 1;
-		}
-	}
+	// One await per file in series over ~950 files was the page's dominant
+	// cost; a bounded pool keeps the same tail reads but overlaps them.
+	const researchFlags = await mapWithConcurrency(
+		researchedNames,
+		SCAN_CONCURRENCY,
+		(name) => hasEmptyTrailingSearchResults(join(researchedDir, name)),
+	);
+	const emptyResearch = researchFlags.filter(Boolean).length;
 
 	const angleFiles = (
-		await Promise.all(
-			angleNames.map(async (name) => ({
-				name,
-				path: join(anglesDir, name),
-				info: await stat(join(anglesDir, name)).catch(() => null),
-			})),
-		)
+		await mapWithConcurrency(angleNames, SCAN_CONCURRENCY, async (name) => ({
+			name,
+			path: join(anglesDir, name),
+			info: await stat(join(anglesDir, name)).catch(() => null),
+		}))
 	).sort((a, b) => (b.info?.mtimeMs ?? 0) - (a.info?.mtimeMs ?? 0));
-	const angleCounts = await Promise.all(
-		angleFiles.map((file) => readAngleCount(file.path)),
+	const angleCounts = await mapWithConcurrency(
+		angleFiles,
+		SCAN_CONCURRENCY,
+		(file) => readAngleCount(file.path),
 	);
 	const angleDistribution: Record<string, number> = {};
 	let invalidAngleJson = 0;
@@ -368,7 +380,7 @@ export async function loadFreshDataset(): Promise<FreshDataset | null> {
 
 	const compactSamples = (
 		await Promise.all(
-			angleFiles.slice(0, 12).map(async (file) => {
+			angleFiles.slice(0, SAMPLE_COUNT).map(async (file) => {
 				const data = await readJson<SampleFile>(file.path);
 				return data
 					? compactSample(file.name, file.info?.mtime.toISOString() ?? "", data)
@@ -399,4 +411,23 @@ export async function loadFreshDataset(): Promise<FreshDataset | null> {
 		samples: compactSamples,
 		evaluation,
 	};
+}
+
+/**
+ * Cached entry point. The corpus grows by whole files as the prep campaign
+ * runs, so a directory stamp is enough to notice new work while a page reload
+ * between batches costs nothing.
+ */
+export function loadFreshDataset(): Promise<FreshDataset | null> {
+	return deriveFromDirectories({
+		as: "lucid-fresh-dataset",
+		dirs: [
+			join(FRESH_ROOT, "news_url_fetched"),
+			join(FRESH_ROOT, "news_researched"),
+			join(FRESH_ROOT, "news_angles"),
+			join(FRESH_ROOT, "output-results"),
+			join(FRESH_ROOT, "service"),
+		],
+		derive: scanFreshDataset,
+	});
 }
