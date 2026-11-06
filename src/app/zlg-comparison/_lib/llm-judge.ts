@@ -5,6 +5,7 @@
  */
 
 export type Judgment = {
+	task_id?: string;
 	metric?: string;
 	method?: string;
 	post_id?: string;
@@ -22,6 +23,9 @@ export type JudgeProgress = {
 	pending?: number;
 	errors?: number;
 	complete?: boolean;
+	valid_completed?: number;
+	failed_tasks?: number;
+	verified_pending?: number;
 };
 
 export function value(value: unknown): string {

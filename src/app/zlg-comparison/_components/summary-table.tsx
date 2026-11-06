@@ -6,7 +6,7 @@ export type SummaryTableRow = {
 	ours: string;
 	zlg: string;
 	winner: "ours" | "zlg" | "tie" | "n/a";
-	direction?: "lower" | "higher";
+	direction?: "lower" | "higher" | "descriptive";
 	detail?: string;
 	caveat?: string;
 	secondary?: string;
@@ -54,11 +54,13 @@ export function SummaryTable({ rows }: { rows: SummaryTableRow[] }) {
 									<span className="ml-1.5 text-[10px] text-slate-500">
 										{row.direction === "lower"
 											? "↓ lower is better"
-											: "↑ higher is better"}
+											: row.direction === "higher"
+												? "↑ higher is better"
+												: "descriptive, no preferred direction"}
 									</span>
 								) : null}
 								{row.caveat ? (
-									<p className="mt-1 max-w-md text-[11px] text-slate-500 leading-snug font-normal normal-case tracking-normal">
+									<p className="mt-1 max-w-md font-normal text-[11px] text-slate-500 normal-case leading-snug tracking-normal">
 										{row.caveat}
 									</p>
 								) : null}
@@ -85,8 +87,7 @@ export function SummaryTable({ rows }: { rows: SummaryTableRow[] }) {
 								<WinnerBadge winner={row.winner} />
 							</td>
 							<td className="py-2 pr-4 text-slate-500 text-xs">
-								{[row.detail, row.secondary].filter(Boolean).join(" · ") ||
-									"—"}
+								{[row.detail, row.secondary].filter(Boolean).join(" · ") || "—"}
 							</td>
 						</tr>
 					))}

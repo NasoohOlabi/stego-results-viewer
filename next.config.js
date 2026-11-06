@@ -5,6 +5,14 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+	// Dev tunnels (Cloudflare quick tunnel / ngrok) send a public Host header.
+	allowedDevOrigins: [
+		"*.trycloudflare.com",
+		"*.ngrok-free.app",
+		"*.ngrok.io",
+		"*.ngrok.app",
+	],
+};
 
 export default config;

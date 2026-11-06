@@ -1,6 +1,7 @@
 import {
 	FAILURE_STAGE_LABELS,
 	loadZlgComparisonData,
+	type MetricTableData,
 	RUN_DIR,
 } from "../zlg-comparison/_lib/data";
 import { fmtNum, fmtPct } from "../zlg-comparison/_lib/format";
@@ -23,6 +24,16 @@ import {
 export const dynamic = "force-dynamic";
 
 const DEFAULT_SAMPLE_LIMIT = 25;
+
+function hasMetricComparison(rows: MetricTableData[], label: string): boolean {
+	return rows.some(
+		(row) =>
+			row.label === label &&
+			row.ours !== null &&
+			row.zlg !== null &&
+			row.pValue !== null,
+	);
+}
 
 function mdTable(headers: string[], rows: string[][]): string {
 	const escapeCell = (cell: string) =>
@@ -70,14 +81,25 @@ export async function GET(request: Request) {
 		);
 	}
 	push();
-	const judgeTasks = data.codexJudgeProgress.reduce(
+	const expectedJudgeTasks = data.codexJudgeProgress.reduce(
 		(total, item) => total + (item.total_tasks ?? 0),
 		0,
 	);
-	const judgeErrors = data.codexJudgeProgress.reduce(
-		(total, item) => total + (item.errors ?? 0),
+	const completedJudgeTasks = data.codexJudgeProgress.reduce(
+		(total, item) => total + (item.valid_completed ?? 0),
 		0,
 	);
+	const failedJudgeTasks = data.codexJudgeProgress.reduce(
+		(total, item) => total + (item.failed_tasks ?? 0),
+		0,
+	);
+	const pendingJudgeTasks = data.codexJudgeProgress.reduce(
+		(total, item) => total + (item.verified_pending ?? 0),
+		0,
+	);
+	const unknownJudgeManifests = data.codexJudgeProgress.filter(
+		(item) => item.total_tasks === undefined,
+	).length;
 	const uniqueOurTexts = new Set(data.samples.map((sample) => sample.ourText))
 		.size;
 	const uniqueZlgTexts = new Set(data.samples.map((sample) => sample.zlgText))
@@ -92,7 +114,7 @@ export async function GET(request: Request) {
 			`- **${uniqueOurTexts} + ${uniqueZlgTexts}** unique generated texts (ours + ZLG)`,
 		);
 		push(
-			`- **${judgeTasks}/${judgeTasks}** valid judge tasks; **${judgeErrors}** errors`,
+			`- **${completedJudgeTasks}/${expectedJudgeTasks || "?"}** valid judge tasks; **${failedJudgeTasks}** failed; **${pendingJudgeTasks}** pending; **${unknownJudgeManifests}** task manifests unavailable`,
 		);
 		if (data.judgeSubset) {
 			push(
@@ -131,7 +153,7 @@ export async function GET(request: Request) {
 		push("## The tradeoff, in one paragraph");
 		push();
 		push(
-			`Capacity figures for the two methods aren't directly comparable (see the note above), so the more meaningful efficiency read is bits per word: ZLG packs more payload per word of generated text (${fmtNum(data.bpwZlgAllMean, 3)} vs ${fmtNum(data.bpwOursAllMean, 3)} bits/word), which is the efficiency metric the baseline paper itself reports. Counting ZLG's own failures as zero gives ${fmtNum(data.reliability?.effective_payload_bits_per_attempt, 1)} payload bits per attempt across ${data.shownAttempts} trials that reached the server (${fmtPct(data.shownAcceptance)} acceptance rate${data.shownSkipped > 0 ? `; a further ${data.shownSkipped} rows never reached it and are excluded` : ""}). ZLG scores lower on GPT-2 perplexity, a fluency proxy that does not measure reader-facing naturalness or human authorship; KL/JSD topical-fit proxies show no statistically clear difference (see below). Our method produces longer text (${fmtNum(data.ourBlock?.word_count_mean, 1)} vs ${fmtNum(data.zlgBlock?.word_count_mean, 1)} words) with a slightly higher lexical-quality index — largely the same lexical-diversity signal as the repetition-ratio row below, not an independent finding.`,
+			`The frozen comparison summary for ${data.metricsRunDir.split(/[\\/]/).at(-1)} reports ${fmtNum(data.reliability?.accepted, 0)} accepted outputs from ${data.shownAttempts} server attempts (${fmtPct(data.shownAcceptance)} acceptance rate, with harness skips excluded). Its paired metric summaries cover ${fmtNum((data.rowLevel.paired_n ?? 0) / 2, 0)} pairs from ${fmtNum(data.paired.paired_n, 0)} distinct posts. Counting ZLG's own failures as zero gives ${fmtNum(data.reliability?.effective_payload_bits_per_attempt, 1)} payload bits per attempt in that frozen summary. The legacy bits-per-word proxy is shown for context (${fmtNum(data.bpwZlgAllMean, 3)} vs ${fmtNum(data.bpwOursAllMean, 3)} bits/word). It does not establish a comparable efficiency winner: the payload definitions and recovery evidence differ. GPT-2 perplexity ${hasMetricComparison(data.metricRows, "Fluency proxy: GPT-2 perplexity") ? "was measured; see the paired comparison below" : "was not scored in this dataset"}; KL/JSD topical-fit proxies ${["Topical-fit proxy: KL vs matched post", "Topical-fit proxy: JSD vs matched post"].every((label) => hasMetricComparison(data.metricRows, label)) ? "were measured; see their paired comparisons below" : "were not scored in this dataset"}. Perplexity is a model-predictability proxy, not reader-facing naturalness or human authorship. Our method produces longer text (${fmtNum(data.ourBlock?.word_count_mean, 1)} vs ${fmtNum(data.zlgBlock?.word_count_mean, 1)} words) with a slightly higher lexical-quality index — largely the same lexical-diversity signal as the repetition-ratio row below, not an independent finding.`,
 		);
 		push();
 	}
@@ -141,22 +163,26 @@ export async function GET(request: Request) {
 		push("## Top-line stats");
 		push();
 		push(
+			`Expanded generation log from ${data.metricsRunDir.split(/[\\/]/).at(-1)} results.jsonl: ${data.rows.length} rows, ${data.acceptedRows.length} accepted, and ${data.attemptedRows.length} requests that reached ZLG (${fmtPct(data.localAcceptanceRate)} accepted per request). ${data.skippedRows.length} harness skips are excluded from that denominator. These counts are separate from the frozen summary above. ${data.expandedLogProvenance?.status === "matches" ? `Immutable content identity ${data.expandedLogProvenance.recordedSha256?.slice(0, 12)} matches this file (${data.expandedLogProvenance.objectLineCount ?? "n/a"} object lines). It does not relabel historical recovery.` : data.expandedLogProvenance?.status === "mismatch" ? "The expanded-log manifest does not match the current results.jsonl." : "No immutable manifest is recorded for this expanded log."}`,
+		);
+		push();
+		push(
 			mdTable(
 				["Stat", "Value"],
 				[
-					["Rows Parsed", String(data.rows.length)],
+					["Expanded log rows", String(data.rows.length)],
 					[
 						"ZLG Attempts",
 						`${data.attemptedRows.length}${data.skippedRows.length > 0 ? ` (${data.skippedRows.length} skipped before any request)` : ""}`,
 					],
-					["Accepted", String(data.acceptedRows.length)],
+					["Expanded log accepted", String(data.acceptedRows.length)],
 					[
 						"Failed (of attempts)",
 						String(data.failedRows.length - data.skippedRows.length),
 					],
 					[
 						"Paired Observations",
-						`${data.rowLevel.paired_n ?? data.pairedRows.length / 2} (${data.paired.paired_n ?? "n/a"} independent post clusters)`,
+						`${(data.rowLevel.paired_n ?? data.pairedRows.length) / 2} pairs (${data.paired.paired_n ?? "n/a"} distinct posts)`,
 					],
 				],
 			),
@@ -167,11 +193,14 @@ export async function GET(request: Request) {
 	// ---- metric summary table ----
 	if (data.metricRows.length > 0) {
 		push(
-			`## Efficiency & distributional proxies (${data.rowLevel.paired_n ?? data.pairedRows.length / 2} paired observations)`,
+			`## Efficiency & distributional proxies (${(data.rowLevel.paired_n ?? data.pairedRows.length) / 2} pairs)`,
 		);
 		push();
 		push(
-			`Perplexity is a model-predictability/fluency proxy; KL and JSD are word-distribution topical-fit proxies. None is a reader-facing measure of naturalness or human authorship. Values use all paired observations; p-values remain Holm-adjusted and clustered by the ${data.paired.paired_n ?? "n/a"} unique posts.`,
+			`This frozen summary covers ${fmtNum((data.rowLevel.paired_n ?? 0) / 2, 0)} pairs from ${fmtNum(data.paired.paired_n, 0)} distinct posts. Perplexity is a model-predictability/fluency proxy; KL and JSD are word-distribution topical-fit proxies. None is a reader-facing measure of naturalness or human authorship. Values use all paired observations; p-values remain Holm-adjusted and clustered by those ${data.paired.paired_n ?? "n/a"} distinct posts.`,
+		);
+		push(
+			"Table values are row means, with each comment weighted equally. The self-consistency row also shows post means. Paired p-values use post-clustered inference.",
 		);
 		push();
 		push(
@@ -179,7 +208,7 @@ export async function GET(request: Request) {
 				["Metric", "Our Method", "ZLG Baseline", "Winner", "Detail"],
 				data.summaryRows.map((row) => [
 					row.direction
-						? `${row.label} (${row.direction === "lower" ? "↓ lower is better" : "↑ higher is better"})`
+						? `${row.label} (${row.direction === "lower" ? "↓ lower is better" : row.direction === "higher" ? "↑ higher is better" : "descriptive, no preferred direction"})`
 						: row.label,
 					row.ours,
 					row.zlg,
@@ -279,7 +308,7 @@ export async function GET(request: Request) {
 		(item) => !item.error && item.result,
 	).length;
 	const completedTasks = data.codexJudgeProgress.reduce(
-		(total, item) => total + (item.completed ?? 0),
+		(total, item) => total + (item.valid_completed ?? 0),
 		0,
 	);
 	const totalTasks = data.codexJudgeProgress.reduce(
@@ -289,7 +318,7 @@ export async function GET(request: Request) {
 	push("## LLM Judge");
 	push();
 	push(
-		`Full-run cache: ${completed} valid rows loaded (${completedTasks}/${totalTasks || "?"} tasks complete).`,
+		`Full-run cache: ${completed} valid rows loaded (${completedTasks}/${totalTasks || "?"} unique tasks valid; ${failedJudgeTasks} failed, ${pendingJudgeTasks} pending).`,
 	);
 	if (data.codexPilotAudit) {
 		push(

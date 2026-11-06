@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 
 /**
@@ -65,6 +66,24 @@ export async function deriveFromFile<T>(options: {
 	}
 
 	const value = derive(await readFile(path, "utf-8"));
+	cache.set(key, { stamp, value });
+	return value;
+}
+
+/** SHA-256 of the file bytes, cached until size or mtime changes. */
+export async function readSha256Cached(
+	filePath: string,
+): Promise<string | null> {
+	const stamp = await fileStamp(filePath);
+	if (stamp === null) return null;
+	const key = `sha256::${filePath}`;
+	const hit = cache.get(key);
+	if (hit?.stamp === stamp) {
+		return hit.value as string;
+	}
+	const value = createHash("sha256")
+		.update(await readFile(filePath))
+		.digest("hex");
 	cache.set(key, { stamp, value });
 	return value;
 }

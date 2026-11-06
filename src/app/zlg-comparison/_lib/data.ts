@@ -1,5 +1,9 @@
 import path from "node:path";
-import { readJsonCached, readJsonlCached } from "~/server/artifact-cache";
+import {
+	readJsonCached,
+	readJsonlCached,
+	readSha256Cached,
+} from "~/server/artifact-cache";
 import { SIDE_WING_REPO_PATH } from "~/server/paths";
 import type { SampleCard } from "../_components/sample-browser";
 import type { SummaryTableRow } from "../_components/summary-table";
@@ -84,6 +88,7 @@ export type MetricTableData = {
 	zlg: number | null;
 	unit?: string;
 	lowerIsBetter?: boolean;
+	direction?: "higher" | "lower" | "descriptive";
 	winner: "ours" | "zlg" | "tie" | "n/a";
 	pValue: number | null;
 	winnerCount?: string;
@@ -280,6 +285,7 @@ function projectJudgment(row: Record<string, unknown>): Judgment {
 	const str = (key: string) =>
 		typeof row[key] === "string" ? (row[key] as string) : undefined;
 	return {
+		task_id: str("task_id"),
 		metric: str("metric"),
 		method: str("method"),
 		post_id: str("post_id"),
@@ -412,6 +418,46 @@ export const FAILURE_STAGE_LABELS: Record<FailureStage, string> = {
 	unknown: "unclassified",
 };
 
+export type ExpandedLogProvenance = {
+	status: "matches" | "mismatch" | "absent";
+	sha256: string | null;
+	recordedSha256: string | null;
+	recordedByteLength: number | null;
+	objectLineCount: number | null;
+	sourceFile: string | null;
+};
+
+async function loadExpandedLogProvenance(
+	resultsPath: string | null,
+): Promise<ExpandedLogProvenance | null> {
+	if (!resultsPath) return null;
+	const manifest = await readJson(
+		path.join(path.dirname(resultsPath), "expanded_log_manifest.json"),
+	);
+	const actualHash = await readSha256Cached(resultsPath);
+	const recordedSha256 =
+		typeof manifest?.sha256 === "string" ? manifest.sha256 : null;
+	const recordedByteLength =
+		typeof manifest?.byte_length === "number" ? manifest.byte_length : null;
+	const objectLineCount =
+		typeof manifest?.object_line_count === "number"
+			? manifest.object_line_count
+			: null;
+	const status: ExpandedLogProvenance["status"] = recordedSha256
+		? recordedSha256 === actualHash
+			? "matches"
+			: "mismatch"
+		: "absent";
+	return {
+		status,
+		sha256: actualHash,
+		recordedSha256,
+		recordedByteLength,
+		objectLineCount,
+		sourceFile: path.basename(resultsPath),
+	};
+}
+
 export async function loadZlgComparisonData() {
 	const parentDir = parentComparisonRunDir(RUN_DIR);
 	const localMetrics = await readJson(
@@ -437,21 +483,24 @@ export async function loadZlgComparisonData() {
 		(metricsRunDir === RUN_DIR
 			? null
 			: await readJson(path.join(metricsRunDir, "summary.json")));
+	const localResultsPath = path.join(RUN_DIR, "results.jsonl");
 	const localRows = await readJsonlCached(
-		path.join(RUN_DIR, "results.jsonl"),
+		localResultsPath,
 		"result",
 		projectResultRow,
 	);
-	const rows =
+	const resultsJsonlPath =
 		localRows.length > 0
-			? localRows
+			? localResultsPath
 			: metricsRunDir === RUN_DIR
-				? localRows
-				: await readJsonlCached(
-						path.join(metricsRunDir, "results.jsonl"),
-						"result",
-						projectResultRow,
-					);
+				? null
+				: path.join(metricsRunDir, "results.jsonl");
+	const rows =
+		resultsJsonlPath === null || resultsJsonlPath === localResultsPath
+			? localRows
+			: await readJsonlCached(resultsJsonlPath, "result", projectResultRow);
+	const expandedLogProvenance =
+		await loadExpandedLogProvenance(resultsJsonlPath);
 	const acceptedRows = rows.filter((r) => Boolean(r.accepted));
 	const failedRows = rows.filter((r) => !r.accepted);
 	// Rows where our own cover-sentence extraction gave up never reached the
@@ -533,16 +582,73 @@ export async function loadZlgComparisonData() {
 			),
 		)
 	).flat();
-	const codexJudgeProgress: JudgeProgress[] = (
-		await Promise.all(
-			JUDGE_METRICS.map(
-				(metric) =>
-					readJson(
-						path.join(CODEX_JUDGMENTS_DIR, `${metric}_progress.json`),
-					) as Promise<JudgeProgress | null>,
+	const rawJudgeProgress: JudgeProgress[] = await Promise.all(
+		JUDGE_METRICS.map((metric) =>
+			readJson(path.join(CODEX_JUDGMENTS_DIR, `${metric}_progress.json`)).then(
+				(item) => (item as JudgeProgress | null) ?? { metric },
 			),
-		)
-	).filter((item): item is JudgeProgress => item !== null);
+		),
+	);
+	const expectedTaskIds = await Promise.all(
+		JUDGE_METRICS.map(async (metric) => {
+			const tasks = await readJsonlCached(
+				path.join(CODEX_JUDGMENTS_DIR, `${metric}_tasks.jsonl`),
+				"judge-task-id",
+				(row) =>
+					typeof row.task_id === "string" && row.task_id.length > 0
+						? row.task_id
+						: null,
+			);
+			return [metric, new Set(tasks)] as const;
+		}),
+	);
+	const expectedByMetric = new Map<string, Set<string>>(expectedTaskIds);
+	const codexJudgeProgress: JudgeProgress[] = rawJudgeProgress.map((item) => {
+		const expected = expectedByMetric.get(item.metric ?? "");
+		if (!expected || expected.size === 0) {
+			return {
+				...item,
+				total_tasks: undefined,
+				valid_completed: undefined,
+				failed_tasks: undefined,
+				verified_pending: undefined,
+			};
+		}
+		const matchingRows = codexJudgments.filter(
+			(row) =>
+				row.metric === item.metric && row.task_id && expected.has(row.task_id),
+		);
+		const validIds = new Set(
+			matchingRows
+				.filter(
+					(row) =>
+						!row.error &&
+						row.result !== null &&
+						row.result !== undefined &&
+						Object.keys(row.result).length > 0,
+				)
+				.map((row) => row.task_id),
+		);
+		const failedIds = new Set(
+			matchingRows
+				.filter(
+					(row) =>
+						row.error ||
+						row.result === null ||
+						row.result === undefined ||
+						Object.keys(row.result).length === 0,
+				)
+				.map((row) => row.task_id)
+				.filter((taskId) => taskId && !validIds.has(taskId)),
+		);
+		return {
+			...item,
+			total_tasks: expected.size,
+			valid_completed: validIds.size,
+			failed_tasks: failedIds.size,
+			verified_pending: expected.size - validIds.size - failedIds.size,
+		};
+	});
 
 	// ---- bits-per-word: the efficiency metric the baseline paper reports.
 	// Computed directly from paired_rows.jsonl (post-clustered mean of the
@@ -623,8 +729,6 @@ export async function loadZlgComparisonData() {
 	const bertscoreRecallWin = winnerInfo(paired.bertscore_recall);
 	const repetitionWin = winnerInfo(paired.repetition_ratio, true);
 	const lexicalQualityWin = winnerInfo(paired.lexical_quality_index);
-	const selfConsistencyWin = winnerInfo(paired.self_consistency, true);
-	const commentLengthWin = winnerInfo(paired.word_count);
 
 	const metricRows: MetricTableData[] = metricsSummary
 		? [
@@ -702,13 +806,13 @@ export async function loadZlgComparisonData() {
 				{
 					label: "Average comment length",
 					caveat:
-						"Mean whitespace-delimited word count per generated comment. Longer text can affect distributional and lexical metrics, so interpret those comparisons alongside this length difference.",
+						"Descriptive row mean of whitespace-delimited words per generated comment. Neither longer nor shorter text is inherently better.",
 					ours: ourBlock?.word_count_mean ?? null,
 					zlg: zlgBlock?.word_count_mean ?? null,
 					unit: "words",
-					winner: commentLengthWin.winner,
+					direction: "descriptive",
+					winner: "n/a",
 					pValue: pairedInferenceP(paired.word_count),
-					winnerCount: commentLengthWin.count,
 				},
 				{
 					label: "Lexical repetition ratio",
@@ -787,18 +891,28 @@ export async function loadZlgComparisonData() {
 					winnerCount: bertscoreWin.count,
 				},
 				{
-					label: "Within-post self-consistency",
+					label: "Within-post self-consistency (row mean)",
+					caveat:
+						"Descriptive similarity across comments from the same post. Higher values can mean useful consistency or excessive sameness, so there is no preferred direction. The post mean is shown alongside; inference is clustered by post.",
 					ours: ourBlock?.self_consistency_mean ?? null,
 					zlg: zlgBlock?.self_consistency_mean ?? null,
-					lowerIsBetter: true,
-					winner: selfConsistencyWin.winner,
+					direction: "descriptive",
+					winner: "n/a",
 					pValue: pairedInferenceP(paired.self_consistency),
 					winnerCount: [
 						`${rowLevel.self_consistency?.n ?? 0}/${rowLevel.paired_n ?? 0} eligible`,
-						selfConsistencyWin.count,
 					]
 						.filter(Boolean)
 						.join(" · "),
+					secondary: {
+						label: "post mean",
+						ours:
+							metricsSummary.methods_clustered_by_post?.our_method
+								?.self_consistency_mean ?? null,
+						zlg:
+							metricsSummary.methods_clustered_by_post?.zlg
+								?.self_consistency_mean ?? null,
+					},
 				},
 			]
 		: [];
@@ -818,11 +932,12 @@ export async function loadZlgComparisonData() {
 						: `${fmtNum(m.zlg)}${m.unit ? ` ${m.unit}` : ""}`,
 				winner: m.winner,
 				direction:
-					m.lowerIsBetter === undefined
+					m.direction ??
+					(m.lowerIsBetter === undefined
 						? undefined
 						: m.lowerIsBetter
 							? "lower"
-							: "higher",
+							: "higher"),
 				detail: [
 					m.winnerCount,
 					m.pValue !== null ? `p=${fmtP(m.pValue)}` : null,
@@ -939,6 +1054,7 @@ export async function loadZlgComparisonData() {
 		reliability,
 		shownAttempts,
 		shownAcceptance,
+		localAcceptanceRate,
 		shownSkipped,
 		pairedRows,
 		pairedRowsSource,
@@ -955,5 +1071,6 @@ export async function loadZlgComparisonData() {
 		reuseRows,
 		totalPostsInDataset,
 		postsWithDuplicateText,
+		expandedLogProvenance,
 	};
 }

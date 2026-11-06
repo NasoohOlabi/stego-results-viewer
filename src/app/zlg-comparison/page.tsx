@@ -35,7 +35,7 @@ export default async function ZlgComparisonPage() {
 		reliability,
 		shownAttempts,
 		shownAcceptance,
-		shownSkipped,
+		localAcceptanceRate,
 		pairedRows,
 		codexJudgeSummary,
 		codexPilotAudit,
@@ -53,17 +53,44 @@ export default async function ZlgComparisonPage() {
 		pairedRowsSource,
 		metricsRunDir,
 		missingArtifacts,
+		expandedLogProvenance,
 	} = await loadZlgComparisonData();
-	const judgeTasks = codexJudgeProgress.reduce(
+	const expectedJudgeTasks = codexJudgeProgress.reduce(
 		(total, item) => total + (item.total_tasks ?? 0),
 		0,
 	);
-	const judgeErrors = codexJudgeProgress.reduce(
-		(total, item) => total + (item.errors ?? 0),
+	const completedJudgeTasks = codexJudgeProgress.reduce(
+		(total, item) => total + (item.valid_completed ?? 0),
 		0,
 	);
+	const failedJudgeTasks = codexJudgeProgress.reduce(
+		(total, item) => total + (item.failed_tasks ?? 0),
+		0,
+	);
+	const pendingJudgeTasks = codexJudgeProgress.reduce(
+		(total, item) => total + (item.verified_pending ?? 0),
+		0,
+	);
+	const unknownJudgeManifests = codexJudgeProgress.filter(
+		(item) => item.total_tasks === undefined,
+	).length;
 	const uniqueOurTexts = new Set(samples.map((sample) => sample.ourText)).size;
 	const uniqueZlgTexts = new Set(samples.map((sample) => sample.zlgText)).size;
+	const measuredMetric = (label: string) =>
+		metricRows.find(
+			(row) =>
+				row.label === label &&
+				row.ours !== null &&
+				row.zlg !== null &&
+				row.pValue !== null,
+		);
+	const hasPerplexityComparison = Boolean(
+		measuredMetric("Fluency proxy: GPT-2 perplexity"),
+	);
+	const hasKlJsdComparison = [
+		"Topical-fit proxy: KL vs matched post",
+		"Topical-fit proxy: JSD vs matched post",
+	].every((label) => measuredMetric(label));
 
 	return (
 		<OvernightFindingsShell>
@@ -136,14 +163,15 @@ export default async function ZlgComparisonPage() {
 							<div className="flex flex-wrap items-start justify-between gap-3">
 								<div>
 									<p className="font-medium text-emerald-300 text-xs uppercase tracking-widest">
-										Completed evaluation
+										Judge evaluation status
 									</p>
 									<h2 className="mt-1 font-bold text-2xl">
-										Independent judge results, ready to review
+										Independent judge results
 									</h2>
 								</div>
 								<span className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 font-medium text-emerald-200 text-xs">
-									{judgeTasks} / {judgeTasks} valid tasks
+									{completedJudgeTasks} / {expectedJudgeTasks || "?"} valid
+									tasks
 								</span>
 							</div>
 							<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -157,11 +185,20 @@ export default async function ZlgComparisonPage() {
 									value={`${uniqueOurTexts} + ${uniqueZlgTexts}`}
 								/>
 								<Stat
-									label="Completed judge tasks"
-									value={String(judgeTasks)}
+									label="Valid judge tasks"
+									value={`${completedJudgeTasks} / ${expectedJudgeTasks || "?"}`}
 								/>
-								<Stat label="Judge errors" value={String(judgeErrors)} />
+								<Stat
+									label="Failed judge tasks"
+									value={String(failedJudgeTasks)}
+								/>
 							</div>
+							<p className="text-emerald-50/85 text-sm leading-relaxed">
+								Task counts use unique expected task IDs and successful,
+								non-error results. Failed: {failedJudgeTasks}; pending:{" "}
+								{pendingJudgeTasks}; task manifests unavailable:{" "}
+								{unknownJudgeManifests}.
+							</p>
 							<p className="text-emerald-50/85 text-sm leading-relaxed">
 								This view reports one paired comparison per source post. Each
 								selected ZLG cover text is unique, so repeated baseline outputs
@@ -220,29 +257,30 @@ export default async function ZlgComparisonPage() {
 								The tradeoff, in one paragraph
 							</p>
 							<p className="mt-2 text-slate-200 text-sm leading-relaxed">
-								Capacity figures for the two methods aren't directly comparable
-								(see the note above), so the more meaningful efficiency read is{" "}
-								<span className="font-semibold text-orange-300">
-									bits per word
-								</span>
-								: ZLG packs more payload per word of generated text (
+								The legacy bits-per-word proxy is shown for context (
 								{fmtNum(bpwZlgAllMean, 3)} vs {fmtNum(bpwOursAllMean, 3)}{" "}
-								bits/word), which is the efficiency metric the baseline paper
-								itself reports. Counting ZLG's own failures as zero gives{" "}
+								bits/word). It does not establish a comparable efficiency
+								winner: the payload definitions and recovery evidence differ.
+								The frozen comparison summary for{" "}
+								{metricsRunDir.split(/[\\/]/).at(-1)} reports{" "}
+								{fmtNum(reliability?.accepted, 0)} accepted outputs from{" "}
+								{shownAttempts} server attempts ({fmtPct(shownAcceptance)}{" "}
+								acceptance rate, with harness skips excluded). Its paired metric
+								summaries use {fmtNum((rowLevel.paired_n ?? 0) / 2, 0)} paired
+								comparisons drawn from {fmtNum(paired.paired_n, 0)} distinct
+								posts. Counting ZLG's own failures as zero gives{" "}
 								{fmtNum(reliability?.effective_payload_bits_per_attempt, 1)}{" "}
-								payload bits per attempt across {shownAttempts} trials that
-								reached the server ({fmtPct(shownAcceptance)} acceptance rate
-								{shownSkipped > 0
-									? `; a further ${shownSkipped} rows never reached it and are excluded`
-									: ""}
-								). ZLG scores{" "}
-								<span className="font-semibold text-orange-300">
-									lower on GPT-2 perplexity
-								</span>
-								, a fluency proxy that does not measure reader-facing
-								naturalness or human authorship; KL/JSD topical-fit proxies show
-								no statistically clear difference (see below). Our method
-								produces{" "}
+								payload bits per attempt in that frozen summary. GPT-2
+								perplexity{" "}
+								{hasPerplexityComparison
+									? "was measured; see the paired comparison below"
+									: "was not scored in this dataset"}{" "}
+								and KL/JSD topical-fit proxies{" "}
+								{hasKlJsdComparison
+									? "were measured; see their paired comparisons below"
+									: "were not scored in this dataset"}
+								. Perplexity is a model predictability proxy, not reader-facing
+								naturalness or human authorship. Our method produces{" "}
 								<span className="font-semibold text-cyan-300">longer text</span>{" "}
 								({fmtNum(ourBlock?.word_count_mean, 1)} vs{" "}
 								{fmtNum(zlgBlock?.word_count_mean, 1)} words). The former
@@ -256,8 +294,25 @@ export default async function ZlgComparisonPage() {
 					) : null}
 
 					{rows.length > 0 ? (
+						<p className="text-slate-400 text-xs">
+							Expanded generation log, {metricsRunDir.split(/[\\/]/).at(-1)}{" "}
+							results.jsonl: {rows.length} rows, {acceptedRows.length} accepted,
+							and {attemptedRows.length} requests that reached ZLG (
+							{fmtPct(localAcceptanceRate)} accepted per request).{" "}
+							{skippedRows.length} harness skips are excluded from that
+							denominator. These counts are separate from the frozen summary
+							above.{" "}
+							{expandedLogProvenance?.status === "matches"
+								? `Immutable content identity ${expandedLogProvenance.recordedSha256?.slice(0, 12)} matches this file (${expandedLogProvenance.objectLineCount ?? "n/a"} object lines). It does not relabel historical recovery.`
+								: expandedLogProvenance?.status === "mismatch"
+									? "The expanded-log manifest does not match the current results.jsonl."
+									: "No immutable manifest is recorded for this expanded log."}
+						</p>
+					) : null}
+
+					{rows.length > 0 ? (
 						<section className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-							<Stat label="Rows Parsed" value={String(rows.length)} />
+							<Stat label="Expanded Log Rows" value={String(rows.length)} />
 							<Stat
 								label="ZLG Attempts"
 								sub={
@@ -267,15 +322,18 @@ export default async function ZlgComparisonPage() {
 								}
 								value={String(attemptedRows.length)}
 							/>
-							<Stat label="Accepted" value={String(acceptedRows.length)} />
+							<Stat
+								label="Expanded Log Accepted"
+								value={String(acceptedRows.length)}
+							/>
 							<Stat
 								label="Failed (of attempts)"
 								value={String(failedRows.length - skippedRows.length)}
 							/>
 							<Stat
 								label="Paired Observations"
-								sub={`${paired.paired_n ?? "n/a"} independent post clusters`}
-								value={String(rowLevel.paired_n ?? pairedRows.length / 2)}
+								sub={`${paired.paired_n ?? "n/a"} distinct posts`}
+								value={String((rowLevel.paired_n ?? pairedRows.length) / 2)}
 							/>
 							<Stat
 								label="Last Updated"
@@ -291,8 +349,8 @@ export default async function ZlgComparisonPage() {
 							<div className="flex flex-wrap items-baseline justify-between gap-2">
 								<h2 className="font-semibold text-lg">
 									Efficiency &amp; distributional proxies (
-									{rowLevel.paired_n ?? pairedRows.length / 2} paired
-									observations)
+									{fmtNum((rowLevel.paired_n ?? pairedRows.length) / 2, 0)}{" "}
+									pairs)
 								</h2>
 								<div className="flex items-center gap-3 text-xs">
 									<span className="flex items-center gap-1 text-slate-400">
@@ -304,11 +362,19 @@ export default async function ZlgComparisonPage() {
 								</div>
 							</div>
 							<p className="text-amber-200/75 text-xs leading-relaxed">
-								Perplexity is a model-predictability/fluency proxy; KL and JSD
-								are word-distribution topical-fit proxies. None is a
-								reader-facing measure of naturalness or human authorship. Values
-								use all paired observations; p-values remain Holm-adjusted and
-								clustered by the {paired.paired_n ?? "n/a"} unique posts.
+								This frozen summary's paired metrics cover{" "}
+								{fmtNum((rowLevel.paired_n ?? 0) / 2, 0)} pairs from{" "}
+								{fmtNum(paired.paired_n, 0)} distinct posts. Perplexity is a
+								model-predictability/fluency proxy; KL and JSD are
+								word-distribution topical-fit proxies. None is a reader-facing
+								measure of naturalness or human authorship. Values use all
+								paired observations; p-values remain Holm-adjusted and clustered
+								by those {paired.paired_n ?? "n/a"} distinct posts.
+							</p>
+							<p className="text-slate-400 text-xs leading-relaxed">
+								Table values are row means, with each comment weighted equally.
+								The self-consistency row also shows post means. Paired p-values
+								use post-clustered inference.
 							</p>
 							<SummaryTable rows={summaryRows} />
 						</section>

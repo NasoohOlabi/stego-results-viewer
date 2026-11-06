@@ -69,26 +69,39 @@ export function LlmJudgePanel({
 		(item) => !item.error && item.result,
 	).length;
 	const completedTasks = progress.reduce(
-		(total, item) => total + (item.completed ?? 0),
+		(total, item) => total + (item.valid_completed ?? 0),
 		0,
 	);
 	const totalTasks = progress.reduce(
 		(total, item) => total + (item.total_tasks ?? 0),
 		0,
 	);
-	const errors = progress.reduce(
-		(total, item) => total + (item.errors ?? 0),
+	const failedTasks = progress.reduce(
+		(total, item) => total + (item.failed_tasks ?? 0),
 		0,
 	);
-	const complete = totalTasks > 0 && completedTasks === totalTasks;
+	const pendingTasks = progress.reduce(
+		(total, item) => total + (item.verified_pending ?? 0),
+		0,
+	);
+	const unknownTaskSets = progress.filter(
+		(item) => item.total_tasks === undefined,
+	).length;
+	const complete =
+		progress.length === 5 &&
+		unknownTaskSets === 0 &&
+		totalTasks > 0 &&
+		completedTasks === totalTasks;
 	return (
 		<section className="space-y-5 rounded-xl border border-violet-400/30 bg-gradient-to-br from-violet-400/[0.10] via-violet-400/[0.03] to-transparent p-5">
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<div>
 					<p className="font-semibold text-lg">Independent LLM Judge</p>
 					<p className="text-slate-400 text-xs">
-						{complete ? "Completed" : "In progress"}: {completed} valid
-						judgments loaded ({completedTasks}/{totalTasks || "?"} tasks).
+						{complete ? "Completed" : "Incomplete"}: {completed} valid judgments
+						loaded ({completedTasks}/{totalTasks || "?"} unique tasks;{" "}
+						{failedTasks} failed, {pendingTasks} pending, {unknownTaskSets} task
+						manifests unavailable).
 					</p>
 				</div>
 				<div className="flex rounded-lg border border-white/10 p-1 text-sm">
@@ -107,7 +120,7 @@ export function LlmJudgePanel({
 			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 				<JudgeStat label="Independent posts" value={String(pairCount)} />
 				<JudgeStat label="Valid judgments" value={String(completed)} />
-				<JudgeStat label="Judge errors" value={String(errors)} />
+				<JudgeStat label="Failed tasks" value={String(failedTasks)} />
 				<JudgeStat
 					label="Pilot audit"
 					value={audit?.healthy ? "Passed" : audit ? "Review" : "n/a"}
@@ -130,11 +143,18 @@ export function LlmJudgePanel({
 						>
 							<p className="font-medium text-violet-200">{item.metric}</p>
 							<p className="text-slate-300">
-								{item.completed ?? 0} / {item.total_tasks ?? "?"}
+								{item.valid_completed ?? 0} / {item.total_tasks ?? "?"} valid
+								tasks
 							</p>
-							<p className={item.errors ? "text-amber-300" : "text-slate-500"}>
-								{item.complete ? "complete" : `${item.pending ?? "?"} pending`}{" "}
-								· {item.errors ?? 0} errors
+							<p
+								className={
+									item.failed_tasks || item.verified_pending
+										? "text-amber-300"
+										: "text-slate-500"
+								}
+							>
+								{item.verified_pending ?? "?"} pending ·{" "}
+								{item.failed_tasks ?? "?"} failed
 							</p>
 						</div>
 					))}
